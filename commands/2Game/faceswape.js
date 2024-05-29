@@ -1,135 +1,63 @@
-import fs from 'fs';
-import path from 'path';
+
 import axios from 'axios';
-
-const fetchTrendingAnime = async () => {
-  try {
-    const response = await axios.get("https://anime-trending-six.vercel.app/kshitiz");
-    return response.data;
-  } catch (error) {
-    console.error(error);
-    throw new Error("Failed to fetch trending anime list");
-  }
-}
-
-const fetchTrailerDownloadUrl = async (videoId) => {
-  try {
-    const response = await axios.get(`https://youtube-kshitiz.vercel.app/download?id=${videoId}`);
-    return response.data[0];
-  } catch (error) {
-    console.error(error);
-    throw new Error("Failed to fetch trailer download URL");
-  }
-}
-
-const downloadTrailer = async (videoUrl, fileName) => {
-  try {
-    const cacheDir = path.join(__dirname, 'cache');
-    if (!fs.existsSync(cacheDir)) {
-      fs.mkdirSync(cacheDir, { recursive: true });
-    }
-
-    const response = await axios.get(videoUrl, { responseType: "stream" });
-    const writer = fs.createWriteStream(fileName);
-    response.data.pipe(writer);
-    return new Promise((resolve, reject) => {
-      writer.on("finish", () => resolve(fileName));
-      writer.on("error", reject);
-    });
-  } catch (error) {
-    console.error(error);
-    throw new Error("Failed to download video");
-  }
-}
-
-const translateText = async (text) => {
-  try {
-    const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ar&dt=t&q=${encodeURIComponent(text)}`);
-    return translationResponse?.data?.[0]?.[0]?.[0];
-  } catch (error) {
-    console.error('Error translating text:', error);
-    return text;
-  }
-};
+import fs from 'fs-extra';
+import path from 'path';
 
 export default {
-  name: "توب_انمي",
-  author: "Hussein Yacoubi",
+  name: "صورة",
+  version: "1.0.0",
   role: "member",
-  description: "يجلب قائمة الأنمي الرائج ويعرض معلوماته.",
-  execute: async ({ api, event }) => {
-    api.setMessageReaction("🕐", event.messageID, () => {}, true);
+  author: "kaguya project",
+  description: "جلب صور برو اولاد و صور برو بنات مع صور سوبرا",
+  cooldowns: 5,
+  execute: async ({ api, event, args }) => {
+    const categories = {
+      boy: "بروفايل اولاد",
+      girl: "بروفايل بنات",
+      car: "سوبرا"
+    };
+
+    if (args.length === 0) {
+      const availableCategories = Object.keys(categories).join(", ");
+      return api.sendMessage(`Please choose a category:\nAvailable categories: ${availableCategories}`, event.threadID, event.messageID);
+    }
+
+    const category = args[0].toLowerCase();
+
+    if (!categories[category]) {
+      return api.sendMessage(` ⚠️ | المرجو اختيار  اي من هذه : ${Object.keys(categories).join(", ")}`, event.threadID, event.messageID);
+    }
 
     try {
-      const animeList = await fetchTrendingAnime();
+      const searchQuery = categories[category];
+      const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(searchQuery)}`);
+      const translatedQuery = translationResponse?.data?.[0]?.[0]?.[0];
 
-      if (!Array.isArray(animeList) || animeList.length === 0) {
-        api.sendMessage({ body: "لم يتم العثور على أنمي رائج." }, event.threadID, event.messageID);
-        api.setMessageReaction("❌", event.messageID, () => {}, true);
-        return;
+      const url = `https://pin-two.vercel.app/pin?search=${encodeURIComponent(translatedQuery)}`;
+      const searchResponse = await axios.get(url);
+      const searchResults = searchResponse.data.result;
+
+      if (searchResults.length === 0) {
+        return api.sendMessage(`No results found for category: ${category}`, event.threadID, event.messageID);
       }
 
-      const top10Anime = animeList.slice(0, 10);
-      const translatedAnimeNames = await Promise.all(
-        top10Anime.map(async (anime, index) => {
-          const translatedName = await translateText(anime.name);
-          return `${index + 1}. ${translatedName}`;
-        })
-      );
-      const message = `✿━━━━━━━━━━━━━━━━━✿\nإليك توب 10 أنميات رائجة :\n\n${translatedAnimeNames.join("\n")}\n✿━━━━━━━━━━━━━━━━━✿`;
+      const randomIndex = Math.floor(Math.random() * searchResults.length);
+      const imageUrl = searchResults[randomIndex];
 
-      api.sendMessage({ body: message }, event.threadID, (err, info) => {
-        global.client.handler.reply.set(info.messageID, {
-          commandName: "توب_انمي",
-          messageID: info.messageID,
-          author: event.senderID,
-          animeList: top10Anime,
-          type: "anime",
-          unsend: true,
-        });
-      });
+      const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+      const imagePath = path.join(cwd(), 'cache', `randompic_image.jpg`);
+      await fs.outputFile(imagePath, imageResponse.data);
 
-      api.setMessageReaction("✅", event.messageID, () => {}, true);
+      const imageStream = fs.createReadStream(imagePath);
+      await api.sendMessage({
+        body: ``,
+        attachment: imageStream
+      }, event.threadID, event.messageID);
+
+      await fs.unlink(imagePath);
     } catch (error) {
       console.error(error);
-      api.sendMessage({ body: "حدث خطأ. يرجى المحاولة لاحقاً." }, event.threadID, event.messageID);
-      api.setMessageReaction("❌", event.messageID, () => {}, true);
-    }
-  },
-
-  onReply: async ({ api, event, reply }) => {
-    if (event.senderID !== reply.author || !reply.animeList) {
-      return;
-    }
-
-    const animeIndex = parseInt(event.body.trim(), 10);
-
-    if (isNaN(animeIndex) || animeIndex <= 0 || animeIndex > reply.animeList.length) {
-      api.sendMessage({ body: "إدخال غير صالح. يرجى تقديم رقم صحيح." }, event.threadID, event.messageID);
-      return;
-    }
-
-    const selectedAnime = reply.animeList[animeIndex - 1];
-    const trailerId = selectedAnime.trailer && selectedAnime.trailer.id;
-
-    if (!trailerId) {
-      api.sendMessage({ body: "العرض الدعائي لهذا الأنمي غير متوفر." }, event.threadID, event.messageID);
-      global.client.handler.reply.delete(reply.messageID);
-      return;
-    }
-
-    try {
-      const downloadUrl = await fetchTrailerDownloadUrl(trailerId);
-      const videoFileName = path.join(process.cwd(), 'cache', `anitrend.mp4`);
-      await downloadTrailer(downloadUrl, videoFileName);
-      const videoStream = fs.createReadStream(videoFileName);
-
-      api.sendMessage({ body: `${selectedAnime.name}`, attachment: videoStream }, event.threadID, event.messageID);
-    } catch (error) {
-      console.error(error);
-      api.sendMessage({ body: "حدث خطأ." }, event.threadID, event.messageID);
-    } finally {
-      global.client.handler.reply.delete(reply.messageID);
+      return api.sendMessage(`An error occurred while fetching the picture.`, event.threadID, event.messageID);
     }
   }
 };
