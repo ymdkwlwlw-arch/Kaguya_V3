@@ -21,7 +21,7 @@ export default {
     const date = moment().tz(timezone).format('MM/DD/YY');
     const time = moment().tz(timezone).format('h:mm:ss A');
 
-    const developerMessage = `🧾 | لديك رسالة ، سينسي\n من طرف @${senderName}\n\n${message}\n\nالوقت ⏰ : ${time} (${timezone})\n التاريخ 📅 : ${date}`;
+    const developerMessage = `◆❯━━━━━━▣✦▣━━━━━━━❮◆\n🧾 | لديك رسالة ، سينسي\n من طرف @${senderName}\n\n${message}\n\⏰ | الوقت : ${time} (${timezone})\n📅 | التاريخ : ${date}\n◆❯━━━━━━▣✦▣━━━━━━━❮◆`;
     const developerThreadID = '100076269693499';
 
     try {
@@ -33,6 +33,8 @@ export default {
         }],
       }, developerThreadID);
 
+api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+
       await api.sendMessage('✅ | تم إرسال رسالتك إلى المطور بنجاح', event.threadID, event.messageID);
     } catch (error) {
       console.error('Error sending message to developer:', error);
@@ -40,3 +42,4 @@ export default {
     }
   }
 };
+  
