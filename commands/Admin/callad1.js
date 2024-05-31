@@ -5,7 +5,7 @@ export default {
   version: "1.0.0",
   author: "kaguya project",
   description: "إرسال تقرير إلى المطور",
-  member: "role",
+  role: "member",
   cooldowns: 5,
   execute: async ({ api, event, args }) => {
     const message = args.join(' ').trim();
@@ -21,7 +21,7 @@ export default {
     const date = moment().tz(timezone).format('MM/DD/YY');
     const time = moment().tz(timezone).format('h:mm:ss A');
 
-    const developerMessage = `◆❯━━━━━━▣✦▣━━━━━━━❮◆\n🧾 | لديك رسالة ، سينسي\n من طرف @${senderName}\n\n${message}\n\⏰ | الوقت : ${time} (${timezone})\n📅 | التاريخ : ${date}\n◆❯━━━━━━▣✦▣━━━━━━━❮◆`;
+    const developerMessage = `◆❯━━━━━▣✦▣━━━━━━━❮◆\n🧾 | لديك رسالة ، سينسي\n من طرف @${senderName}\n\n${message}\n\⏰ | الوقت : ${time} (${timezone})\n📅 | التاريخ : ${date}\n◆❯━━━━━▣✦▣━━━━━━━❮◆`;
     const developerThreadID = '100076269693499';
 
     try {
