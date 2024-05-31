@@ -106,7 +106,7 @@ export class CommandHandler {
       const { adminIDs: threadAdminIDs } = await api.getThreadInfo(threadID);
 
       if ((command.role === "admin" || command.role === "owner") && !threadAdminIDs.includes(senderID) && !this.config.ADMIN_IDS.includes(senderID)) {
-        api.setMessageReaction("⚠️", event.messageID, (err) => {}, true);
+        api.setMessageReaction("🚫", event.messageID, (err) => {}, true);
         return api.sendMessage(getLang("handler.command_noPermission"), threadID, messageID);
       }
 
