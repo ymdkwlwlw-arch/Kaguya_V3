@@ -22,7 +22,7 @@ export default {
       }
 
       api.setMessageReaction("⏰", event.messageID, (err) => {}, true);
-      const response = await axios.get(`https://deku-rest-api-3ijr.onrender.com/new/gpt-4_adv?prompt=${encodeURIComponent(prompt)}`);
+      const response = await axios.get(`https://deku-rest-api-ywad.onrender.com/new/gpt-4_adv?prompt=${encodeURIComponent(prompt)}`);
       const answer = response.data.result.reply; // تعديل هنا للوصول إلى رد الواجهة البرمجية بشكل صحيح
 
       api.sendMessage(answer, event.threadID, (err, info) => {
