@@ -33,7 +33,7 @@ export default {
     request(url)
       .pipe(fs.createWriteStream(inputPath))
       .on('finish', () => {
-        const apiUrl = `https://apis-samir.onrender.com/removebg?url=${encodeURIComponent(url)}`;
+        const apiUrl = `https://for-devs.onrender.com/api/rbg?imageUrl=${encodeURIComponent(url)}&apikey=api1`;
 
         axios({
           method: 'get',
