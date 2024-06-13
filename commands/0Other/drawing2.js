@@ -14,7 +14,7 @@ export default {
       const prompt = args.join(" ");
 
       // Translate Arabic text to English if needed
-      const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
+      const translationResponse = await axios.get(`https://deku-rest-api-ywad.onrender.com/emi?prompt=${encodeURIComponent(prompt)}`);
       const translatedPrompt = translationResponse?.data?.[0]?.[0]?.[0] || prompt;
 
       const emiApiUrl = `https://deku-rest-api-3ijr.onrender.com/emi?prompt=${encodeURIComponent(translatedPrompt)}`;
