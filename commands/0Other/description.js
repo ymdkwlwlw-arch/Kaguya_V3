@@ -1,45 +1,48 @@
 import axios from 'axios';
-import tinyurl from 'tinyurl';
+import fs from 'fs-extra';
+import path from 'path';
 
 export default {
-  name: "صفي",
-  version: "1.0.0",
-  author: "مشروع كاغويا",
-  description: "جلب وصف الصورة بعد الرد على صورة  ",
+  name: "ايموجي",
+  author: "kaguya project",
   role: "member",
-  usages: "رد على صورة للحصول على الوصف",
-  cooldowns: 5,
-  execute: async ({ api, event }) => {
+  description: "تحويل إيموجي الى صورة متحركة",
+  async execute({ message, args, api, event }) {
+    if (args.length === 0) {
+      api.sendMessage("⚠️ | يرجى إدخال إيموجي لتحويله إلى صورة متحركة.", event.threadID, event.messageID);
+      return;
+    }
+
     api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
-    const { type, messageReply } = event;
-    const { attachments, threadID, messageID } = messageReply || {};
+    try {
+      const prompt = args.join(" ");
 
-    if (type === "message_reply" && attachments) {
-      const [attachment] = attachments;
-      const { url, type: attachmentType } = attachment || {};
+      // Translate Arabic text to English if needed
+      const emiApiUrl = `https://deku-rest-api-ywad.onrender.com/emoji2gif?q=${encodeURIComponent(prompt)}`;
+      const startTime = Date.now();
 
-      if (!attachment || attachmentType !== "photo") {
-        return api.sendMessage("يرجى الرد على صورة.", threadID, messageID);
+      const emiResponse = await axios.get(emiApiUrl, {
+        responseType: "arraybuffer"
+      });
+
+      const cacheFolderPath = path.join(process.cwd(), "/cache");
+      if (!fs.existsSync(cacheFolderPath)) {
+        fs.mkdirSync(cacheFolderPath);
       }
+      const imagePath = path.join(cacheFolderPath, `${Date.now()}imojie.gif`);
+      fs.writeFileSync(imagePath, Buffer.from(emiResponse.data, "binary"));
 
-      try {
-        const tinyUrl = await tinyurl.shorten(url);
-        const apiUrl = `https://prompt-gen-eight.vercel.app/kshitiz?url=${encodeURIComponent(tinyUrl)}`;
-        const response = await axios.get(apiUrl);
+      const stream = fs.createReadStream(imagePath);
+      api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-        const { prompt } = response.data;
-        
-        // الترجمة إلى العربية
-        const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ar&dt=t&q=${encodeURIComponent(prompt)}`);
-        const translatedPrompt = translationResponse?.data?.[0]?.[0]?.[0];
-
-        api.sendMessage(translatedPrompt, threadID, messageID);
-      } catch (error) {
-        console.error(error);
-        api.sendMessage("❌ حدث خطأ أثناء جلب الوصف.", threadID, messageID);
-      }
-    } else {
-      api.sendMessage("يرجى الرد على صورة.", threadID, messageID);
+      api.sendMessage({
+        body: `✅━❪تــم الــتــحــويــل بــنــجــاح❫━✅`,
+        attachment: stream
+      }, event.threadID, event.messageID);
+    } catch (error) {
+      console.error("Error:", error);
+      api.sendMessage("❌ | حدث خطأ أثناء تحويل الإيموجي إلى صورة متحركة.", event.threadID, event.messageID);
+      api.setMessageReaction("❌", event.messageID, (err) => {}, true);
     }
   }
 };
