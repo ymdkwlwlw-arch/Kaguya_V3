@@ -36,7 +36,7 @@ export default {
       api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
       api.sendMessage({
-        body: `✅━❪تــم الــتــحــويــل بــنــجــاح❫━✅`,
+        body: `✅❪تــم الــتــحــويــل بــنــجــاح❫✅`,
         attachment: stream
       }, event.threadID, event.messageID);
     } catch (error) {
