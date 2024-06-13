@@ -30,7 +30,7 @@ export default {
       await fs.promises.writeFile(imagePath, imageResponse.data);
 
       api.sendMessage({
-        body: `◆❯━━━━━━▣✦▣━━━━━━━❮◆\nإليك صورة عشوائية لثعلب 🦊\n◆❯━━━━━━▣✦▣━━━━━━━❮◆`,
+        body: `◆❯━━━━━▣✦▣━━━━━━❮◆\nإليك صورة عشوائية لثعلب 🦊\n◆❯━━━━━▣✦▣━━━━━━❮◆`,
         attachment: fs.createReadStream(imagePath)
       }, event.threadID, () => {
         fs.unlinkSync(imagePath);
