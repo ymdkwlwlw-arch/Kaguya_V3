@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import path from 'path';
 
 export default {
-  name: "رفع جودة الصورة",
+  name: "تحسين",
   version: "1.0.0",
   author: "مشروع كاغويا",
   description: "رفع جودة الصور المقدمة أو المردود عليها",
