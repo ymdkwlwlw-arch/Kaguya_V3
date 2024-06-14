@@ -2,7 +2,7 @@ import axios from "axios";
 import fs from "fs-extra";
 
 export default {
-  name: "إيموجي",
+  name: "إيموجي2",
   author: "حسين يعقوبي",
   role: "member",
   description: "تحويل إيموجي إلى صورة متحركة",
