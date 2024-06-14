@@ -5,56 +5,86 @@ import { shorten } from 'tinyurl';
 
 export default {
   name: "نيجي",
-  author: "kaguya project",
+  version: "1.0.0",
+  author: "مشروع كاغويا",
+  description: "جلب صورة باستخدام الذكاء الاصطناعي بناءً على النص المدخل",
   role: "member",
-  description: "توليد صورة أنمي بناء على النص المعطى.",
-  async execute({ message, event, args, api }) {
-    api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
+  usages: "<وصف الصورة> | <رقم الموديل 1-26> | <النسبة 1-4>",
+  cooldowns: 5,
+  execute: async ({ api, event, args }) => {
+    const ratios = ["1:1", "16:9", "4:5", "9:16"];
+    const cacheFolderPath = path.join(process.cwd(), "cache");
 
-    const input = args.join(' ');
-    const [prompt, resolution = '1:1'] = input.split('|').map(s => s.trim());
-
-    if (!prompt) {
-      return api.sendMessage("❌ | الرجاء إدخال النص.", event.threadID, event.messageID);
+    if (!fs.existsSync(cacheFolderPath)) {
+      fs.mkdirSync(cacheFolderPath);
     }
 
     try {
-      // رابط الأساسي للخدمة مع المعاملات
-      const apiUrl = `https://apis-samir.onrender.com/niji?prompt=${encodeURIComponent(prompt)}&resolution=${encodeURIComponent(resolution)}`;
-      const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
-      const imageData = Buffer.from(response.data, 'binary');
+      if (args.length === 0) {
+        await api.sendMessage("⚠️ | يرجى تقديم وصف للصورة، رقم الموديل من 1 إلى 26، ومن أجل النسبة اختر من هذه النسب التالية: 1:1, 16:9, 4:5, 9:16. مثال: *نيجي فتاة جميلة | 2 | 1:1", event.threadID, event.messageID);
+        return;
+      }
 
-      // تحديد المسار لحفظ الصورة مؤقتاً
-      const imagePath = path.join(process.cwd(), "cache", `${Date.now()}_generated_image.png`);
-      fs.writeFileSync(imagePath, imageData);
+      const input = args.join(" ").split("|").map(arg => arg.trim());
+      if (input.length < 3) {
+        await api.sendMessage("⚠️ | صيغة غير صحيحة. يرجى استخدام الصيغة التالية: *نيجي <وصف الصورة> | <رقم الموديل> | <النسبة>", event.threadID, event.messageID);
+        return;
+      }
 
-      // قراءة الصورة المولدة وإرسالها
-      const stream = fs.createReadStream(imagePath);
+      const [prompt, model, ratio] = input;
+      const modelNo = parseInt(model, 10);
+      const ratioIndex = parseInt(ratio, 10) - 1;
+
+      if (isNaN(modelNo) || modelNo < 1 || modelNo > 26) {
+        await api.sendMessage("⚠️ | رقم موديل غير صالح. يرجى تقديم رقم بين 1 و 26.", event.threadID, event.messageID);
+        return;
+      }
+
+      if (isNaN(ratioIndex) || ratioIndex < 0 || ratioIndex > 3) {
+        await api.sendMessage(`⚠️ | نسبة غير صالحة. يرجى تقديم رقم بين 1 و 4 يقابل النسب: 1:1, 16:9, 4:5, 9:16.`, event.threadID, event.messageID);
+        return;
+      }
+
+      // Translate the prompt from Arabic to English
+      const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
+      const translatedPrompt = translationResponse?.data?.[0]?.[0]?.[0] || prompt;
+
+      const selectedRatio = ratios[ratioIndex];
+      const startTime = Date.now();
+      const w = await api.sendMessage(`⏳ | جاري معالجة طلبك: الوصف: ${translatedPrompt}، الموديل: ${modelNo}، نسبة العرض إلى النسبة: ${selectedRatio}، يرجى الانتظار...`, event.threadID, event.messageID);
+
+      const apiUrl = `https://vyro-ai.onrender.com/generate-image?model=${modelNo}&aspect_ratio=${encodeURIComponent(selectedRatio)}`;
+      const res = await axios.post(apiUrl, { prompt: translatedPrompt }, { responseType: 'arraybuffer' });
+
+      if (res.status !== 200) {
+        throw new Error("فشل في توليد الصورة.");
+      }
+
+      const imageBuffer = Buffer.from(res.data, 'binary');
+      const imgPath = path.join(cacheFolderPath, 'generated_image.jpg');
+      await fs.outputFile(imgPath, imageBuffer);
+
+      const endTime = Date.now();
+      const processingTimeInSeconds = ((endTime - startTime) / 1000).toFixed(2);
 
       api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-      shorten(apiUrl, async function (shortUrl) {
-        await api.sendMessage({  
-          body: `✅ |تــــم تـــولـــيــد الــصــورة بــنــجــاح`,
-          attachment: stream
+      // Assuming we need to upload the image somewhere to get the URL
+      // Here we use the assumption that image is uploaded and we have the URL
+      const imageUrl = 'http://path.to.uploaded.image/generated_image.jpg'; // Replace with actual URL if you have a mechanism to upload
+
+      shorten(imageUrl, async function (shortUrl) {
+        await api.unsendMessage(w.messageID);
+        await api.sendMessage({
+          attachment: fs.createReadStream(imgPath),
+          body: `✅ | تــــم تـــولــيــد الــصــورة بــنــجــاح \n: "${translatedPrompt}"\n❏ موديل : 『${modelNo}』\n📊 |❏ النسبة : ${selectedRatio}\n⏰ |❏ وقت المعالجة : 『${processingTimeInSeconds}』 ثانية\n📎 |❏ رابط الصورة : ${shortUrl}`,
         }, event.threadID, event.messageID);
       });
-
     } catch (error) {
-      console.error('خطأ في إرسال الصورة:', error);
-      api.sendMessage("❌ | حدث خطأ. الرجاء المحاولة مرة أخرى لاحقًا.", event.threadID, event.messageID);
+      console.error(error);
+      await api.sendMessage("⚠️ | فشل في توليد الصورة. يرجى المحاولة مرة أخرى لاحقاً.", event.threadID, event.messageID);
     } finally {
-      api.setMessageReaction("", event.messageID, (err) => {}, true);
+      await fs.remove(path.join(cacheFolderPath, 'generated_image.jpg'));
     }
   }
 };
-
-async function translateToEnglish(text) {
-  try {
-    const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(text)}`);
-    return translationResponse?.data?.[0]?.[0]?.[0];
-  } catch (error) {
-    console.error("خطأ في ترجمة النص:", error);
-    return text; // إرجاع النص كما هو في حالة وجود خطأ في الترجمة
-  }
-} 
