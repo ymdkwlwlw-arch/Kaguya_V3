@@ -1,35 +1,42 @@
-import axios from "axios";
-import fs from "fs-extra";
+import axios from 'axios';
+import fs from 'fs-extra';
+import path from 'path';
 
 export default {
-  name: "إيموجي2",
-  author: "حسين يعقوبي",
+  name: "رفع جودة الصورة",
+  version: "1.0.0",
+  author: "مشروع كاغويا",
+  description: "رفع جودة الصور المقدمة أو المردود عليها",
   role: "member",
-  description: "تحويل إيموجي إلى صورة متحركة",
-  async execute({ api, args, event }) {
-    const emoji = args.join(" ");
+  usages: "[رابط الصورة | الرد على الصورة]",
+  cooldowns: 5,
+  execute: async ({ api, event, args }) => {
+    const cachePath = path.join(process.cwd(), "cache", "upscalate_photo.jpg");
+    const { threadID, messageID } = event;
 
-    if (!emoji) {
-      return api.sendMessage("ℹ️ | يرجى إدخال إيموجي لتحويله إلى صورة متحركة.", event.threadID, event.messageID);
+    const photoUrl = event.messageReply ? event.messageReply.attachments[0].url : args.join(" ");
+
+    if (!photoUrl) {
+      return api.sendMessage("📸 | يرجى الرد على صورة أو تقديم عنوان URL للصورة للمعالجة والتحسين.", threadID, messageID);
     }
 
     try {
-      const { threadID, messageID } = event;
-      const path = process.cwd() + "/cache/animated_image.gif"; 
+      await api.sendMessage("🕟 | جاري رفع جودة الصورة ، يرجى الإنتظار...", threadID, messageID);
 
-      const response = await axios.get(`https://joshweb.click/emoji2gif?q=${encodeURIComponent(emoji)}`, { responseType: "arraybuffer" });
+      const response = await axios.get(`https://for-devs.onrender.com/api/upscale?imageurl=${encodeURIComponent(photoUrl)}&apikey=api1`);
+      const processedImageURL = response.data.hazescale;
 
-      fs.writeFileSync(path, Buffer.from(response.data, "utf-8"));
+      const imgResponse = await axios.get(processedImageURL, { responseType: "arraybuffer" });
+      const imgBuffer = Buffer.from(imgResponse.data, 'binary');
 
-      api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+      await fs.writeFile(cachePath, imgBuffer);
 
-      api.sendMessage({ 
-        body: "✅ | تم تحويل الإيموجي إلى صورة متحركة بنجاح",
-        attachment: fs.createReadStream(path)
-      }, threadID, () => fs.unlinkSync(path), messageID);
+      await api.sendMessage({
+        body: "✅ | تم رفع جودة الصورة بنجاح",
+        attachment: fs.createReadStream(cachePath)
+      }, threadID, () => fs.unlinkSync(cachePath), messageID);
     } catch (error) {
-      console.error(error);
-      api.sendMessage("⚠️ | حدث خطأ أثناء تحويل الإيموجي إلى صورة متحركة. يرجى المحاولة مرة أخرى.", event.threadID);
+      await api.sendMessage(`Error processing image: ${error.message}`, threadID, messageID);
     }
-  },
+  }
 };
