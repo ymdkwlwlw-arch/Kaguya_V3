@@ -1,7 +1,6 @@
 import axios from 'axios';
 import fs from 'fs-extra';
 import path from 'path';
-import { shorten } from 'tinyurl';
 
 export default {
   name: "نيجي",
@@ -21,13 +20,13 @@ export default {
 
     try {
       if (args.length === 0) {
-        await api.sendMessage("⚠️ | يرجى تقديم وصف للصورة، رقم الموديل من 1 إلى 26، ومن أجل النسبة اختر من هذه النسب التالية: 1:1, 16:9, 4:5, 9:16. مثال: *نيجي فتاة جميلة | 2 | 1:1", event.threadID, event.messageID);
+        await api.sendMessage("⚠️ | يرجى تقديم وصف للصورة، رقم الموديل من 1 إلى 26، والنسبة من 1 إلى 4.", event.threadID, event.messageID);
         return;
       }
 
       const input = args.join(" ").split("|").map(arg => arg.trim());
       if (input.length < 3) {
-        await api.sendMessage("⚠️ | صيغة غير صحيحة. يرجى استخدام الصيغة التالية: *نيجي <وصف الصورة> | <رقم الموديل> | <النسبة>", event.threadID, event.messageID);
+        await api.sendMessage("⚠️ | صيغة غير صحيحة. يرجى استخدام الصيغة: <وصف الصورة> | <رقم الموديل> | <النسبة>", event.threadID, event.messageID);
         return;
       }
 
@@ -51,7 +50,7 @@ export default {
 
       const selectedRatio = ratios[ratioIndex];
       const startTime = Date.now();
-      const w = await api.sendMessage(`⏳ | جاري معالجة طلبك: الوصف: ${translatedPrompt}، الموديل: ${modelNo}، نسبة العرض إلى النسبة: ${selectedRatio}، يرجى الانتظار...`, event.threadID, event.messageID);
+      const w = await api.sendMessage(`⏳ | جاري معالجة طلبك: الوصف: ${translatedPrompt}، الموديل: ${modelNo}، نسبة العرض إلى الارتفاع: ${selectedRatio}، يرجى الانتظار...`, event.threadID, event.messageID);
 
       const apiUrl = `https://vyro-ai.onrender.com/generate-image?model=${modelNo}&aspect_ratio=${encodeURIComponent(selectedRatio)}`;
       const res = await axios.post(apiUrl, { prompt: translatedPrompt }, { responseType: 'arraybuffer' });
@@ -67,19 +66,11 @@ export default {
       const endTime = Date.now();
       const processingTimeInSeconds = ((endTime - startTime) / 1000).toFixed(2);
 
-      api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-
-      // Assuming we need to upload the image somewhere to get the URL
-      // Here we use the assumption that image is uploaded and we have the URL
-      const imageUrl = 'http://path.to.uploaded.image/generated_image.jpg'; // Replace with actual URL if you have a mechanism to upload
-
-      shorten(imageUrl, async function (shortUrl) {
-        await api.unsendMessage(w.messageID);
-        await api.sendMessage({
-          attachment: fs.createReadStream(imgPath),
-          body: `◆❯━━━━━▣✦▣━━━━━━❮◆\n✅ | تــــم تـــولــيــد الــصــورة بــنــجــاح \n: "${translatedPrompt}"\n❏ موديل : 『${modelNo}』\n📊 |❏ النسبة : ${selectedRatio}\n⏰ |❏ وقت المعالجة : 『${processingTimeInSeconds}』 ثانية\n📎 |❏ رابط الصورة : ${shortUrl}\n◆❯━━━━━▣✦▣━━━━━━❮◆`,
-        }, event.threadID, event.messageID);
-      });
+      await api.unsendMessage(w.messageID);
+      await api.sendMessage({
+        attachment: fs.createReadStream(imgPath),
+        body: `◆❯━━━━━▣✦▣━━━━━━❮◆\n✅ | تــــم تـــولــيــد الــصــورة بــنــجــاح \n: "${translatedPrompt}"\n❏ موديل : 『${modelNo}』\n📊 |❏ النسبة : ${selectedRatio}\n⏰ |❏ وقت المعالجة : 『${processingTimeInSeconds}』\n◆❯━━━━━▣✦▣━━━━━━❮◆`,
+      }, event.threadID, event.messageID);
     } catch (error) {
       console.error(error);
       await api.sendMessage("⚠️ | فشل في توليد الصورة. يرجى المحاولة مرة أخرى لاحقاً.", event.threadID, event.messageID);
