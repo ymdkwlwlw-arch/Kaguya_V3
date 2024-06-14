@@ -13,7 +13,7 @@ export default {
     let mid = event.messageID;
 
     try {
-      let response = await axios.get("https://deku-rest-api-3ijr.onrender.com/waifu", { responseType: "stream" });
+      let response = await axios.get("https://hasan-oi-girl-api.onrender.com/randomphoto", { responseType: "stream" });
 
       if (response.data) {
         let imageResponse = response.data;
