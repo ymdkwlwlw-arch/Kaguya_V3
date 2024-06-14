@@ -77,7 +77,7 @@ export default {
         await api.unsendMessage(w.messageID);
         await api.sendMessage({
           attachment: fs.createReadStream(imgPath),
-          body: `✅ | تــــم تـــولــيــد الــصــورة بــنــجــاح \n: "${translatedPrompt}"\n❏ موديل : 『${modelNo}』\n📊 |❏ النسبة : ${selectedRatio}\n⏰ |❏ وقت المعالجة : 『${processingTimeInSeconds}』 ثانية\n📎 |❏ رابط الصورة : ${shortUrl}`,
+          body: `◆❯━━━━━▣✦▣━━━━━━❮◆\n✅ | تــــم تـــولــيــد الــصــورة بــنــجــاح \n: "${translatedPrompt}"\n❏ موديل : 『${modelNo}』\n📊 |❏ النسبة : ${selectedRatio}\n⏰ |❏ وقت المعالجة : 『${processingTimeInSeconds}』 ثانية\n📎 |❏ رابط الصورة : ${shortUrl}\n◆❯━━━━━▣✦▣━━━━━━❮◆`,
         }, event.threadID, event.messageID);
       });
     } catch (error) {
