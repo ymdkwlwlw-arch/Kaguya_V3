@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import path from 'path';
 
 export default {
-  name: "إيموجي2",
+  name: "إيموجي",
   author: "kaguya project",
   role: "member",
   description: "تحويل إيموجي الى صورة متحركة",
