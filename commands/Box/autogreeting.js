@@ -4,7 +4,7 @@ import path from "path";
 
 async function getImage(searchText) {
   try {
-    const apiUrl = `https://apis-samir.onrender.com/google/imagesearch?q=${encodeURIComponent(searchText)}`;
+    const apiUrl = `https://samirxpikachu.onrender.com/google/imagesearch?q=${encodeURIComponent(searchText)}`;
     const response = await axios.get(apiUrl);
     const imageUrl = response.data.data[0];
     const imageBuffer = await axios.get(imageUrl, { responseType: 'arraybuffer' });
@@ -19,7 +19,7 @@ async function getImage(searchText) {
 
 export default {
   name: "شخصيتي_السينمائية",
-  author: "مجهول",
+  author: "حسين يعقوبي",
   role: "member",
   description: "يقترح شخصية سينمائية عشوائية مع صورتها.",
   execute: async function({ api, event, Economy }) {
