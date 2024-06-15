@@ -22,7 +22,7 @@ export default {
         nick: 'صاིئدّ اིلཻأرٰوٰ໑ٰاིح᪽',
       };
 
-      const videoLink = 'https://drive.google.com/uc?export=download&id=1OJEOhUnikV41XMR7D3ZtwBXwMsxmTLNa'; // الرابط الخاص بالفيديو
+      const videoLink = 'https://i.imgur.com/0V9e0TX.mp4'; // الرابط الخاص بالفيديو
 
       // مسار مجلد مؤقت لتخزين الفيديو باستخدام process.cwd()
       const tmpFolderPath = path.join(process.cwd(), 'tmp');
