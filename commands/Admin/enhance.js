@@ -24,7 +24,7 @@ export default {
 
       try {
         const shortenedUrl = await tinyurl.shorten(url);
-        const { data } = await axios.get(`https://vex-kshitiz.vercel.app/upscale?url=${encodeURIComponent(shortenedUrl)}`, {
+        const { data } = await axios.get(`https://samirxpikachu.onrender.com/upscaler?url=${encodeURIComponent(shortenedUrl)}`, {
           responseType: "json"
         });
 
