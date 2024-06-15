@@ -24,7 +24,7 @@ export default {
 
       try {
         const shortenedUrl = await tinyurl.shorten(url);
-        const { data } = await axios.get(`https://samirxpikachu.onrender.com/upscaler?url=${encodeURIComponent(shortenedUrl)}`, {
+        const { data } = await axios.get(`https://for-devs.onrender.com/api/upscale?imageurl=${encodeURIComponent(shortenedUrl)}&apikey=api1`, {
           responseType: "json"
         });
 
