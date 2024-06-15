@@ -1,57 +1,69 @@
-import axios from 'axios';
-import cheerio from 'cheerio';
-import fs from 'fs-extra';
-import path from 'path';
-import { getStreamFromPath } from 'some-utility-module'; // قم بتعديل المسار والوحدة حسب استخدامك
+import axios from "axios";
+import fs from "fs";
+import path from "path";
+
+const commandName = "جوجل";
 
 export default {
-  name: "جوجل",
-  version: "1.0.0",
-  author: "مشروع كاغويا",
-  description: "بحث الصور في جوجل",
+  name: commandName,
+  author: "Anonymous",
   role: "member",
-  usages: "[عدد النتائج] [استعلام البحث]",
-  cooldowns: 5,
+  description: "بحث عن الصور على الإنترنت.",
   execute: async ({ api, event, args }) => {
-    const cacheFolderPath = path.join(process.cwd(), "cache");
-    if (!fs.existsSync(cacheFolderPath)) {
-      fs.mkdirSync(cacheFolderPath);
-    }
+    let searchQuery = args.join(' ');
 
-    try {
-      const numResults = parseInt(args[0]) || 6; // Default to 6 if no number is provided
-      const query = args.slice(1).join(' ');
-      const encodedQuery = encodeURIComponent(query);
-      const url = `https://www.google.com/search?q=${encodedQuery}&tbm=isch`;
+    if (searchQuery) {
+        try {
+            const response = await axios.get(`https://samirxpikachu.onrender.com/google/imagesearch?q=${encodeURIComponent(searchQuery)}`);
+            const data = response.data.data;
+            const imgData = [];
 
-      const { data } = await axios.get(url);
-      const $ = cheerio.load(data);
+            for (let i = 0; i < Math.min(6, data.length); i++) {
+                const imgResponse = await axios.get(data[i], { responseType: 'arraybuffer' });
+                const imgPath = path.join(process.cwd(), 'cache', `${i + 1}.jpg`);
+                await fs.promises.writeFile(imgPath, imgResponse.data);
+                imgData.push(fs.createReadStream(imgPath));
+            }
 
-      const results = [];
-      $('img[src^="https://"]').each(function() {
-        results.push($(this).attr('src'));
-      });
+            await api.sendMessage({
+                attachment: imgData,
+                body: ` 🌟 | إليك الصور الخاصة بك  "${searchQuery}"`
+            }, event.threadID, event.messageID);
 
-      const attachments = await Promise.all(results.slice(0, numResults).map(async (imgUrl, index) => {
-        const imgResponse = await axios.get(imgUrl, { responseType: 'arraybuffer' });
-        const imgPath = path.join(cacheFolderPath, `image_${index}.jpg`);
-        await fs.writeFile(imgPath, Buffer.from(imgResponse.data, 'binary'));
-        return getStreamFromPath(imgPath);
-      }));
+        } catch (error) {
+            console.error("Failed to fetch or send images:", error.message);
+            api.sendMessage({ body: "Failed to get random images." }, event.threadID);
+        }
+    } else {
+        let links = [];
 
-      await api.sendMessage({
-        body: `✅ | إليك أفضل ${numResults} صورة، نتيجة ل "${query}":`,
-        attachment: attachments
-      }, event.threadID, event.messageID);
+        for (let attachment of event.messageReply.attachments) {
+            links.push(attachment.url);
+        }
 
-      // Cleanup cache files
-      results.slice(0, numResults).forEach((_, index) => {
-        const imgPath = path.join(cacheFolderPath, `image_${index}.jpg`);
-        fs.unlinkSync(imgPath);
-      });
-    } catch (error) {
-      console.error(error);
-      await api.sendMessage("❌ | آسف، لم أتمكن من العثور على أي نتائج.", event.threadID, event.messageID);
+        try {
+            const shortLink1 = await uploadImgbb(links[0]);
+            const imageUrl = shortLink1.image.url;
+            const response = await axios.get(`https://apis-samir.onrender.com/find?imageUrl=${imageUrl}`);
+            const data = response.data.data;
+            const imgData = [];
+
+            for (let i = 0; i < Math.min(6, data.length); i++) {
+                const imgResponse = await axios.get(data[i], { responseType: 'arraybuffer' });
+                const imgPath = path.join(process.cwd(), 'cache', `${i + 1}.jpg`);
+                await fs.promises.writeFile(imgPath, imgResponse.data);
+                imgData.push(fs.createReadStream(imgPath));
+            }
+
+            await api.sendMessage({
+                attachment: imgData,
+                body: ` 🌟 | إليك الصور الخاصة بك  `
+            }, event.threadID, event.messageID);
+
+        } catch (error) {
+            console.error("Failed to fetch or send images:", error.message);
+            api.sendMessage({ body: "Failed to get random images." }, event.threadID);
+        }
     }
   }
 };
