@@ -3,7 +3,6 @@ import fs from 'fs-extra';
 import path from 'path';
 import { shorten } from 'tinyurl';
 
-
 export default {
   name: "نيجي",
   author: "kaguya project",
@@ -15,39 +14,40 @@ export default {
     const input = args.join(' ');
     const [prompt, resolution = '1:1'] = input.split('|').map(s => s.trim());
 
-
-    
     if (!prompt) {
       return api.sendMessage("❌ | الرجاء إدخال النص.", event.threadID, event.messageID);
     }
 
     try {
+      // ترجمة النص إلى الإنجليزية
+      const translatedPrompt = await translateToEnglish(prompt);
+
       // رابط الأساسي للخدمة مع المعاملات
-      const apiUrl = `https://samirxpikachu.onrender.com/niji?prompt=${encodeURIComponent(prompt)}&resolution=${encodeURIComponent(resolution)}`;
+      const apiUrl = `https://samirxpikachu.onrender.com/niji?prompt=${encodeURIComponent(translatedPrompt)}&resolution=${encodeURIComponent(resolution)}`;
       const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
       const imageData = Buffer.from(response.data, 'binary');
 
       // تحديد المسار لحفظ الصورة مؤقتاً
       const imagePath = path.join(process.cwd(), "cache", `${Date.now()}_generated_image.png`);
-      fs.writeFileSync(imagePath, imageData);
+      await fs.outputFile(imagePath, imageData);
 
       // قراءة الصورة المولدة وإرسالها
       const stream = fs.createReadStream(imagePath);
 
-      api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-
-      shorten(imageUrl, async function (shortUrl) {
-      
-      await api.sendMessage({  
-        body: `◆❯━━━━━▣✦▣━━━━━━❮◆\n✅ |تــــم تـــولـــيــد الــصــورة بــنــجــاح\n📎 | رابط الصورة : ${shortUrl}\n◆❯━━━━━▣✦▣━━━━━━❮◆`,
-        attachment: stream
-      }, event.threadID, event.messageID);
-
+      // تقصير رابط الصورة باستخدام tinyurl
+      shorten(apiUrl, async function (shortUrl) {
+        api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+        await api.sendMessage({
+          body: `◆❯━━━━━▣✦▣━━━━━━❮◆\n✅ |تــــم تـــولـــيــد الــصــورة بــنــجــاح\n📎 | رابط الصورة : ${shortUrl}\n◆❯━━━━━▣✦▣━━━━━━❮◆`,
+          attachment: stream
+        }, event.threadID, event.messageID);
+      });
     } catch (error) {
       console.error('خطأ في إرسال الصورة:', error);
       api.sendMessage("❌ | حدث خطأ. الرجاء المحاولة مرة أخرى لاحقًا.", event.threadID, event.messageID);
     } finally {
       api.setMessageReaction("", event.messageID, (err) => {}, true);
+      await fs.remove(imagePath); // حذف الصورة المؤقتة بعد الإرسال
     }
   }
 };
@@ -60,4 +60,4 @@ async function translateToEnglish(text) {
     console.error("خطأ في ترجمة النص:", error);
     return text; // إرجاع النص كما هو في حالة وجود خطأ في الترجمة
   }
-        }
+}
