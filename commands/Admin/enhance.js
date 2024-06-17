@@ -1,56 +1,66 @@
-import axios from 'axios';
-import fs from 'fs-extra';
-import path from 'path';
-import tinyurl from 'tinyurl';
-import { join } from 'path';
+import axios from "axios";
+import fs from "fs";
+import path from "path";
+import request from "request";
+
+const currentDir = process.cwd();
 
 export default {
   name: "جودة",
-  author: "Kaguya Project",
+  author: "حسين يعقوبي",
   role: "member",
-  description: "يقوم بتحسين الصور باستخدام API خارجية.",
-  async execute({ message, event, api }) {
-    api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
-    const { type, messageReply } = event;
-    const { attachments, threadID, messageID } = messageReply || {};
+  description: "يقوم ب رفع جودة الصورة اللتي تم الرد عليها او المراد تحسين جود.",
+  cooldown: 60, // cooldown بالثواني
 
-    if (type === "message_reply" && attachments) {
-      const [attachment] = attachments;
-      const { url, type: attachmentType } = attachment || {};
+  async execute({ api, event }) {
+    const { threadID, messageID, type, messageReply } = event; // تم التصحيح هنا
 
-      if (!attachment || !["photo", "sticker"].includes(attachmentType)) {
-        return api.sendMessage("❌ | الرد يجب أن يكون على صورة.", threadID, messageID);
-      }
+    api.setMessageReaction("⚙️", event.messageID, (err) => {}, true);
 
-      try {
-        const shortenedUrl = await tinyurl.shorten(url);
-        const { data } = await axios.get(`https://for-devs.onrender.com/api/upscale?imageurl=${encodeURIComponent(shortenedUrl)}&apikey=api1`, {
-          responseType: "json"
-        });
-
-        const imageUrl = data.result_url;
-        const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
-
-        const cacheFolder = path.join(process.cwd(), "cache");
-        if (!fs.existsSync(cacheFolder)) {
-          fs.mkdirSync(cacheFolder, { recursive: true });
-        }
-
-        const imagePath = path.join(cacheFolder, "remi_image.png");
-        fs.writeFileSync(imagePath, imageResponse.data);
-
-
-        api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-
-        api.sendMessage({ attachment: fs.createReadStream(imagePath) }, threadID, () => {
-          fs.unlinkSync(imagePath);
-        }, messageID);
-      } catch (error) {
-        console.error(error);
-        api.sendMessage("❌ | حدث خطأ أثناء تحسين الصورة.", threadID, messageID);
-      }
-    } else {
-      api.sendMessage("❌ | يرجى الرد على صورة.", threadID, messageID);
+    if (type !== 'message_reply') {
+      api.sendMessage('[❕] إستخدام غير صالح المرجو الرد على صورة.', threadID, messageID);
+      return;
     }
-  }
+
+    if (messageReply.attachments.length !== 1 || messageReply.attachments[0].type !== 'photo') {
+      api.sendMessage('[❕] صورة غير صالحة ، المرجو الرد على صورة واحدة وواضحة المرة المقبلة.', threadID, messageID);
+      return;
+    }
+
+    const url = messageReply.attachments[0].url;
+    const inputPath = path.join(currentDir, 'cache', `upscalate.jpg`);
+
+    request(url)
+      .pipe(fs.createWriteStream(inputPath))
+      .on('finish', () => {
+        const apiUrl = `https://for-devs.onrender.com/api/upscale?imageurl=${encodeURIComponent(url)}&apikey=api1`;
+
+        axios({
+          method: 'get',
+          url: apiUrl,
+          responseType: 'arraybuffer',
+        })
+          .then((res) => {
+            if (res.status !== 200) {
+              console.error('Error:', res.status, res.statusText);
+              return;
+            }
+
+            fs.writeFileSync(inputPath, res.data);
+
+            api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+
+            const message = {
+              body: ' ✅ | تم رفع جودة الصورة بنجاح .',
+              attachment: fs.createReadStream(inputPath),
+            };
+
+            api.sendMessage(message, threadID, messageID);
+          })
+          .catch((error) => {
+            api.sendMessage('[❌] فشل الطلب \n\n' + error, threadID, messageID);
+            console.error('Request failed:', error);
+          });
+      });
+  },
 };
