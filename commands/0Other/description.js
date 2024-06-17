@@ -1,48 +1,35 @@
-import axios from 'axios';
-import fs from 'fs-extra';
-import path from 'path';
+import axios from "axios";
+import fs from "fs-extra";
 
 export default {
   name: "إيموجي",
-  author: "kaguya project",
+  author: "حسين يعقوبي",
   role: "member",
-  description: "تحويل إيموجي الى صورة متحركة",
-  async execute({ message, args, api, event }) {
-    if (args.length === 0) {
-      api.sendMessage("⚠️ | يرجى إدخال إيموجي لتحويله إلى صورة متحركة.", event.threadID, event.messageID);
-      return;
+  description: "تحويل إيموجي إلى صورة متحركة",
+  async execute({ api, args, event }) {
+    const emoji = args.join(" ");
+
+    if (!emoji) {
+      return api.sendMessage("ℹ️ | يرجى إدخال إيموجي لتحويله إلى صورة متحركة.", event.threadID, event.messageID);
     }
 
-    api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
     try {
-      const prompt = args.join(" ");
+      const { threadID, messageID } = event;
+      const path = process.cwd() + "/cache/animated_image.gif"; 
 
-      // Translate Arabic text to English if needed
-      const emiApiUrl = `https://deku-rest-api-ywad.onrender.com/emoji2gif?q=${encodeURIComponent(prompt)}`;
-      const startTime = Date.now();
+      const response = await axios.get(`https://samirxpikachu.onrender.com/egif?emoji=${encodeURIComponent(emoji)}`, { responseType: "arraybuffer" });
 
-      const emiResponse = await axios.get(emiApiUrl, {
-        responseType: "arraybuffer"
-      });
+      fs.writeFileSync(path, Buffer.from(response.data, "utf-8"));
 
-      const cacheFolderPath = path.join(process.cwd(), "/cache");
-      if (!fs.existsSync(cacheFolderPath)) {
-        fs.mkdirSync(cacheFolderPath);
-      }
-      const imagePath = path.join(cacheFolderPath, `${Date.now()}imojie.gif`);
-      fs.writeFileSync(imagePath, Buffer.from(emiResponse.data, "binary"));
-
-      const stream = fs.createReadStream(imagePath);
       api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-      api.sendMessage({
-        body: `✅❪تــم الــتــحــويــل بــنــجــاح❫✅`,
-        attachment: stream
-      }, event.threadID, event.messageID);
+      api.sendMessage({ 
+        body: "✅❪تــم الــتــحــويــل بــنــجــاح❫✅",
+        attachment: fs.createReadStream(path)
+      }, threadID, () => fs.unlinkSync(path), messageID);
     } catch (error) {
-      console.error("Error:", error);
-      api.sendMessage("❌ | حدث خطأ أثناء تحويل الإيموجي إلى صورة متحركة.", event.threadID, event.messageID);
-      api.setMessageReaction("❌", event.messageID, (err) => {}, true);
+      console.error(error);
+      api.sendMessage("⚠️ | حدث خطأ أثناء تحويل الإيموجي إلى صورة متحركة. يرجى المحاولة مرة أخرى.", event.threadID);
     }
-  }
+  },
 };
