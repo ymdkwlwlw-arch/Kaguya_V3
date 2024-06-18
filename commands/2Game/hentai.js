@@ -15,7 +15,7 @@ export default {
     const title = args.slice(1).join(" ");
 
     try {
-      const albumPath = join(process.cwd(), 'albums', senderID.toString());
+      const albumPath = join(process.cwd(), 'album', senderID.toString());
       const imagePath = join(albumPath, 'images');
       const videoPath = join(albumPath, 'videos');
       const audioPath = join(albumPath, 'audios');
