@@ -1,65 +1,84 @@
+import fs from 'fs';
 import axios from 'axios';
-import fs from 'fs-extra';
 import path from 'path';
 
-export default {
-  name: "استيكر",
-  author: "kaguya project",
-  role: "member",
-  description: "توليد استيكر بناءً على الوصف المقدم.",
-  async execute({ event, args, api }) {
-    api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
+async function translateText(text) {
     try {
-      // تحويل النص من العربية إلى الإنجليزية إن لزم الأمر
-      const prompt = await translateToEnglish(args.join(" ").trim());
-
-      const baseUrl = "https://kshitiz-t2i-x6te.onrender.com/sdxl";
-      const model_id = 39; 
-
-      if (!prompt) {
-        return api.sendMessage("❌ | الرجاء إدخال النص.", event.threadID, event.messageID);
-      }
-
-      // طلب الاستيكر من الخدمة
-      const apiResponse = await axios.get(baseUrl, {
-        params: {
-          prompt: prompt,
-          model_id: model_id
-        }
-      });
-
-      // التحقق من وجود رابط للاستيكر في الرد
-      if (apiResponse.data.imageUrl) {
-        const imageUrl = apiResponse.data.imageUrl;
-        const imagePath = path.join(process.cwd(), "cache", `sticker.png`);
-        const imageResponse = await axios.get(imageUrl, { responseType: "stream" });
-        const imageStream = imageResponse.data.pipe(fs.createWriteStream(imagePath));
-        imageStream.on("finish", () => {
-          const stream = fs.createReadStream(imagePath);
-          
- api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-
-          api.sendMessage({
-            body: "",
-            attachment: stream
-          }, event.threadID, event.messageID);
-        });
-      } else {
-        throw new Error("رابط الصورة غير موجود في الرد.");
-      }
+        const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ar&dt=t&q=${encodeURIComponent(text)}`);
+        return translationResponse?.data?.[0]?.[0]?.[0];
     } catch (error) {
-      console.error("خطأ:", error);
-      api.sendMessage("❌ | حدث خطأ. الرجاء المحاولة مرة أخرى لاحقًا.", event.threadID, event.messageID);
+        console.error('Error in translation:', error);
+        return text; // In case of error, return the original text
     }
-  }
-};
-
-async function translateToEnglish(text) {
-  try {
-    const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(text)}`);
-    return translationResponse?.data?.[0]?.[0]?.[0];
-  } catch (error) {
-    console.error("Error translating text:", error);
-    return text; // إرجاع النص كما هو في حالة وجود خطأ في الترجمة
-  }
 }
+
+export default {
+    name: "تشابه",
+    author: "kaguya project",
+    description: "يقوم بالبحث عن معلومات حول الصورة المرسلة أو رابط الصورة.",
+    role: "member",
+    execute: async ({ api, args, message, event }) => {
+        let imageUrl;
+
+        if (event.messageReply && event.messageReply.attachments.length > 0) {
+            imageUrl = event.messageReply.attachments[0].url;
+        } else if (args.length > 0) {
+            imageUrl = args[0];
+        } else {
+            return api.sendMessage("الرجاء الرد على صورة أو تقديم رابط صورة.", event.threadID, event.messageID);
+        }
+
+        try {
+            const response = await axios.get(`https://samirxpikachu.onrender.com/glens?url=${encodeURIComponent(imageUrl)}`);
+            const results = response.data.results[0].content.results.organic.slice(0, 6);
+
+            if (results.length > 0) {
+                const translatedResults = await Promise.all(results.map(async (result, index) => {
+                    const translatedTitle = await translateText(result.title);
+                    return {
+                        index: index + 1,
+                        title: translatedTitle,
+                        url: result.url,
+                        thumbnail: result.url_thumbnail
+                    };
+                }));
+
+                const trackInfo = translatedResults.map(result => 
+                    `${result.index}. ${result.title}\nURL: ${result.url}`
+                ).join("\n\n");
+
+                const attachments = await Promise.all(
+                    translatedResults.map(async (result, index) => {
+                        const thumbnailResponse = await axios.get(result.thumbnail, { responseType: 'stream' });
+                        const filePath = path.resolve(process.cwd(), 'cache', `thumbnail_${index}.jpg`);
+                        const writer = fs.createWriteStream(filePath);
+                        thumbnailResponse.data.pipe(writer);
+
+                        return new Promise((resolve, reject) => {
+                            writer.on('finish', () => resolve(fs.createReadStream(filePath)));
+                            writer.on('error', reject);
+                        });
+                    })
+                );
+
+                await api.sendMessage({
+                    body: `${trackInfo}`,
+                    attachment: attachments
+                }, event.threadID, event.messageID);
+
+                // Clean up cache files
+                attachments.forEach(stream => {
+                    const filePath = stream.path;
+                    if (fs.existsSync(filePath)) {
+                        fs.unlinkSync(filePath);
+                    }
+                });
+            } else {
+                api.sendMessage("لم يتم العثور على نتائج للصورة المقدمة.", event.threadID, event.messageID);
+            }
+        } catch (error) {
+            console.error(error);
+            api.sendMessage("حدث خطأ أثناء جلب نتائج البحث عن الصورة.", event.threadID, event.messageID);
+        }
+    }
+};
