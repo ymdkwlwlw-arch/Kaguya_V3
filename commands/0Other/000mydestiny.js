@@ -77,7 +77,7 @@ async function generateImages({ api, event, args }) {
 }
 
 export default {
-    name: "ارسمي2",
+    name: "ارسمي3",
     author: "Kaguya Project",
     role: "member",
     description: "Generates images based on the provided description and model.",
