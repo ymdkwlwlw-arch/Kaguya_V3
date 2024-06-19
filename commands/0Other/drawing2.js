@@ -17,7 +17,7 @@ export default {
       const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
       const translatedPrompt = translationResponse?.data?.[0]?.[0]?.[0] || prompt;
 
-      const emiApiUrl = `https://deku-rest-api-ywad.onrender.com/emi?prompt=${encodeURIComponent(translatedPrompt)}`;
+      const emiApiUrl = `https://samirxpikachu.onrender.com/animagine?prompt=${encodeURIComponent(translatedPrompt)}`;
       const startTime = Date.now();
 
       const emiResponse = await axios.get(emiApiUrl, {
