@@ -22,8 +22,8 @@ export default {
       }
 
       api.setMessageReaction("⏰", event.messageID, (err) => {}, true);
-      const response = await axios.get(`https://samirxpikachu.onrender.com/gpt?content=${encodeURIComponent(prompt)}`);
-      const answer = response.data.result.reply; // تعديل هنا للوصول إلى رد الواجهة البرمجية بشكل صحيح
+      const response = await axios.get(`https://api.onlytris.space/gemini?question=${encodeURIComponent(prompt)}`);
+      const answer = response.data.content; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
 
       api.sendMessage(answer, event.threadID, (err, info) => {
         if (err) return console.error(err);
@@ -48,8 +48,8 @@ export default {
   onReply: async ({ api, event, reply, Economy, Users }) => {
     if (reply.type === "reply") {
       try {
-        const response = await axios.get(`https://deku-rest-api-3ijr.onrender.com/new/gpt-4_adv?prompt=${encodeURIComponent(event.body)}`);
-        const answer = response.data.result.reply;
+        const response = await axios.get(`https://api.onlytris.space/gemini?question=${encodeURIComponent(event.body)}`);
+        const answer = response.data.content; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
         api.sendMessage(answer, event.threadID, event.messageID);
       } catch (error) {
         console.error("Error:", error.message, error.response?.data);
