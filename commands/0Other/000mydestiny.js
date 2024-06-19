@@ -12,7 +12,7 @@ async function generateImages({ api, event, args }) {
         const input = args.join(" ").split("|").map(arg => arg.trim());
         const [prompt, model] = input;
 
-        if (prompt.split(" ").length < 10) {
+        if (prompt.split(" ").length < 1) {
             await api.sendMessage("⚠️ | أرجوك قم بكتابة وصف اكثر من 10 كلمات", event.threadID, event.messageID);
             return;
         }
