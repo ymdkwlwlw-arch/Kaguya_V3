@@ -41,15 +41,16 @@ export default {
         event.threadID
       );
 
-      const response = await axios.get(`https://deku-rest-api-3ijr.onrender.com/anydl?url=${encodeURIComponent(description)}`);
+      const response = await axios.get(`https://for-devs.onrender.com/api/alldl?url=${encodeURIComponent(description)}&apikey=api1`);
       const videoData = response.data;
 
-      if (!videoData.status || !videoData.result) {
+      if (!videoData.status || !videoData.result || !videoData.result.downloadUrls || videoData.result.downloadUrls.length === 0) {
         api.sendMessage("⚠️ | لم أتمكن من العثور على فيديو بناءً على الوصف المقدم. يرجى المحاولة مرة أخرى.", event.threadID);
         return;
       }
 
-      const videoUrl = videoData.result;
+      const videoUrl = videoData.result.downloadUrls[0].url; // الحصول على أول URL من downloadUrls
+      const videoTitle = videoData.result.title; // الحصول على عنوان الفيديو
       const filePath = `${process.cwd()}/cache/tikdl.mp4`;
 
       // تأكد من أن الرابط صالح بالتحقق من استجابة HTTP
@@ -65,7 +66,7 @@ export default {
           api.unsendMessage(sentMessage.messageID); // حذف الرسالة التي تم التفاعل معها ب "⬇️"
           api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-          const messageBody = `༈「تـم تـحـمـيـل الـفـيـديـو」 ✅ ༈`;
+          const messageBody = `╼╾─────⊹⊱⊰⊹─────╼╾\n✅ | تـم تـحـمـيـل الـفـيـديـو\n📎 | العنوان: ${videoTitle}\n╼╾─────⊹⊱⊰⊹─────╼╾`;
 
           api.sendMessage(
             {
@@ -82,4 +83,4 @@ export default {
       api.sendMessage("⚠️ | حدث خطأ أثناء تنزيل الفيديو. يرجى المحاولة مرة أخرى.", event.threadID);
     }
   },
-}
+      }
