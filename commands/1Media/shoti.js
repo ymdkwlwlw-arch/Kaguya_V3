@@ -3,7 +3,7 @@ import request from "request";
 import fs from "fs";
 
 export default {
-  name: "تحميل",
+  name: "تيكتوك",
   author: "kaguya project",
   role: "member",
   description: "تنزيل مقاطع الفيديو من تيك توك بناءً على الوصف.",
@@ -12,9 +12,9 @@ export default {
     api.setMessageReaction("⬇️", event.messageID, (err) => {}, true);
 
     const userMoney = (await Economy.getBalance(event.senderID)).data;
-    const cost = 500;
+    const cost = 100;
     if (userMoney < cost) {
-      return api.sendMessage(`⚠️ | لا يوجد لديك رصيد كافٍ. يجب عليك الحصول على ${cost} دولار أولاً من اجل تنزيل مقطع واحد يمكنك تنزيل مقاطع من تيك توك ، فيسبوك ، بنتريست ، يوتيوب ، انستغرام`, event.threadID);
+      return api.sendMessage(`⚠️ | لا يوجد لديك رصيد كافٍ. يجب عليك الحصول على ${cost} دولار أولاً من اجل تنزيل مقطع واحد يمكنك تنزيل مقاطع من تيك توك ،`, event.threadID);
     }
 
     // الخصم من الرصيد
@@ -41,16 +41,16 @@ export default {
         event.threadID
       );
 
-      const response = await axios.get(`https://for-devs.onrender.com/api/alldl?url=${encodeURIComponent(description)}&apikey=api1`);
+      const response = await axios.get(`https://samirxpikachu.onrender.com/tiktok?url=${encodeURIComponent(description)}`);
       const videoData = response.data;
 
-      if (!videoData.status || !videoData.result || !videoData.result.downloadUrls || videoData.result.downloadUrls.length === 0) {
+      if (!videoData || !videoData.url) {
         api.sendMessage("⚠️ | لم أتمكن من العثور على فيديو بناءً على الوصف المقدم. يرجى المحاولة مرة أخرى.", event.threadID);
         return;
       }
 
-      const videoUrl = videoData.result.downloadUrls[0].url; // الحصول على أول URL من downloadUrls
-      const videoTitle = videoData.result.title; // الحصول على عنوان الفيديو
+      const videoUrl = videoData.url; // الحصول على URL الفيديو
+      const videoTitle = `فيديو من تيك توك بواسطة ${videoData.user.nickname}`; // توليد عنوان الفيديو
       const filePath = `${process.cwd()}/cache/tikdl.mp4`;
 
       // تأكد من أن الرابط صالح بالتحقق من استجابة HTTP
@@ -66,7 +66,7 @@ export default {
           api.unsendMessage(sentMessage.messageID); // حذف الرسالة التي تم التفاعل معها ب "⬇️"
           api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-          const messageBody = `╼╾─────⊹⊱⊰⊹─────╼╾\n✅ | تـم تـحـمـيـل الـفـيـديـو\n📎 | العنوان: ${videoTitle}\n╼╾─────⊹⊱⊰⊹─────╼╾`;
+          const messageBody = `╼╾─────⊹⊱⊰⊹─────╼╾\n ✅ | تـم تـحـمـيـل الـفـيـديـو\n╼╾─────⊹⊱⊰⊹─────╼╾`;
 
           api.sendMessage(
             {
@@ -83,4 +83,4 @@ export default {
       api.sendMessage("⚠️ | حدث خطأ أثناء تنزيل الفيديو. يرجى المحاولة مرة أخرى.", event.threadID);
     }
   },
-    }
+        }
