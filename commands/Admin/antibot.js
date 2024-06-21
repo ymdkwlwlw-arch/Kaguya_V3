@@ -1,61 +1,52 @@
 import axios from "axios";
-import global from "global"; // تأكد من وجود هذا الاستيراد للحصول على المتغير global
+import fs from "fs";
 
 export default {
-  name: "كشف",
+  name:"ضبط",
   author: "kaguya project",
   role: "admin",
-  description: "يكشف ويزيل البوتات بناءً على المؤشرات المحددة في الرسائل.",
+  description: "يضيف أمرًا جديدًا من خلال تنزيل كوده من رابط معين وحفظه في ملف معين.",
 
   execute: async ({ api, event, args }) => {
-    const threadID = event.threadID;
-    const detectedBots = new Set();
-    let detecting = true;
+    // التحقق من عدد الوسائط المقدمة
+    if (args.length !== 1 && (event.type !== "message_reply" || event.messageReply.body.trim() === "")) {
+      api.sendMessage("يرجى تقديم الرابط واسم الملف (إما عن طريق الرد على رسالة تحتوي على الرابط أو إدخالها مباشرة كوسائط).", event.threadID, event.messageID);
+      return;
+    }
 
-    api.sendMessage('بدء كشف البوتات. سيتم مراقبة الرسائل لمدة 10 دقائق...', threadID);
+    // الحصول على معرف المستخدم الحالي
+    const currentUserID = api.getCurrentUserID();
 
-    // إيقاف الكشف بعد 10 دقائق
-    setTimeout(() => {
-      detecting = false;
+    // إذا لم يكن هناك رد، افترض أن الوسائط تحتوي على الرابط واسم الملف
+    let url, fileName;
+    if (event.type === "message_reply" && event.messageReply.senderID === currentUserID) {
+      url = event.messageReply.body.trim();
+      fileName = args[0].trim();
+    } else if (args.length === 2) {
+      url = args[0].trim();
+      fileName = args[1].trim();
+    } else {
+      api.sendMessage("يرجى تقديم الرابط واسم الملف بشكل صحيح.", event.threadID, event.messageID);
+      return;
+    }
 
-      if (detectedBots.size > 0) {
-        detectedBots.forEach(botID => {
-          api.removeUserFromGroup(botID, threadID, (err) => {
-            if (err) {
-              console.error(`فشل في إزالة البوت ${botID}:`, err);
-            } else {
-              api.sendMessage(`تم إزالة البوت المكتشف: ${botID}`, threadID);
-            }
-          });
-        });
-      } else {
-        api.sendMessage('لم يتم كشف أي بوتات خلال فترة المراقبة.', threadID);
-      }
-    }, 10 * 60 * 1000);
+    // تنزيل الكود وحفظه في ملف
+    try {
+      const response = await axios.get(url);
+      const code = response.data;
+      const filePath = `./commands/0Other/${fileName}`;
 
-    // الاستماع للرسائل والردود على الرسائل
-    api.listenMqtt((err, event) => {
-      if (err) {
-        console.error('خطأ في الاستماع للأحداث:', err);
-        return;
-      }
-
-      if (detecting && event.threadID === threadID && (event.type === 'message' || event.type === 'message_reply')) {
-        // كشف الرسائل التي قد تشير إلى وجود بوت
-        const botIndicators = [
-          "command not found",
-          "does not exist",
-          "no prompt provided",
-          "invalid command"
-        ];
-
-        const message = event.body.toLowerCase();
-
-        if (botIndicators.some(indicator => message.includes(indicator))) {
-          detectedBots.add(event.senderID);
-          console.log(`تم كشف رسالة بوت من المستخدم ${event.senderID}: ${event.body}`);
+      fs.writeFile(filePath, code, (err) => {
+        if (err) {
+          console.error('Error:', err);
+          api.sendMessage("فشل في إضافة الأمر.", event.threadID, event.messageID);
+        } else {
+          api.sendMessage(`تم إضافة الأمر "${fileName}" بنجاح!`, event.threadID, event.messageID);
         }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Error:', error);
+      api.sendMessage("فشل في تنزيل كود الأمر.", event.threadID, event.messageID);
+    }
   }
 };
