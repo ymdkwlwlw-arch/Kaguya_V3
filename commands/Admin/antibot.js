@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 
 export default {
-  name: "إضافة أمر جديد",
+  name: "إنشاء",
   author: "kaguya project",
   role: "admin",
   description: "يضيف أمرًا جديدًا من خلال تنزيل كوده من رابط معين وحفظه في ملف معين.",
