@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import path from 'path'; // استيراد مكتبة path
 
 export default {
-  name: "تحويل",
+  name: "تحويل_تو_اوديو",
   author: "kaguya project",
   role: "member",
   description: "تحويل رسالة فيديو إلى ملف صوتي.",
