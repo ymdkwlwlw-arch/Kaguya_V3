@@ -1,58 +1,51 @@
 import axios from "axios";
-import fs from "fs";
 
 export default {
   name: "تحويل",
   author: "kaguya project",
-  role: "admin",
-  description: "يحول الأموال بين المستخدمين مع خصم ضريبة 15%.",
-  
-  execute: async ({ api, event, Economy, Users, args }) => {
-    const { increaseMoney, decreaseMoney, getData } = Economy;
-    const { threadID, messageID, senderID } = event;
-    let targetID = String(args[0]);
-    let moneyPay = (args.slice(1).join(" ")) || null;
+  role: "member",
+  description: "تحويل الأموال بين المستخدمين",
 
-    if (isNaN(targetID)) {
-      const mention = Object.keys(event.mentions);
-      if (mention.length === 0) {
-        return api.sendMessage("[ عملية التحويل ] لا مستقبل ممنشن قم بعمل منشن أرجوك ❌.", threadID, messageID);
-      }
-      if (mention.length > 1) {
-        return api.sendMessage("[ عملية التحويل ] يجب أن تقوم بعمل منشن على شخص واحد.", threadID, messageID);
-      }
-      targetID = String(mention[0]);
-      moneyPay = (args.slice(args.indexOf(event.mentions[mention[0]]) + (event.mentions[mention[0]] || "").length + 1).join(" ")) || null;
+  execute: async ({ api, event, args, Economy }) => {
+    const { senderID } = event;
+    const senderData = await Economy.getBalance(senderID);
+    
+    if (!senderData) {
+      return api.sendMessage("Error: Sender data not found.", event.threadID, event.messageID);
+    }
+    
+    const amount = parseInt(args[0]);
+    if (isNaN(amount) || amount <= 0) {
+      return api.sendMessage(" ⚠️ | المرجو إدخال مبلغ صالح و إيجابي.", event.threadID, event.messageID);
+    } else if (amount > senderData.money) {
+      return api.sendMessage(" ⚠️ | تفقد رصيدك.", event.threadID, event.messageID);
+    }
+    
+    const recipientUID = args[1];
+    if (!recipientUID) {
+      return api.sendMessage("Error: Please provide a recipient UID.", event.threadID, event.messageID);
+    }
+    
+    const recipientData = await Economy.getBalance(recipientUID);
+    if (!recipientData) {
+      return api.sendMessage(" ❌ | فشلت العملية والسبب عدم إيجاد المستقبل.", event.threadID, event.messageID);
     }
 
-    if (!global.data.allCurrenciesID.includes(targetID)) {
-      return api.sendMessage("[ عملية التحويل ] مستقبل غير صالح ولايستحق تحويل المال إليه.", threadID, messageID);
-    }
-
-    if (isNaN(moneyPay) || moneyPay < 1) {
-      return api.sendMessage("[ عملية التحويل ] مبلغ غير صالح.", threadID, messageID);
-    }
-    const taxed = (parseInt(moneyPay) * 15) / 100;
-
+    // Get recipient's name
+    let recipientName;
     try {
-      const payerData = await getData(senderID);
-      const moneyPayer = payerData.money;
-      if (moneyPayer === undefined) {
-        return api.sendMessage("[ عملية التحويل ] من فضلك انتظر 5 ثواني ليتم تسجيلك بالكامل لأنك لست عضوا بعد.", threadID, messageID);
-      }
-      if (moneyPayer < moneyPay) {
-        return api.sendMessage("[ عملية التحويل ] رصيدك غير كاف. يرجى التحقق من المبلغ الخاص بك.", threadID, messageID);
-      }
-      // Get the name of the target user
-      const userInfo = await api.getUserInfo(targetID);
-      const nameTarget = userInfo[targetID].name;
-
-      await decreaseMoney(senderID, parseInt(moneyPay));
-      await increaseMoney(targetID, parseInt(moneyPay) - taxed);
-      return api.sendMessage(`[ عملية التحويل ] تم بنجاح تحويل ${parseInt(moneyPay) - taxed} إلى ${nameTarget} (15% الضريبة المتضمنة على ذالك)`, threadID, messageID);
+      const userInfo = await api.getUserInfo(recipientUID);
+      recipientName = userInfo[recipientUID].name;
     } catch (error) {
-      console.error(error);
-      return api.sendMessage("[ عملية التحويل ] حدث خطأ غير معروف، يرجى الاتصال بالمسؤول إستخدم الأمر *نداء.", threadID, messageID);
+      console.error("Error fetching user info:", error);
+      recipientName = recipientUID; // Fallback to UID if name is not available
     }
-  }
+    
+    await Economy.decrease(senderID, amount);
+    await Economy.increase(recipientUID, amount);
+    
+    api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+    
+    return api.sendMessage(`✅ | تمت بنجاح عملية التحويل ل مبلغ دولار 💵『${amount}』 إلى الشخص مع الآيدي : ${recipientName}.`, event.threadID, event.messageID);
+  },
 };
