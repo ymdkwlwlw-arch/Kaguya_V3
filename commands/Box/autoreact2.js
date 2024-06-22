@@ -20,6 +20,8 @@ export default {
     execute: async ({ api, args, message, event }) => {
         let imageUrl;
 
+        api.setMessageReaction("⚙️", event.messageID, (err) => {}, true);
+
         if (event.messageReply && event.messageReply.attachments.length > 0) {
             imageUrl = event.messageReply.attachments[0].url;
         } else if (args.length > 0) {
@@ -61,8 +63,10 @@ export default {
                     })
                 );
 
+                api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+
                 await api.sendMessage({
-                    body: `${trackInfo}`,
+                    body: `◆❯━━━━━━▣✦▣━━━━━━━❮◆\n\tاليك صور مشابهة\n◆❯━━━━━━▣✦▣━━━━━━━❮◆`,
                     attachment: attachments
                 }, event.threadID, event.messageID);
 
