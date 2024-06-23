@@ -49,7 +49,7 @@ export default {
         }
     },
 
-    onReply: async ({ api, event, reply }) => {
+    onReply: async ({ api, event, reply, global }) => {
         const { senderID, messageID, threadID, body } = event;
         
         if (reply.type === "pick" && reply.name === "المتجر" && reply.author === senderID) {
@@ -66,15 +66,27 @@ export default {
             // Download image and send it as attachment
             const imagePath = path.join(process.cwd(), 'cache', 'play_store_app.jpg');
             const imageResponse = await axios.get(selectedApp.image, { responseType: 'stream' });
-            imageResponse.data.pipe(fs.createWriteStream(imagePath));
+            const writer = fs.createWriteStream(imagePath);
+            imageResponse.data.pipe(writer);
 
-            setTimeout(() => {
+            writer.on('finish', () => {
                 api.sendMessage({
                     attachment: fs.createReadStream(imagePath),
-                }, threadID);
-            }, 2000);
+                }, threadID, () => {
+                    // Clean up the image file after sending the message
+                    fs.unlinkSync(imagePath);
+                });
+            });
+
+            writer.on('error', (err) => {
+                console.error('Error writing image file:', err);
+                api.sendMessage("❌ | حدث خطأ أثناء تنزيل صورة التطبيق.", threadID);
+            });
 
             api.setMessageReaction("✅", messageID, (err) => {}, true);
+
+            // Remove the reply handler to avoid future issues
+            global.client.handler.reply.delete(reply.messageID);
         }
     }
 };
