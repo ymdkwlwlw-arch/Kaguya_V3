@@ -49,6 +49,9 @@ export default {
                     `${result.index}. ${result.title}\nURL: ${result.url}`
                 ).join("\n\n");
 
+                console.log('Track Info:', trackInfo);  // Debugging: Check track info
+                console.log('Translated Results:', translatedResults);  // Debugging: Check translated results
+
                 const attachments = await Promise.all(
                     translatedResults.map(async (result, index) => {
                         const thumbnailResponse = await axios.get(result.thumbnail, { responseType: 'stream' });
