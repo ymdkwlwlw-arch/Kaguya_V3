@@ -4,7 +4,7 @@ import path from "path";
 import moment from "moment-timezone";
 
 const KievRPSSecAuth = process.env.KievRPSSecAuth || "FABaBBRaTOJILtFsMkpLVWSG6AN6C/svRwNmAAAEgAAACFvXJQtAul8EGAQUziyX624Mp4iPvuqLeaRWrYjD9B/6Xb3S4Do/cjiJd3J4d/S79tm8+YBYvvFzXUix0ksBIZN1PGB7ooC3ZCj7rWdKCjMkQTBSwvwYGKVEaKV9s9KhOS7naBQfQMhaIGYmjaC2oIhurCEdP4ORBKkwLtvvl/4rghGuHpW4q6ZAR95okMIrgKhX84q9hR/HykTYXN3loHwmBUBWSG0qrVJEdjmxREcpfjgmOKA2s8rb4C8LTJv9G0zJaOZFpDDEM+ImEtHsm+oh3Q0mI2LZ+EZ4vSx6PHD5IkR90T5ztn+FSU5J3wOXcLJky9Htgz0GaIEU/+dcBwL7zPdzroEcqx/2eogdOMjp+uzzRuNMqGxp5X52eqlmFPkTWUnC4f5LG/cnIg1hoO710bhL6aCF9xkmBnkm3ESn8XOostymf+Srvjn81gSO8cuCunNxPnBqeWveGqc+6TyZTIp70e0Op0YRZLXZyONw2mH1tF2UF3dzYEQsndx6aiA2apS31fXL56wkcsdhibOr1SBWOOrqedhSAHpjfcGNCWiRkqo3sl9vzBoyJnI5lCdNWFQtm/L9Fvfxf7B02Tg0UZvdlgvP/i8HaJkBn2U5hupqQZiBDoEn0o6Wnr2Kj+iAx/kXrs3nRxoM1V8ti62n3/NUvJFZW7sB1LPoYpDBs/FmcFB//G1UNmsWYeMBbtk5nb0/jqxbqw2hRWTxiK+lHU4N8KX9OjAORGVFIIsh+/uz5xRoD7dMoQTPSnhvnvMFzFUlRPOrnlaqqgx9j5AsGXX8X2sWn1U8vmwqhTNgnLywTsDSEei5nKaoTPWtiQkm4t1vdBOebNeQvIBtGt1Hgf77/Sumf5kxtCv3mx3zUqBN1R7Jjjdf4DbUGmSfMtF9rLRjJ2bdm0Ta06ksGEpxnP4s+oWs4EeD4Rs5WgRSn7cs5F95NOuVF5jh5JiSxp27CWbggvXsbIDMt7jGsAM8dXt3gWFr6H5iMlNVqOxm+vL8v92h00g4hHc8NH1Hww7AJKxT6LMJMBealvuYtbMst2YusPTcM8k4pktWIzYliFeShn8kCVITOeauuo+nwdejoWY2IoKYmXEiD8gSlPTijtgFHes6NQfTm4KpwtrD7YFlBl1UoyytWTpiUUVXT/F1OTe7r640zCkMfrATAwib94fEbt/2wTVzf0EYnh2tguLhmI1ZCw+uPAbgEqRgspVXYOjHXEqNjpoWmyYLiAOfaMyHet8or8H1SnGW13WntQmzKxktLnsNT/evL6haoXUSQL2EDC4WrEbUxWBRV0JOTpAhnTwpwRR76ewEuTZVOqlsCqPpPVbCZSwBJOn44xriIFom6HdRsD82yxT3jri5Tn8A7p2pCWiepyNn2eACDwPeAha1WdE3ctzXJZjexzetFACardcCRJB7E5nds56Y5bQliuYbtg==";
-const _U = process.env._U || "17wDWwuFK-qacyoiS5gK682-y1RG3AsJEmLGIXGMcxoSZxLjZP1yWmsg29uUXHR5LZMcXzbfXyauxVtyptzwfeCfbziqWAVq5ZVGp04kDXY95F5hISkQVnDfksihBXS4uwfZ2R2c1fsQKHw2GMkJEOekW4ejS9tzbwFTMdst7TH2OfCBtZfYxeYlbiYxLIZFEZryVb2ZmicYaqobJdn6ccgFABaBBRaTOJILtFsMkpLVWSG6AN6C/svRwNmAAAEgAAACFvXJQtAul8EGAQUziyX624Mp4iPvuqLeaRWrYjD9B/6Xb3S4Do/cjiJd3J4d/S79tm8+YBYvvFzXUix0ksBIZN1PGB7ooC3ZCj7rWdKCjMkQTBSwvwYGKVEaKV9s9KhOS7naBQfQMhaIGYmjaC2oIhurCEdP4ORBKkwLtvvl/4rghGuHpW4";
+const _U = process.env._U || "17wDWwuFK-qacyoiS5gK682-y1RG3AsJEmLGIXGMcxoSZxLjZP1yWmsg29uUXHR5LZMcXzbfXyauxVtyptzwfeCfbziqWAVq5ZVGp04kDXY95F5hISkQVnDfksihBXS4uwfZ2R2c1fsQKHw2GMkJEOekW4ejS9tzbwFTMdst7TH2OfCBtZfYxeYlbiYxLIZFEZryVb2ZmicYaqobJdn6ccg";
 
 export default {
   name: "تخيلي",
@@ -65,7 +65,7 @@ const userMoney = (await Economy.getBalance(event.senderID)).data;
 
         await api.sendMessage({
           attachment: imgData,
-          body: `✿━━━━━━━━━━━━━━━━━✿\n✅ | تفضل نتيجة الوصف الخاصة بك \nتم التنفيذ من طرف: ${userName}\n⏰ | ❏ الوقت: ${timeString}\n📅 | ❏ التاريخ: ${dateString}\n⏳ | ❏ وقت التنفيذ: ${executionTime} ثانية\n📝 | ❏الوصف: ${prompt}\n✿━━━━━━━━━━━━━━━━━✿`
+          body: `࿇ ══━━━━✥◈✥━━━━══ ࿇\n✅ | تفضل نتيجة الوصف الخاصة بك \nتم التنفيذ من طرف: ${userName}\n⏰ | ❏ الوقت: ${timeString}\n📅 | ❏ التاريخ: ${dateString}\n⏳ | ❏ وقت التنفيذ: ${executionTime} ثانية\n📝 | ❏الوصف: ${prompt}\n࿇ ══━━━━✥◈✥━━━━══ ࿇`
         }, event.threadID, event.messageID);
       }); 
 
