@@ -3,7 +3,7 @@ import request from "request";
 import fs from "fs";
 
 export default {
-  name: "تيكتوك",
+  name: "تحميل",
   author: "kaguya project",
   role: "member",
   description: "تنزيل مقاطع الفيديو من تيك توك بناءً على الوصف.",
@@ -14,7 +14,7 @@ export default {
     const userMoney = (await Economy.getBalance(event.senderID)).data;
     const cost = 100;
     if (userMoney < cost) {
-      return api.sendMessage(`⚠️ | لا يوجد لديك رصيد كافٍ. يجب عليك الحصول على ${cost} دولار أولاً من اجل تنزيل مقطع واحد يمكنك تنزيل مقاطع من تيك توك ،`, event.threadID);
+      return api.sendMessage(`⚠️ | لا يوجد لديك رصيد كافٍ. يجب عليك الحصول على ${cost}  دولار أولاً من اجل تنزيل مقطع واحد يمكنك تنزيل مقاطع من تيك توك ، فيسبوك ، تيك توك ، بنتريست ، ، يوتيوب`, event.threadID);
     }
 
     // الخصم من الرصيد
@@ -41,16 +41,16 @@ export default {
         event.threadID
       );
 
-      const response = await axios.get(`https://samirxpikachu.onrender.com/tiktok?url=${encodeURIComponent(description)}`);
+      const response = await axios.get(`https://nobs-api.onrender.com/dipto/alldl?url=${encodeURIComponent(description)}`);
       const videoData = response.data;
 
-      if (!videoData || !videoData.url) {
+      if (!videoData || !videoData.result) {
         api.sendMessage("⚠️ | لم أتمكن من العثور على فيديو بناءً على الوصف المقدم. يرجى المحاولة مرة أخرى.", event.threadID);
         return;
       }
 
-      const videoUrl = videoData.url; // الحصول على URL الفيديو
-      const videoTitle = `فيديو من تيك توك بواسطة ${videoData.user.nickname}`; // توليد عنوان الفيديو
+      const videoUrl = Buffer.from(videoData.result, 'base64').toString('utf-8'); // فك تشفير URL الفيديو
+      const videoTitle = `فيديو من تيك توك بواسطة ${videoData.author}`; // توليد عنوان الفيديو
       const filePath = `${process.cwd()}/cache/tikdl.mp4`;
 
       // تأكد من أن الرابط صالح بالتحقق من استجابة HTTP
@@ -66,7 +66,7 @@ export default {
           api.unsendMessage(sentMessage.messageID); // حذف الرسالة التي تم التفاعل معها ب "⬇️"
           api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-          const messageBody = `╼╾─────⊹⊱⊰⊹─────╼╾\n ✅ | تـم تـحـمـيـل الـفـيـديـو\n╼╾─────⊹⊱⊰⊹─────╼╾`;
+          const messageBody = `╼╾─────⊹⊱⊰⊹─────╼╾\n✅ | ${videoData.cp}\n╼╾─────⊹⊱⊰⊹─────╼╾`;
 
           api.sendMessage(
             {
@@ -83,4 +83,4 @@ export default {
       api.sendMessage("⚠️ | حدث خطأ أثناء تنزيل الفيديو. يرجى المحاولة مرة أخرى.", event.threadID);
     }
   },
-        }
+};
