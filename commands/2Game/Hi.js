@@ -21,16 +21,17 @@ export default {
 
       const audioResponse = await axios.get(audioUrl, { responseType: "arraybuffer" });
 
-      const audioPath = path.join(process.cwd(), "cache", "audio.mp3");
-      fs.writeFileSync(audioPath, Buffer.from(audioResponse.data));
+      const fileName = `${event.senderID}.mp3`;
+      const filePath = path.join(process.cwd(), "cache", fileName);
+      fs.writeFileSync(filePath, Buffer.from(audioResponse.data));
 
       await api.sendMessage({
         body: "",
-        attachment: fs.createReadStream(audioPath)
+        attachment: fs.createReadStream(filePath)
       }, event.threadID);
 
       // إزالة الملف المؤقت بعد إرساله
-      fs.unlinkSync(audioPath);
+      fs.unlinkSync(filePath);
     } catch (error) {
       console.error(error);
       await api.sendMessage("🐸 حدث خطأ أثناء تحويل النص إلى كلام.", event.threadID);
