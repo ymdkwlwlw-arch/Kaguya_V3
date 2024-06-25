@@ -17,21 +17,36 @@ export default {
     try {
       const url = `https://nobs-api.onrender.com/dipto/text2voiceV2?text=${encodeURIComponent(say)}&format=mp3&voiceModel=Nova`;
       const response = await axios.get(url);
-      const audioUrl = response.data.voiceUrl;
 
-      const audioResponse = await axios.get(audioUrl, { responseType: "arraybuffer" });
+      if (response.data && response.data.voiceUrl) {
+        const audioUrl = response.data.voiceUrl;
+        
+        // استخدم تدفق البيانات (stream) لتنزيل الملف الصوتي وحفظه
+        const fileName = `${event.senderID}.mp3`;
+        const filePath = path.join(process.cwd(), "cache", fileName);
+        const audioResponse = await axios.get(audioUrl, { responseType: "stream" });
 
-      const fileName = `${event.senderID}.mp3`;
-      const filePath = path.join(process.cwd(), "cache", fileName);
-      fs.writeFileSync(filePath, Buffer.from(audioResponse.data));
+        const writeStream = fs.createWriteStream(filePath);
+        audioResponse.data.pipe(writeStream);
 
-      await api.sendMessage({
-        body: "",
-        attachment: fs.createReadStream(filePath)
-      }, event.threadID);
+        writeStream.on("finish", async () => {
+          await api.sendMessage({
+            body: "",
+            attachment: fs.createReadStream(filePath)
+          }, event.threadID);
 
-      // إزالة الملف المؤقت بعد إرساله
-      fs.unlinkSync(filePath);
+          // إزالة الملف المؤقت بعد إرساله
+          fs.unlinkSync(filePath);
+        });
+
+        writeStream.on("error", (err) => {
+          console.error("Error writing to stream:", err);
+          api.sendMessage("🐸 حدث خطأ أثناء تحويل النص إلى كلام.", event.threadID);
+        });
+
+      } else {
+        throw new Error("لم يتم العثور على URL للصوت في الاستجابة.");
+      }
     } catch (error) {
       console.error(error);
       await api.sendMessage("🐸 حدث خطأ أثناء تحويل النص إلى كلام.", event.threadID);
