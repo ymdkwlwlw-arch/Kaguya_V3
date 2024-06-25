@@ -7,27 +7,23 @@ export default {
   author: "kaguya project",
   role: "member",
   description: "تنزيل مقاطع الفيديو من تيك توك بناءً على الوصف.",
-
+  
   execute: async ({ api, event, args, Economy }) => {
     api.setMessageReaction("⬇️", event.messageID, (err) => {}, true);
 
     const userMoney = (await Economy.getBalance(event.senderID)).data;
     const cost = 100;
     if (userMoney < cost) {
-      return api.sendMessage(`⚠️ | لا يوجد لديك رصيد كافٍ. يجب عليك الحصول على ${cost}  دولار أولاً من اجل تنزيل مقطع واحد يمكنك تنزيل مقاطع من تيك توك ، فيسبوك ، تيك توك ، بنتريست ، ، يوتيوب`, event.threadID);
+      return api.sendMessage(`⚠️ | لا يوجد لديك رصيد كافٍ. يجب عليك الحصول على ${cost} دولار أولاً من أجل تنزيل مقطع واحد. يمكنك تنزيل مقاطع من تيك توك، فيسبوك، بينتريست، يوتيوب`, event.threadID);
     }
 
     // الخصم من الرصيد
     await Economy.decrease(cost, event.senderID);
 
     try {
-      const description = args.join(" ");
-      if (!description) {
-        api.sendMessage(
-          "[!] يجب تقديم وصف الفيديو للمتابعة.",
-          event.threadID,
-          event.messageID
-        );
+      const url = args.join(" ");
+      if (!url) {
+        api.sendMessage("[!] يجب تقديم رابط الفيديو للمتابعة.", event.threadID, event.messageID);
         return;
       }
 
@@ -36,22 +32,19 @@ export default {
       const senderName = userInfo[event.senderID].name;
 
       // Send initial message
-      const sentMessage = await api.sendMessage(
-        `🕟 | مرحبًا @${senderName}، جارٍ تنزيل الفيديو، الرجاء الانتظار...`,
-        event.threadID
-      );
+      const sentMessage = await api.sendMessage(`🕟 | مرحبًا @${senderName}، جارٍ تنزيل الفيديو، الرجاء الانتظار...`, event.threadID);
 
-      const response = await axios.get(`https://nobs-api.onrender.com/dipto/alldl?url=${encodeURIComponent(description)}`);
+      const response = await axios.get(`https://nobs-api.onrender.com/dipto/alldl?url=${encodeURIComponent(url)}`);
       const videoData = response.data;
 
       if (!videoData || !videoData.result) {
-        api.sendMessage("⚠️ | لم أتمكن من العثور على فيديو بناءً على الوصف المقدم. يرجى المحاولة مرة أخرى.", event.threadID);
+        api.sendMessage("⚠️ | لم أتمكن من العثور على فيديو بناءً على الرابط المقدم. يرجى المحاولة مرة أخرى.", event.threadID);
         return;
       }
 
       const videoUrl = Buffer.from(videoData.result, 'base64').toString('utf-8'); // فك تشفير URL الفيديو
       const videoTitle = `فيديو من تيك توك بواسطة ${videoData.author}`; // توليد عنوان الفيديو
-      const filePath = `${process.cwd()}/cache/tikdl.mp4`;
+      const filePath = `${process.cwd()}/cache/${event.senderID}.mp4`;
 
       // تأكد من أن الرابط صالح بالتحقق من استجابة HTTP
       request.head(videoUrl, (err, res) => {
