@@ -13,7 +13,7 @@ export default {
   cooldown: 60, // cooldown بالثواني
 
   async execute({ api, event }) {
-    const { threadID, messageID, type, messageReply } = event; // تم التصحيح هنا
+    const { threadID, messageID, type, messageReply } = event;
 
     api.setMessageReaction("⚙️", event.messageID, (err) => {}, true);
 
@@ -33,29 +33,38 @@ export default {
     request(url)
       .pipe(fs.createWriteStream(inputPath))
       .on('finish', () => {
-        const apiUrl = `https://for-devs.onrender.com/api/upscale?imageurl=${encodeURIComponent(url)}&apikey=api1`;
+        const apiUrl = `https://jonellccprojectapis10.adaptable.app/api/remini?imageUrl=${encodeURIComponent(url)}`;
 
         axios({
           method: 'get',
           url: apiUrl,
-          responseType: 'arraybuffer',
+          responseType: 'json',
         })
           .then((res) => {
-            if (res.status !== 200) {
+            if (res.status !== 200 || !res.data.image_data || !res.data.image_size) {
               console.error('Error:', res.status, res.statusText);
               return;
             }
 
-            fs.writeFileSync(inputPath, res.data);
+            const enhancedImageUrl = res.data.image_data;
+            const imageSize = res.data.image_size;
+            const outputPath = path.join(currentDir, 'cache', 'enhanced.jpg');
 
-            api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+            request(enhancedImageUrl)
+              .pipe(fs.createWriteStream(outputPath))
+              .on('finish', () => {
+                api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-            const message = {
-              body: ' ✅ | تم رفع جودة الصورة بنجاح .',
-              attachment: fs.createReadStream(inputPath),
-            };
+                const message = {
+                  body: `╼╾─────⊹⊱⊰⊹─────╼╾\n✅ | تم رفع جودة الصورة بنجاح \n 📥 | حجم الصورة : ${imageSize}\n╼╾─────⊹⊱⊰⊹─────╼╾`,
+                  attachment: fs.createReadStream(outputPath),
+                };
 
-            api.sendMessage(message, threadID, messageID);
+                api.sendMessage(message, threadID, messageID);
+
+                // إزالة الملف المؤقت بعد إرساله
+                fs.unlinkSync(outputPath);
+              });
           })
           .catch((error) => {
             api.sendMessage('[❌] فشل الطلب \n\n' + error, threadID, messageID);
