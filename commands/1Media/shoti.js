@@ -34,16 +34,19 @@ export default {
       // Send initial message
       const sentMessage = await api.sendMessage(`🕟 | مرحبًا @${senderName}، جارٍ تنزيل الفيديو، الرجاء الانتظار...`, event.threadID);
 
-      const response = await axios.get(`https://nobs-api.onrender.com/dipto/alldl?url=${encodeURIComponent(url)}`);
+      const response = await axios.get(`https://for-devs.onrender.com/api/alldl?url=${encodeURIComponent(url)}&apikey=api1`);
       const videoData = response.data;
 
-      if (!videoData || !videoData.result) {
+      if (!videoData || !videoData.downloadUrls || videoData.downloadUrls.length === 0) {
         api.sendMessage("⚠️ | لم أتمكن من العثور على فيديو بناءً على الرابط المقدم. يرجى المحاولة مرة أخرى.", event.threadID);
         return;
       }
 
-      const videoUrl = Buffer.from(videoData.result, 'base64').toString('utf-8'); // فك تشفير URL الفيديو
-      const videoTitle = `فيديو من تيك توك بواسطة ${videoData.author}`; // توليد عنوان الفيديو
+      const videoUrl = videoData.downloadUrls[0].url;
+      const videoTitle = videoData.title || "فيديو بدون عنوان";
+      const videoDuration = videoData.duration || "مدة غير معروفة";
+      const videoSize = videoData.downloadUrls[0].size || "حجم غير معروف";
+      const videoQuality = videoData.downloadUrls[0].format || "جودة غير معروفة";
       const filePath = `${process.cwd()}/cache/${event.senderID}.mp4`;
 
       // تأكد من أن الرابط صالح بالتحقق من استجابة HTTP
@@ -59,7 +62,7 @@ export default {
           api.unsendMessage(sentMessage.messageID); // حذف الرسالة التي تم التفاعل معها ب "⬇️"
           api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-          const messageBody = `╼╾─────⊹⊱⊰⊹─────╼╾\n✅ | ${videoData.cp}\n╼╾─────⊹⊱⊰⊹─────╼╾`;
+          const messageBody = `✅ | تم تنزيل الفيديو بنجاح.\n\nالعنوان: ${videoTitle}\nالمدة: ${videoDuration}\nالحجم: ${videoSize}\nالجودة: ${videoQuality}`;
 
           api.sendMessage(
             {
