@@ -8,45 +8,29 @@ export default {
   role: "member",
   description: "تحويل النص إلى كلام بواسطة خدمة Google Text-to-Speech.",
   execute: async ({ api, message, args, event }) => {
+    let lng = "ar";
     let say = args.join(" ");
 
-    if (!say) {
-      return api.sendMessage("يرجى تقديم نص للتحويل إلى كلام.", event.threadID);
+    if (lng.includes(args[0])) {
+      lng = args[0];
+      args.shift();
+      say = encodeURIComponent(args.join(" "));
     }
 
     try {
-      const url = `https://nobs-api.onrender.com/dipto/text2voiceV2?text=${encodeURIComponent(say)}&format=mp3&voiceModel=Nova`;
-      const response = await axios.get(url);
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${say}`;
+      const audioResponse = await axios.get(url, { responseType: "arraybuffer" });
 
-      if (response.data && response.data.voiceUrl) {
-        const audioUrl = response.data.voiceUrl;
-        
-        // استخدم تدفق البيانات (stream) لتنزيل الملف الصوتي وحفظه
-        const fileName = `${event.senderID}.mp3`;
-        const filePath = path.join(process.cwd(), "cache", fileName);
-        const audioResponse = await axios.get(audioUrl, { responseType: "stream" });
+      const audioPath = path.join(process.cwd(), "cache", "audio.mp3");
+      fs.writeFileSync(audioPath, Buffer.from(audioResponse.data));
 
-        const writeStream = fs.createWriteStream(filePath);
-        audioResponse.data.pipe(writeStream);
+      await api.sendMessage({
+        body: "",
+        attachment: fs.createReadStream(audioPath)
+      }, event.threadID);
 
-        writeStream.on("finish", async () => {
-          await api.sendMessage({
-            body: "",
-            attachment: fs.createReadStream(filePath)
-          }, event.threadID);
-
-          // إزالة الملف المؤقت بعد إرساله
-          fs.unlinkSync(filePath);
-        });
-
-        writeStream.on("error", (err) => {
-          console.error("Error writing to stream:", err);
-          api.sendMessage("🐸 حدث خطأ أثناء تحويل النص إلى كلام.", event.threadID);
-        });
-
-      } else {
-        throw new Error("لم يتم العثور على URL للصوت في الاستجابة.");
-      }
+      // ربما يجب عليك إزالة الملف المؤقت بعد إرساله
+      fs.unlinkSync(audioPath);
     } catch (error) {
       console.error(error);
       await api.sendMessage("🐸 حدث خطأ أثناء تحويل النص إلى كلام.", event.threadID);
