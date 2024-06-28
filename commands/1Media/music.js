@@ -1,74 +1,79 @@
-import axios from 'axios';
-import fs from 'fs-extra';
+import fs from 'fs';
+import path from 'path';
 import ytdl from 'ytdl-core';
 import yts from 'yt-search';
+import axios from 'axios';
 
-export default {
-  name: "اغنية",
-  author: "حسين يعقوبي",
-  cooldowns: 60,
-  description: "تنزيل أغنية من YouTube",
-  role: "عضو",
-  aliases: ["اغنية"],
+async function sing(api, event, args, message) {
+  api.setMessageReaction("🕢", event.messageID, (err) => {}, true);
 
-  async execute({ api, event }) {
-    const input = event.body;
-    const text = input.substring(12);
-    const data = input.split(" ");
+  try {
+    let title = '';
 
-    if (data.length < 2) {
-      return api.sendMessage("⚠️ | أرجوك قم بإدخال اسم الأغنية.", event.threadID);
-    }
-
-    data.shift();
-    const musicName = data.join(" ");
-
-    try {
-      api.sendMessage(`✔ | جاري البحث عن الأغنية المطلوبة"${musicName}". المرجو الانتظار...`, event.threadID);
-
-      const searchResults = await yts(musicName);
-      if (!searchResults.videos.length) {
-        return api.sendMessage("⚠️ | لم يتم العثور على أي نتائج.", event.threadID);
+    const extractShortUrl = async () => {
+      const attachment = event.messageReply.attachments[0];
+      if (attachment.type === "video" || attachment.type === "audio") {
+        return attachment.url;
+      } else {
+        throw new Error("Invalid attachment type.");
       }
+    };
 
-      const music = searchResults.videos[0];
-      const musicUrl = music.url;
-
-      const stream = ytdl(musicUrl, { filter: "audioonly" });
-
-      const fileName = `${event.senderID}.mp3`;
-      const filePath = `./cache/${fileName}`;
-
-      stream.pipe(fs.createWriteStream(filePath));
-
-      stream.on('response', () => {
-        console.info('[DOWNLOADER]', 'بدء التنزيل الآن!');
-      });
-
-      stream.on('info', (info) => {
-        console.info('[DOWNLOADER]', `تنزيل الأغنية: ${info.videoDetails.title}`);
-      });
-
-      stream.on('end', () => {
-        console.info('[DOWNLOADER] تم التنزيل');
-
-        if (fs.statSync(filePath).size > 26214400) {
-          fs.unlinkSync(filePath);
-          return api.sendMessage('❌ | لا يمكن إرسال الملف لأن حجمه أكبر من 25 ميغابايت.', event.threadID);
-        }
-
-        const message = {
-          body: `✅ | تم التنزيل\n ❀ العنوان: ${music.title}\n المدة: ${music.duration.timestamp}`,
-          attachment: fs.createReadStream(filePath)
-        };
-
-        api.sendMessage(message, event.threadID, () => {
-          fs.unlinkSync(filePath);
-        });
-      });
-    } catch (error) {
-      console.error('[ERROR]', error);
-      api.sendMessage('🥱 ❀ حدث خطأ أثناء معالجة الأمر.', event.threadID);
+    if (event.messageReply && event.messageReply.attachments && event.messageReply.attachments.length > 0) {
+      const shortUrl = await extractShortUrl();
+      const musicRecognitionResponse = await axios.get(`https://kaizenji-rest-api-bd61774dda46.herokuapp.com/music?url=${encodeURIComponent(shortUrl)}`);
+      title = musicRecognitionResponse.data.title;
+    } else if (args.length === 0) {
+      api.sendMessage("يرجى تقديم عنوان أو رابط الأغنية.", event.threadID, event.messageID);
+      return;
+    } else {
+      title = args.join(" ");
     }
+
+    const searchResults = await yts(title);
+
+    if (!searchResults.videos.length) {
+      api.sendMessage("لم يتم العثور على أغنية للبحث المقدم.", event.threadID, event.messageID);
+      return;
+    }
+
+    const videoUrl = searchResults.videos[0].url;
+    const stream = await ytdl(videoUrl, { filter: "audioonly" });
+
+    const fileName = `song.mp3`;
+    const filePath = path.join(process.cwd(), "cache", fileName);
+
+    const writer = fs.createWriteStream(filePath);
+    stream.pipe(writer);
+
+    writer.on('finish', () => {
+      const audioStream = fs.createReadStream(filePath);
+      api.sendMessage({ body: `🎧 | تشغيل: ${title}`, attachment: audioStream }, event.threadID, () => {
+        api.setMessageReaction("✅", event.messageID, () => {}, true);
+        fs.unlinkSync(filePath); // حذف الملف بعد الإرسال
+      }, event.messageID);
+    });
+
+    writer.on('error', (error) => {
+      console.error("Error:", error);
+      api.sendMessage("حدث خطأ أثناء محاولة تشغيل الأغنية.", event.threadID, event.messageID);
+    });
+
+  } catch (error) {
+    console.error("Error:", error);
+    api.sendMessage("حدث خطأ أثناء محاولة تشغيل الأغنية.", event.threadID, event.messageID);
+  }
+}
+
+const command = {
+  name: "اغنية",
+  author: "Kaguya Project",
+  role: "member",
+  description: "تشغيل أغنية من YouTube بناءً على عنوان أو رابط.",
+  
+  execute: async ({ api, event, args, message }) => {
+    await sing(api, event, args, message);
   }
 };
+
+export default command;
