@@ -4,15 +4,11 @@ const command = {
   name: "كاغويا",
   author: "Kaguya Project",
   role: "member",
-  description: "يرد برسالة مع ستيكر عند كتابة كلمة كاغويا.",
+  description: "يدردش معك ويرد برسالة مع ستيكر عند الرد عليه.",
   nashPrefix: false,
 
   async execute({ api, event, Threads }) {
-    const { threadID, messageID, senderID, body } = event;
-
-    // جلب معلومات المستخدم
-    const userInfo = await api.getUserInfo(senderID);
-    const senderName = userInfo[senderID]?.name || "عزيزي";
+    const { threadID, messageID, body } = event;
 
     // تحقق من وجود الكلمة المفتاحية "كاغويا"
     if (body.toLowerCase().includes("كاغويا")) {
@@ -32,17 +28,11 @@ const command = {
         const replyMessage = response.data.success || "عذرا، لم أتمكن من فهم رسالتك.";
 
         // إرسال الرسالة مع ستيكر
-        api.sendMessage({
-          body: `${senderName}, ${replyMessage}`,
-          mentions: [{
-            tag: senderName,
-            id: senderID
-          }]
-        }, threadID, (error, info) => {
+        api.sendMessage(replyMessage, threadID, (error, info) => {
           if (!error) {
             api.sendMessage({ sticker: randomSticker }, threadID);
             global.client.handler.reply.set(info.messageID, {
-              author: senderID,
+              author: event.senderID,
               type: "reply",
               name: "كاغويا",
               unsend: false,
@@ -76,18 +66,8 @@ const command = {
         const response = await axios.get(`https://simsimi.site/api/v2/?mode=talk&lang=ar&message=${encodeURIComponent(body)}&filter=true`);
         const replyMessage = response.data.success || "عذرا، لم أتمكن من فهم رسالتك.";
 
-        // جلب معلومات المستخدم
-        const userInfo = await api.getUserInfo(senderID);
-        const senderName = userInfo[senderID]?.name || "عزيزي";
-
         // إرسال الرسالة مع ستيكر
-        api.sendMessage({
-          body:  `${senderName}, ${replyMessage}`,
-          mentions: [{
-            tag: senderName,
-            id: senderID
-          }]
-        }, threadID, (error, info) => {
+        api.sendMessage(replyMessage, threadID, (error, info) => {
           if (!error) {
             api.sendMessage({ sticker: randomSticker }, threadID);
           }
