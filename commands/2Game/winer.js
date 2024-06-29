@@ -18,10 +18,10 @@ export default {
       }
 
       const url = event.body;
-      const response = await axios.get(`https://deku-rest-api-3ijr.onrender.com/api/instadl?url=${encodeURIComponent(url)}`);
+      const response = await axios.get(`https://for-devs.onrender.com/api/instadl?url=${encodeURIComponent(url)}&apikey=api1`);
 
-      if (response.data.status && response.data.result) {
-        const videoUrl = response.data.result;
+      if (response.data.video) {
+        const videoUrl = response.data.video;
 
         const downloadDirectory = process.cwd();
         const filePath = path.join(downloadDirectory, 'cache', `${Date.now()}.mp4`);
