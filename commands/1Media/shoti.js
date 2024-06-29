@@ -1,75 +1,67 @@
 import axios from "axios";
-import fs from "fs";
 import path from "path";
+import fs from "fs-extra";
 
 export default {
   name: "تحميل",
-  author: "Kaguya Project",
+  author: "kaguya project",
   role: "member",
-  description: "تنزيل مقطع فيديو من Facebook.",
-  execute: async function({ api, event, args }) {
+  description: "تنزيل مقاطع الفيديو من Instagram.",
 
-    api.setMessageReaction("⬇️", event.messageID, null, true);
+  execute: async function ({ api, event }) {
+    api.setMessageReaction("⬇️", event.messageID, (err) => {}, true);
 
     try {
-      const link = args.join(" ");
-      if (!link) {
-        api.sendMessage(`⚠️ | يرجى إدخال رابط أولاً لمتابعة تنزيل الفيديو، مثال: *تحميل «رابط اي موقع اواصل احتماعي»`, event.threadID);
+      if (!event.body || event.body.trim().length === 0) {
+        api.sendMessage("⚠️ |يرجى إدخال رابط موقع اجتماعي ك يوتيوب فيسبوك بنتريست تيكتوك مثال *تحميل : https://www.instagram.com", event.threadID);
         return;
       }
 
-      // إرسال رسالة للإنتظار
-      const waitingMessage = await api.sendMessage(`🕥 | جاري تحميل الفيديو. يرجى الانتظار لحظة...`, event.threadID);
+      const url = event.body;
+      const response = await axios.get(`https://nobs-api.onrender.com/dipto/alldl?url=${encodeURIComponent(url)}`);
 
-      const res = await axios.get(`https://nobs-api.onrender.com/dipto/alldl?url=${encodeURIComponent(link)}`);
-      const videoData = res.data;
+      if (response.data.result) {
+        const videoUrl = response.data.result;
 
-      if (!videoData || !videoData.result) {
-        api.sendMessage("⚠️ | لم أتمكن من العثور على فيديو بناءً على الرابط المقدم. يرجى المحاولة مرة أخرى.", event.threadID);
-        return;
+        const downloadDirectory = process.cwd();
+        const filePath = path.join(downloadDirectory, 'cache', `${Date.now()}.mp4`);
+
+        const videoResponse = await axios({
+          url: videoUrl,
+          method: 'GET',
+          responseType: 'stream'
+        });
+
+        const fileStream = fs.createWriteStream(filePath);
+        videoResponse.data.pipe(fileStream);
+
+        fileStream.on('finish', async () => {
+          const fileSize = (await fs.stat(filePath)).size / (1024 * 1024); // in MB
+          if (fileSize > 25) {
+            api.sendMessage("الملف كبير جدًا، لا يمكن إرساله", event.threadID, () => fs.unlinkSync(filePath), event.messageID);
+          } else {
+            const messageBody = `✅ | تم تحميل المقطع بنجاح`;
+
+            api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+
+            api.sendMessage({
+              body: messageBody,
+              attachment: fs.createReadStream(filePath)
+            }, event.threadID, () => fs.unlinkSync(filePath), event.messageID);
+          }
+        });
+
+        fileStream.on('error', (error) => {
+          api.sendMessage("حدث خطأ أثناء تحميل الفيديو. يرجى المحاولة مرة أخرى لاحقًا.", event.threadID);
+          console.error("خطأ في تنزيل الفيديو:", error);
+        });
+      } else {
+        api.sendMessage("لم يتم العثور على فيديو في الرابط المدخل.", event.threadID);
+        console.error("لم يتم العثور على فيديو في الرابط المدخل");
       }
-
-      const videoUrl = Buffer.from(videoData.result, 'base64').toString('utf-8'); // فك تشفير URL الفيديو
-      const videoPath = path.join(process.cwd(), "cache", `fbdl.mp4`);
-
-      // إنشاء Stream لحفظ الفيديو
-      const writer = fs.createWriteStream(videoPath);
-      const videoStream = await axios({
-        url: videoUrl,
-        method: 'GET',
-        responseType: 'stream'
-      });
-
-      videoStream.data.pipe(writer);
-
-      writer.on('finish', () => {
-        // حذف رسالة الانتظار قبل إرسال المقطع
-        api.unsendMessage(waitingMessage.messageID);
-
-        api.setMessageReaction("✅", event.messageID, null, true);
-
-        // إرسال المقطع مع عنوانه
-        api.sendMessage(
-          {
-            body: `༈「تـم تـحـمـيـل الـفـيـديـو」 ✅ ༈`,
-            attachment: fs.createReadStream(videoPath)
-          },
-          event.threadID,
-          () => fs.unlinkSync(videoPath) // حذف الملف بعد الإرسال
-        );
-
-        // إعادة تعيين رمز التفاعل على الرسالة الأصلية
-        api.setMessageReaction("", event.messageID, null, true);
-      });
-
-      writer.on('error', (error) => {
-        api.sendMessage(`حدث خطأ أثناء تحميل الفيديو. يرجى المحاولة مرة أخرى لاحقًا.`, event.threadID);
-        console.error(error);
-      });
-
-    } catch (error) {
-      api.sendMessage(`حدث خطأ أثناء تحميل الفيديو. يرجى المحاولة مرة أخرى لاحقًا.`, event.threadID);
-      console.log(error);
+    } catch (err) {
+      api.sendMessage("حدث خطأ أثناء معالجة الطلب. يرجى المحاولة مرة أخرى لاحقًا.", event.threadID);
+      console.error("خطأ أثناء معالجة الطلب:", err);
     }
   }
 };
