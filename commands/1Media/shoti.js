@@ -27,14 +27,10 @@ export default {
         return;
       }
 
-      // Fetch user data to get the user's name
-      const userInfo = await api.getUserInfo(event.senderID);
-      const senderName = userInfo[event.senderID].name;
-
       // Send initial message
       const sentMessage = await api.sendMessage(`🕟 | جارٍ تنزيل الفيديو، الرجاء الانتظار...`, event.threadID);
 
-      const response = await axios.get(`https://for-devs.onrender.com/api/alldl?url=${encodeURIComponent(url)}&apikey=api1`);
+      const response = await axios.get(`https://nobs-api.onrender.com/dipto/alldl?url=${encodeURIComponent(url)}`);
       const videoData = response.data;
 
       if (!videoData || !videoData.result) {
