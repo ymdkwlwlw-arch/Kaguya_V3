@@ -1,79 +1,58 @@
-import fs from 'fs';
-import path from 'path';
-import ytdl from 'ytdl-core';
-import yts from 'yt-search';
-import axios from 'axios';
+import axios from "axios";
+import path from "path";
+import fs from "fs-extra";
 
-async function sing(api, event, args, message) {
-  api.setMessageReaction("🕢", event.messageID, (err) => {}, true);
-
-  try {
-    let title = '';
-
-    const extractShortUrl = async () => {
-      const attachment = event.messageReply.attachments[0];
-      if (attachment.type === "video" || attachment.type === "audio") {
-        return attachment.url;
-      } else {
-        throw new Error("Invalid attachment type.");
-      }
-    };
-
-    if (event.messageReply && event.messageReply.attachments && event.messageReply.attachments.length > 0) {
-      const shortUrl = await extractShortUrl();
-      const musicRecognitionResponse = await axios.get(`https://kaizenji-rest-api-bd61774dda46.herokuapp.com/music?url=${encodeURIComponent(shortUrl)}`);
-      title = musicRecognitionResponse.data.title;
-    } else if (args.length === 0) {
-      api.sendMessage("يرجى تقديم عنوان أو رابط الأغنية.", event.threadID, event.messageID);
-      return;
-    } else {
-      title = args.join(" ");
-    }
-
-    const searchResults = await yts(title);
-
-    if (!searchResults.videos.length) {
-      api.sendMessage("لم يتم العثور على أغنية للبحث المقدم.", event.threadID, event.messageID);
-      return;
-    }
-
-    const videoUrl = searchResults.videos[0].url;
-    const stream = await ytdl(videoUrl, { filter: "audioonly" });
-
-    const fileName = `song.mp3`;
-    const filePath = path.join(process.cwd(), "cache", fileName);
-
-    const writer = fs.createWriteStream(filePath);
-    stream.pipe(writer);
-
-    writer.on('finish', () => {
-      const audioStream = fs.createReadStream(filePath);
-      api.sendMessage({ body: `🎧 | تشغيل: ${title}`, attachment: audioStream }, event.threadID, () => {
-        api.setMessageReaction("✅", event.messageID, () => {}, true);
-        fs.unlinkSync(filePath); // حذف الملف بعد الإرسال
-      }, event.messageID);
-    });
-
-    writer.on('error', (error) => {
-      console.error("Error:", error);
-      api.sendMessage("حدث خطأ أثناء محاولة تشغيل الأغنية.", event.threadID, event.messageID);
-    });
-
-  } catch (error) {
-    console.error("Error:", error);
-    api.sendMessage("حدث خطأ أثناء محاولة تشغيل الأغنية.", event.threadID, event.messageID);
-  }
-}
-
-const command = {
-  name: "اغنية",
-  author: "Kaguya Project",
+export default {
+  name: "تخيلي3",
+  author: "مشروع كاغويا",
   role: "member",
-  description: "تشغيل أغنية من YouTube بناءً على عنوان أو رابط.",
-  
-  execute: async ({ api, event, args, message }) => {
-    await sing(api, event, args, message);
+  description: "توليد صورة بناءً على النص المدخل.",
+
+  execute: async function ({ api, event }) {
+    const args = event.body.split(" ");
+    let prompt = args.join(" ");
+
+    if (!prompt || prompt.trim().length === 0) {
+      api.sendMessage("⚠️ | يرجى إدخال نص لتحويله إلى صورة.", event.threadID, event.messageID);
+      return;
+    }
+
+    try {
+      // ترجمة النص من العربية إلى الإنجليزية
+      const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
+      prompt = translationResponse?.data?.[0]?.[0]?.[0];
+
+      const apiUrl = `https://samirxpikachu.onrender.com/sd3-medium?prompt=${encodeURIComponent(prompt)}`;
+
+      const response = await axios.get(apiUrl, { responseType: 'stream' });
+
+      if (!response.data) {
+        api.sendMessage("فشل في استرجاع الصورة.", event.threadID, event.messageID);
+        return;
+      }
+
+      const downloadDirectory = process.cwd();
+      const filePath = path.join(downloadDirectory, 'cache', `${Date.now()}.jpg`);
+
+      const fileStream = fs.createWriteStream(filePath);
+      response.data.pipe(fileStream);
+
+      fileStream.on('finish', async () => {
+        const messageBody = '࿇ ══━━━━✥◈✥━━━━══ ࿇\n✅ | تـم تــولــيــد الــصــورة \n࿇ ══━━━━✥◈✥━━━━══ ࿇';
+
+        api.sendMessage({
+          body: messageBody,
+          attachment: fs.createReadStream(filePath)
+        }, event.threadID, () => fs.unlinkSync(filePath), event.messageID);
+      });
+
+      fileStream.on('error', (error) => {
+        api.sendMessage("حدث خطأ أثناء تحميل الصورة. يرجى المحاولة مرة أخرى لاحقًا.", event.threadID);
+        console.error("خطأ في تنزيل الصورة:", error);
+      });
+    } catch (error) {
+      api.sendMessage("حدث خطأ أثناء معالجة الطلب. يرجى المحاولة مرة أخرى لاحقًا.", event.threadID);
+      console.error("خطأ أثناء معالجة الطلب:", error);
+    }
   }
 };
-
-export default command;
