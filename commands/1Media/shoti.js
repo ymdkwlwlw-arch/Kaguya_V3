@@ -3,25 +3,27 @@ import path from "path";
 import fs from "fs-extra";
 
 export default {
-  name: "تحميل",
+  name: "تيكتوك",
   author: "kaguya project",
   role: "member",
-  description: "تنزيل مقاطع الفيديو من Instagram.",
+  description: "تنزيل مقاطع الفيديو من TikTok.",
 
   execute: async function ({ api, event }) {
     api.setMessageReaction("⬇️", event.messageID, (err) => {}, true);
 
     try {
       if (!event.body || event.body.trim().length === 0) {
-        api.sendMessage("⚠️ |يرجى إدخال رابط موقع اجتماعي ك يوتيوب فيسبوك بنتريست تيكتوك مثال *تحميل : https://www.instagram.com", event.threadID);
+        api.sendMessage("⚠️ | يرجى إدخال رابط تيكتوك مثال *تيكتوك : https://vm.tiktok.com", event.threadID);
         return;
       }
 
       const url = event.body;
-      const response = await axios.get(`https://nobs-api.onrender.com/dipto/alldl?url=${encodeURIComponent(url)}`);
+      const response = await axios.get(`https://samirxpikachu.onrender.com/tiktok?url=${encodeURIComponent(url)}`);
 
-      if (response.data.result) {
-        const videoUrl = response.data.result;
+      if (response.data.url) {
+        const videoUrl = response.data.url;
+        const username = response.data.user.nickname;
+        const duration = response.data.duration;
 
         const downloadDirectory = process.cwd();
         const filePath = path.join(downloadDirectory, 'cache', `${Date.now()}.mp4`);
@@ -40,7 +42,7 @@ export default {
           if (fileSize > 25) {
             api.sendMessage("الملف كبير جدًا، لا يمكن إرساله", event.threadID, () => fs.unlinkSync(filePath), event.messageID);
           } else {
-            const messageBody = `✅ | تم تحميل المقطع بنجاح`;
+            const messageBody = `࿇ ══━━━━✥◈✥━━━━══ ࿇\n✅ | تــم تــحــمــيــل الــمــقــطــع\n👤 | المستخدم: ${username}\n⏱️ | المدة: ${duration} ثانية\n࿇ ══━━━━✥◈✥━━━━══ ࿇`;
 
             api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
