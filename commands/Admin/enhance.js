@@ -1,75 +1,56 @@
-import axios from "axios";
-import fs from "fs";
-import path from "path";
-import request from "request";
-
-const currentDir = process.cwd();
+import axios from 'axios';
+import fs from 'fs-extra';
+import path from 'path';
+import tinyurl from 'tinyurl';
+import { join } from 'path';
 
 export default {
   name: "جودة",
-  author: "حسين يعقوبي",
+  author: "Kaguya Project",
   role: "member",
-  description: "يقوم ب رفع جودة الصورة اللتي تم الرد عليها او المراد تحسين جود.",
-  cooldown: 60, // cooldown بالثواني
+  description: "يقوم بتحسين الصور باستخدام API خارجية.",
+  async execute({ message, event, api }) {
+    api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
+    const { type, messageReply } = event;
+    const { attachments, threadID, messageID } = messageReply || {};
 
-  async execute({ api, event }) {
-    const { threadID, messageID, type, messageReply } = event;
+    if (type === "message_reply" && attachments) {
+      const [attachment] = attachments;
+      const { url, type: attachmentType } = attachment || {};
 
-    api.setMessageReaction("⚙️", event.messageID, (err) => {}, true);
+      if (!attachment || !["photo", "sticker"].includes(attachmentType)) {
+        return api.sendMessage("❌ | الرد يجب أن يكون على صورة.", threadID, messageID);
+      }
 
-    if (type !== 'message_reply') {
-      api.sendMessage('[❕] إستخدام غير صالح المرجو الرد على صورة.', threadID, messageID);
-      return;
+      try {
+        const shortenedUrl = await tinyurl.shorten(url);
+        const { data } = await axios.get(`https://for-devs.onrender.com/api/upscale?imageurl=${encodeURIComponent(shortenedUrl)}&apikey=api1`, {
+          responseType: "json"
+        });
+
+        const imageUrl = data.result_url;
+        const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
+
+        const cacheFolder = path.join(process.cwd(), "cache");
+        if (!fs.existsSync(cacheFolder)) {
+          fs.mkdirSync(cacheFolder, { recursive: true });
+        }
+
+        const imagePath = path.join(cacheFolder, "remi_image.png");
+        fs.writeFileSync(imagePath, imageResponse.data);
+
+
+        api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+
+        api.sendMessage({ attachment: fs.createReadStream(imagePath) }, threadID, () => {
+          fs.unlinkSync(imagePath);
+        }, messageID);
+      } catch (error) {
+        console.error(error);
+        api.sendMessage("❌ | حدث خطأ أثناء تحسين الصورة.", threadID, messageID);
+      }
+    } else {
+      api.sendMessage("❌ | يرجى الرد على صورة.", threadID, messageID);
     }
-
-    if (messageReply.attachments.length !== 1 || messageReply.attachments[0].type !== 'photo') {
-      api.sendMessage('[❕] صورة غير صالحة ، المرجو الرد على صورة واحدة وواضحة المرة المقبلة.', threadID, messageID);
-      return;
-    }
-
-    const url = messageReply.attachments[0].url;
-    const inputPath = path.join(currentDir, 'cache', `upscalate.jpg`);
-
-    request(url)
-      .pipe(fs.createWriteStream(inputPath))
-      .on('finish', () => {
-        const apiUrl = `https://jonellccprojectapis10.adaptable.app/api/remini?imageUrl=${encodeURIComponent(url)}`;
-
-        axios({
-          method: 'get',
-          url: apiUrl,
-          responseType: 'json',
-        })
-          .then((res) => {
-            if (res.status !== 200 || !res.data.image_data || !res.data.image_size) {
-              console.error('Error:', res.status, res.statusText);
-              return;
-            }
-
-            const enhancedImageUrl = res.data.image_data;
-            const imageSize = res.data.image_size;
-            const outputPath = path.join(currentDir, 'cache', 'enhanced.jpg');
-
-            request(enhancedImageUrl)
-              .pipe(fs.createWriteStream(outputPath))
-              .on('finish', () => {
-                api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-
-                const message = {
-                  body: `╼╾─────⊹⊱⊰⊹─────╼╾\n✅ | تم رفع جودة الصورة بنجاح \n 📥 | حجم الصورة : ${imageSize}\n╼╾─────⊹⊱⊰⊹─────╼╾`,
-                  attachment: fs.createReadStream(outputPath),
-                };
-
-                api.sendMessage(message, threadID, messageID);
-
-                // إزالة الملف المؤقت بعد إرساله
-                fs.unlinkSync(outputPath);
-              });
-          })
-          .catch((error) => {
-            api.sendMessage('[❌] فشل الطلب \n\n' + error, threadID, messageID);
-            console.error('Request failed:', error);
-          });
-      });
-  },
+  }
 };
