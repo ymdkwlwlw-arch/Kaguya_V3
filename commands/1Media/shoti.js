@@ -17,14 +17,12 @@ export default {
         return;
       }
 
-      const url = event.body;
+      const url = event.body.trim();
       const response = await axios.get(`https://samirxpikachu.onrender.com/tiktok?url=${encodeURIComponent(url)}`);
 
-      if (response.data.url) {
-        const videoUrl = response.data.url;
-        const username = response.data.user.nickname;
-        const duration = response.data.duration;
+      const videoUrl = response.data.url || response.data.wmplay || response.data.hdplay;
 
+      if (videoUrl) {
         const downloadDirectory = process.cwd();
         const filePath = path.join(downloadDirectory, 'cache', `${Date.now()}.mp4`);
 
@@ -38,19 +36,15 @@ export default {
         videoResponse.data.pipe(fileStream);
 
         fileStream.on('finish', async () => {
-          const fileSize = (await fs.stat(filePath)).size / (1024 * 1024); // in MB
-          if (fileSize > 25) {
-            api.sendMessage("الملف كبير جدًا، لا يمكن إرساله", event.threadID, () => fs.unlinkSync(filePath), event.messageID);
-          } else {
-            const messageBody = `࿇ ══━━━━✥◈✥━━━━══ ࿇\n✅ | تــم تــحــمــيــل الــمــقــطــع\n👤 | المستخدم: ${username}\n⏱️ | المدة: ${duration} ثانية\n࿇ ══━━━━✥◈✥━━━━══ ࿇`;
+          api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-            api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+          await api.sendMessage({
+            body: "࿇ ══━━━━✥◈✥━━━━══ ࿇\n✅ | تــم تــحــمــيــل الــمــقــطــع\n࿇ ══━━━━✥◈✥━━━━══ ࿇",
+            attachment: fs.createReadStream(filePath)
+          }, event.threadID);
 
-            api.sendMessage({
-              body: messageBody,
-              attachment: fs.createReadStream(filePath)
-            }, event.threadID, () => fs.unlinkSync(filePath), event.messageID);
-          }
+          // حذف الملف بعد الإرسال
+          fs.unlinkSync(filePath);
         });
 
         fileStream.on('error', (error) => {
