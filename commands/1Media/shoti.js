@@ -3,61 +3,65 @@ import path from "path";
 import fs from "fs-extra";
 
 export default {
-  name: "تيكتوك",
+  name: "مقطع",
   author: "kaguya project",
   role: "member",
-  description: "تنزيل مقاطع الفيديو من TikTok.",
+  description: "Generates an animated video from a prompt.",
+  
+  execute: async function ({ api, event, args }) {
+    let text = args.join(" ");
+    api.setMessageReaction("⚙️", event.messageID, (err) => {}, true);
 
-  execute: async function ({ api, event }) {
-    api.setMessageReaction("⬇️", event.messageID, (err) => {}, true);
+    if (!text) {
+      return api.sendMessage("Please provide a promp.", event.threadID, event.messageID);
+    }
 
     try {
-      if (!event.body || event.body.trim().length === 0) {
-        api.sendMessage("⚠️ | يرجى إدخال رابط تيكتوك مثال *تيكتوك : https://vm.tiktok.com", event.threadID);
-        return;
+      // ترجمة النص من العربية إلى الإنجليزية
+      const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(text)}`);
+      const prompt = translationResponse?.data?.[0]?.[0]?.[0] || text;
+
+      await api.sendMessage("Generating video, please wait... This may take a while.", event.threadID, event.messageID);
+
+      const apiUrl = `https://samirxpikachu.onrender.com/animated?prompt=${encodeURIComponent(prompt)}`;
+      const response = await axios.get(apiUrl);
+
+      if (!response.data || !response.data.video_url) {
+        return api.sendMessage("Failed to generate the video. Please try again.", event.threadID, event.messageID);
       }
 
-      const url = event.body.trim();
-      const response = await axios.get(`https://samirxpikachu.onrender.com/tiktok?url=${encodeURIComponent(url)}`);
+      const videoUrl = response.data.video_url;
 
-      const videoUrl = response.data.url || response.data.wmplay || response.data.hdplay;
+      const downloadDirectory = process.cwd();
+      const filePath = path.join(downloadDirectory, 'cache', `${Date.now()}.mp4`);
 
-      if (videoUrl) {
-        const downloadDirectory = process.cwd();
-        const filePath = path.join(downloadDirectory, 'cache', `${Date.now()}.mp4`);
+      // تحميل الفيديو وحفظه في المسار المؤقت
+      const videoResponse = await axios({
+        url: videoUrl,
+        method: 'GET',
+        responseType: 'stream'
+      });
 
-        const videoResponse = await axios({
-          url: videoUrl,
-          method: 'GET',
-          responseType: 'stream'
-        });
+      const fileStream = fs.createWriteStream(filePath);
+      videoResponse.data.pipe(fileStream);
 
-        const fileStream = fs.createWriteStream(filePath);
-        videoResponse.data.pipe(fileStream);
+      fileStream.on('finish', async () => {
+        // إرسال الفيديو كملف مرفق
+        api.setMessageReaction("🎬", event.messageID, (err) => {}, true);
+        await api.sendMessage({
+          body: "࿇ ══━━━━✥◈✥━━━━══ ࿇\n✅ | تم توليد المقطع بنجاح\n࿇ ══━━━━✥◈✥━━━━══ ࿇",
+          attachment: fs.createReadStream(filePath)
+        }, event.threadID, () => fs.unlinkSync(filePath), event.messageID);
+      });
 
-        fileStream.on('finish', async () => {
-          api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+      fileStream.on('error', (error) => {
+        console.error("Error downloading video:", error);
+        api.sendMessage("Failed to retrieve the generated video. Please try again.", event.threadID, event.messageID);
+      });
 
-          await api.sendMessage({
-            body: "࿇ ══━━━━✥◈✥━━━━══ ࿇\n✅ | تــم تــحــمــيــل الــمــقــطــع\n࿇ ══━━━━✥◈✥━━━━══ ࿇",
-            attachment: fs.createReadStream(filePath)
-          }, event.threadID);
-
-          // حذف الملف بعد الإرسال
-          fs.unlinkSync(filePath);
-        });
-
-        fileStream.on('error', (error) => {
-          api.sendMessage("حدث خطأ أثناء تحميل الفيديو. يرجى المحاولة مرة أخرى لاحقًا.", event.threadID);
-          console.error("خطأ في تنزيل الفيديو:", error);
-        });
-      } else {
-        api.sendMessage("لم يتم العثور على فيديو في الرابط المدخل.", event.threadID);
-        console.error("لم يتم العثور على فيديو في الرابط المدخل");
-      }
-    } catch (err) {
-      api.sendMessage("حدث خطأ أثناء معالجة الطلب. يرجى المحاولة مرة أخرى لاحقًا.", event.threadID);
-      console.error("خطأ أثناء معالجة الطلب:", err);
+    } catch (error) {
+      console.error("Error generating video:", error);
+      api.sendMessage("An error occurred while generating the video. Please try again later.", event.threadID, event.messageID);
     }
   }
 };
