@@ -10,6 +10,7 @@ export default {
   
   execute: async function ({ api, event, args }) {
     const text = args.join(" ");
+    api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
     
     try {
       // الترجمة من العربية إلى الإنجليزية
@@ -29,8 +30,9 @@ export default {
 
       writer.on('finish', async () => {
         // إرسال الصورة كملف مرفق
+        api.setMessageReaction("✅", event.messageID, (err) => {}, true);
         await api.sendMessage({
-          body: '࿇ ══━━━━✥◈✥━━━━══ ࿇\n✅ |تم توليد الصورة بنجاح\n࿇ ══━━━━✥◈✥━━━━══ ࿇',
+          body: '࿇ ══━━━━✥◈✥━━━━══ ࿇\n ✅ |تم توليد الصورة بنجاح\n࿇ ══━━━━✥◈✥━━━━══ ࿇',
           attachment: fs.createReadStream(filePath)
         }, event.threadID, () => fs.unlinkSync(filePath), event.messageID);
       });
