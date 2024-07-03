@@ -10,18 +10,22 @@ export default {
 
   execute: async function ({ api, event, args }) {
     try {
+      if (args.length === 0) {
+        return api.sendMessage(' ❗ | يرجى إدخال شيء للبحث عنه.', event.threadID, event.messageID);
+      }
+
       api.setMessageReaction('⏱️', event.messageID, (err) => {}, true);
 
       const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(args.join(' '))}`);
       const translatedText = translationResponse.data[0][0][0];
 
       const keySearch = translatedText;
-      const numberSearch = 20; // تحديد عدد الصور ليكون 12 تلقائيًا
+      const numberSearch = 9; // تحديد عدد الصور ليكون 10 تلقائيًا
 
-      const apiUrl = `https://turtle-apis.onrender.com/api/pinterest?search=${encodeURIComponent(keySearch)}&keysearch=${numberSearch}`;
+      const apiUrl = `https://jonellccprojectapis10.adaptable.app/api/pin?title=${encodeURIComponent(keySearch)}&count=${numberSearch}`;
 
       const res = await axios.get(apiUrl);
-      const data = res.data.images;
+      const data = res.data.data;
       const imgData = [];
 
       for (let i = 0; i < Math.min(numberSearch, data.length); i++) {
@@ -29,7 +33,6 @@ export default {
         const imgPath = path.join(process.cwd(), 'cache', `${i + 1}.jpg`);
         await fs.outputFile(imgPath, imgResponse.data);
 
-        api.setMessageReaction('✅', event.messageID, (err) => {}, true);
         imgData.push(fs.createReadStream(imgPath));
       }
 
@@ -38,9 +41,11 @@ export default {
       }, event.threadID, event.messageID);
 
       await fs.remove(path.join(process.cwd(), 'cache'));
+      api.setMessageReaction('✅', event.messageID, (err) => {}, true);
     } catch (error) {
       console.error(error);
-      return api.sendMessage('حدث خطأ.', event.threadID, event.messageID);
+      api.sendMessage('حدث خطأ.', event.threadID, event.messageID);
+      api.setMessageReaction('❌', event.messageID, (err) => {}, true);
     }
   },
 };
