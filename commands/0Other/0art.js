@@ -13,7 +13,7 @@ export default {
       const imageLink = event.messageReply?.attachments?.[0]?.url;
 
       if (!imageLink) {
-        return api.sendMessage('Please reply to an image.', event.threadID, event.messageID);
+        return api.sendMessage(' 🛡️ | أرجوك قم بالرد على صورة.', event.threadID, event.messageID);
       }
 
       try {
