@@ -3,10 +3,10 @@ import fs from 'fs-extra';
 import path from 'path';
 
 export default {
-  name: 'دولة',
+  name: 'تصميم33',
   author: 'Vex_Kshitiz',
   role: 0,
-  description: 'البحث عن معلومات الدول بناءً على الاسم المدخل وإرسالها.',
+  description: 'Create designs based on input text and design number.',
 
   execute: async function ({ api, event, args }) {
     async function checkAuthor(authorName) {
@@ -22,82 +22,52 @@ export default {
 
     const isAuthorValid = await checkAuthor(module.exports.author);
     if (!isAuthorValid) {
-      await api.sendMessage("Author changer alert! this cmd belongs to Vex_Kshitiz.", event.threadID, event.messageID);
+      await api.sendMessage("Author changer alert! This command belongs to Vex_Kshitiz.", event.threadID, event.messageID);
       return;
     }
 
-    if (args.length === 0) {
-      return api.sendMessage(' ❗ | يرجى إدخال اسم الدولة.', event.threadID, event.messageID);
-    }
-
-    const countryName = args.join(" ");
-
-    // Translate input from Arabic to English
-    const translationResponseToEn = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(countryName)}`);
-    const translatedCountryName = translationResponseToEn.data[0][0][0];
-
-    const countryApiUrl = `https://country-info-eta.vercel.app/kshitiz?name=${encodeURIComponent(translatedCountryName)}`;
-
     try {
-      const response = await axios.get(countryApiUrl);
-      const {
-        name,
-        officialName,
-        capital,
-        region,
-        subregion,
-        population,
-        area,
-        languages,
-        flag,
-        coatOfArms,
-        currency
-      } = response.data;
-
-      const infoTextEn = `╼╾─────⊹⊱⊰⊹─────╼╾\n
-        إسم الدولة : ${name}
-        الإسم الرسمي : ${officialName}
-        العاصمة : ${capital}
-        المنطقة : ${region}
-        المنطقة الفرعية : ${subregion}
-        تعداد السكان : ${population}
-        المساحة : ${area} كيلومتر مربع 
-        اللغة الرسمية : ${languages}
-        العملة : ${currency}
-      ╼╾─────⊹⊱⊰⊹─────╼╾\n`;
-
-      // Translate output from English to Arabic
-      const translationResponseToAr = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ar&dt=t&q=${encodeURIComponent(infoTextEn)}`);
-      const translatedInfoText = translationResponseToAr.data[0][0][0];
-
-      const cacheDir = path.join(process.cwd(), 'cache');
-      await fs.ensureDir(cacheDir);
-
-      const images = [flag, coatOfArms];
-      const imgData = [];
-
-      for (let i = 0; i < images.length; i++) {
-        try {
-          const imgResponse = await axios.get(images[i], { responseType: 'arraybuffer' });
-          const extension = path.extname(images[i]) || '.jpg';
-          const imgPath = path.join(cacheDir, `${i + 1}${extension}`);
-          await fs.outputFile(imgPath, imgResponse.data);
-          imgData.push(fs.createReadStream(imgPath));
-        } catch (error) {
-          console.error(error);
-        }
+      const searchQuery = args.join(" ");
+      if (!searchQuery.includes("-")) {
+        return api.sendMessage(`Invalid format. Example: {p}ephoto vex kshitiz -1`, event.threadID, event.messageID);
       }
 
+      const [text, num] = searchQuery.split("-").map(str => str.trim());
+      const number = parseInt(num);
+
+      if (isNaN(number) || number <= 0 || number > 1000) {
+        return api.sendMessage(" ⚠️ | قم بإدخال الأمر هكذا *تصميم نص - رقم التصميم لديك من 1 إلى 6 جرب أدخل النص بالانجليزي في حالة لم ينجح معك بالعربي.", event.threadID, event.messageID);
+      }
+
+      const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(text)}`);
+      const translatedText = translationResponse.data[0][0][0];
+
+      const apiUrl = `https://e-photo.vercel.app/kshitiz?text=${encodeURIComponent(translatedText)}&number=${number}`;
+      const response = await axios.get(apiUrl);
+      const imageData = response.data.result;
+
+      if (!imageData || !imageData.status || !imageData.ing) {
+        return api.sendMessage(`⚡ | آسفة لم يتم صنع تصميمك بالنسبة للنص "${text}".`, event.threadID, event.messageID);
+      }
+
+      const imageUrl = imageData.ing;
+      const imgResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+
+      const imgPath = path.join(process.cwd(), 'cache', 'ephoto.jpg');
+      await fs.outputFile(imgPath, imgResponse.data);
+
+      const stream = fs.createReadStream(imgPath);
+      api.setMessageReaction('🌟', event.messageID, (err) => {}, true);
+
       await api.sendMessage({
-        attachment: imgData,
-        body: translatedInfoText.trim(),
+        attachment: stream,
+        body: ''
       }, event.threadID, event.messageID);
 
-      // Clean up cache directory
-      await fs.remove(cacheDir);
+      await fs.unlink(imgPath);
     } catch (error) {
       console.error(error);
-      await api.sendMessage("عذرًا، حدث خطأ أثناء معالجة طلبك.", event.threadID, event.messageID);
+      return api.sendMessage(`An error occurred.`, event.threadID, event.messageID);
     }
-  },
+  }
 };
