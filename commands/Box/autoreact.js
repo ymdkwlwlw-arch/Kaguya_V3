@@ -22,8 +22,8 @@ export default {
       }
 
       api.setMessageReaction("⏰", event.messageID, (err) => {}, true);
-      const response = await axios.get(`https://api.onlytris.space/gemini?question=${encodeURIComponent(prompt)}`);
-      const answer = response.data.content; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
+      const response = await axios.get(`https://joshweb.click/new/gpt-4_adv?prompt=${encodeURIComponent(prompt)}`);
+      const answer = response.data.result.reply; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
 
       api.sendMessage(answer, event.threadID, (err, info) => {
         if (err) return console.error(err);
@@ -46,11 +46,21 @@ export default {
   },
 
   onReply: async ({ api, event, reply, Economy, Users }) => {
-    if (reply.type === "reply") {
+    if (reply.type === "reply" && reply.author === event.senderID) {
       try {
-        const response = await axios.get(`https://api.onlytris.space/gemini?question=${encodeURIComponent(event.body)}`);
-        const answer = response.data.content; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
-        api.sendMessage(answer, event.threadID, event.messageID);
+        const response = await axios.get(`https://joshweb.click/new/gpt-4_adv?prompt=${encodeURIComponent(event.body)}`);
+        const answer = response.data.result.reply; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
+        api.sendMessage(answer, event.threadID, (err, info) => {
+          if (err) return console.error(err);
+
+          // تحديث replyId للرد الجديد
+          global.client.handler.reply.set(info.messageID, {
+            author: event.senderID,
+            type: "reply",
+            name: "ذكاء",
+            unsend: false,
+          });
+        });
       } catch (error) {
         console.error("Error:", error.message, error.response?.data);
         api.sendMessage("⚠️ حدث خطأ أثناء معالجة ردك. يرجى المحاولة مرة أخرى.", event.threadID, event.messageID);
