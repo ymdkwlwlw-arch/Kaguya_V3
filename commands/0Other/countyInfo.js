@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import path from 'path';
 
 export default {
-  name: 'ephoto',
+  name: 'لوغو',
   author: 'Vex_Kshitiz',
   role: 0,
   description: 'Create designs based on input text and design number.',
@@ -36,7 +36,7 @@ export default {
       const number = parseInt(num);
 
       if (isNaN(number) || number <= 0 || number > 1000) {
-        return api.sendMessage(" ⚠️ | قم بإدخال الأمر هكذا *تصميم نص - رقم التصميم لديك من 1 إلى 6 جرب أدخل النص بالانجليزي في حالة لم ينجح معك بالعربي.", event.threadID, event.messageID);
+        return api.sendMessage(" ⚠️ | قم بإدخال الأمر هكذا *تصميم نص - رقم التصميم لديك من 1 إلى 6 قم بإدخل النص بالانجليزي .", event.threadID, event.messageID);
       }
 
       const apiUrl = `https://e-photo.vercel.app/kshitiz?text=${encodeURIComponent(text)}&number=${number}`;
