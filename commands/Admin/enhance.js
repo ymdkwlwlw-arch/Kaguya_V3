@@ -24,12 +24,12 @@ export default {
 
       try {
         const shortenedUrl = await tinyurl.shorten(url);
-        const { data } = await axios.get(`https://for-devs.onrender.com/api/upscale?imageurl=${encodeURIComponent(shortenedUrl)}&apikey=api1`, {
+        const { data } = await axios.get(`https://joshweb.click/remini?q=${encodeURIComponent(shortenedUrl)}`, {
           responseType: "json"
         });
 
-        const imageUrl = data.result_url;
-        const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
+        const imageUrl = data.result;
+        const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
 
         const cacheFolder = path.join(process.cwd(), "cache");
         if (!fs.existsSync(cacheFolder)) {
@@ -39,10 +39,12 @@ export default {
         const imagePath = path.join(cacheFolder, "remi_image.png");
         fs.writeFileSync(imagePath, imageResponse.data);
 
-
         api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-
-        api.sendMessage({ attachment: fs.createReadStream(imagePath) }, threadID, () => {
+         shorten(apiUrl, async function (shortUrl) {
+        api.sendMessage({
+          attachment: fs.createReadStream(imagePath),
+          body: ` ✅ | تم رفع جودة الصورة بنجاح\n📎 | رابط الصورة : ${shortUrl}`
+        }, threadID, () => {
           fs.unlinkSync(imagePath);
         }, messageID);
       } catch (error) {
