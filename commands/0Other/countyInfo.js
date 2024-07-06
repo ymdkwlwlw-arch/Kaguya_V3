@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import path from 'path';
 
 export default {
-  name: 'تصميم33',
+  name: 'ephoto',
   author: 'Vex_Kshitiz',
   role: 0,
   description: 'Create designs based on input text and design number.',
@@ -29,7 +29,7 @@ export default {
     try {
       const searchQuery = args.join(" ");
       if (!searchQuery.includes("-")) {
-        return api.sendMessage(`Invalid format. Example: {p}ephoto vex kshitiz -1`, event.threadID, event.messageID);
+        return api.sendMessage(`Invalid format. Example: {p}ephoto text -1`, event.threadID, event.messageID);
       }
 
       const [text, num] = searchQuery.split("-").map(str => str.trim());
@@ -39,10 +39,7 @@ export default {
         return api.sendMessage(" ⚠️ | قم بإدخال الأمر هكذا *تصميم نص - رقم التصميم لديك من 1 إلى 6 جرب أدخل النص بالانجليزي في حالة لم ينجح معك بالعربي.", event.threadID, event.messageID);
       }
 
-      const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(text)}`);
-      const translatedText = translationResponse.data[0][0][0];
-
-      const apiUrl = `https://e-photo.vercel.app/kshitiz?text=${encodeURIComponent(translatedText)}&number=${number}`;
+      const apiUrl = `https://e-photo.vercel.app/kshitiz?text=${encodeURIComponent(text)}&number=${number}`;
       const response = await axios.get(apiUrl);
       const imageData = response.data.result;
 
