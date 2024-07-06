@@ -9,23 +9,6 @@ export default {
   description: 'Create designs based on input text and design number.',
 
   execute: async function ({ api, event, args }) {
-    async function checkAuthor(authorName) {
-      try {
-        const response = await axios.get('https://author-check.vercel.app/name');
-        const apiAuthor = response.data.name;
-        return apiAuthor === authorName;
-      } catch (error) {
-        console.error("Error checking author:", error);
-        return false;
-      }
-    }
-
-    const isAuthorValid = await checkAuthor(module.exports.author);
-    if (!isAuthorValid) {
-      await api.sendMessage("Author changer alert! This command belongs to Vex_Kshitiz.", event.threadID, event.messageID);
-      return;
-    }
-
     try {
       const searchQuery = args.join(" ");
       if (!searchQuery.includes("-")) {
