@@ -8,7 +8,7 @@ const command = {
   nashPrefix: false,
 
   async execute({ api, event, Threads }) {
-    const { threadID, messageID, body } = event;
+    const { threadID, messageID, body, senderID } = event;
 
     // تحقق من وجود الكلمة المفتاحية "كاغويا"
     if (body.toLowerCase().includes("كاغويا")) {
@@ -32,7 +32,7 @@ const command = {
           if (!error) {
             api.sendMessage({ sticker: randomSticker }, threadID);
             global.client.handler.reply.set(info.messageID, {
-              author: event.senderID,
+              author: senderID,
               type: "reply",
               name: "كاغويا",
               unsend: false,
@@ -70,6 +70,12 @@ const command = {
         api.sendMessage(replyMessage, threadID, (error, info) => {
           if (!error) {
             api.sendMessage({ sticker: randomSticker }, threadID);
+            global.client.handler.reply.set(info.messageID, {
+              author: senderID,
+              type: "reply",
+              name: "كاغويا",
+              unsend: false,
+            });
           }
         }, messageID);
       } catch (error) {
