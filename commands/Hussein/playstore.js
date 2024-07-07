@@ -1,60 +1,79 @@
-import axios from "axios";
-import path from "path";
-import fs from "fs";
+import axios from 'axios';
 
 export default {
-    name: "المتجر",
-    author: "حسين يعقوبي",
-    role: "member",
-    description: "يجلب معلومات حول تطبيق من متجر Google Play ويترجمها إلى اللغة العربية.",
-    
-    execute: async ({ api, event, args }) => {
-        const { threadID, senderID, messageID } = event;
-        
-        api.setMessageReaction("🔍", messageID, (err) => {}, true);
+  name: "احسب",
+  author: "Kaguya Project",
+  role: "member",
+  description: "يعرض إحصاءات مختلفة حول المجموعة الحالية.",
+  
+  async execute({ api, Threads, Users, event, args }) {
+    const { threadID, messageID, participantIDs } = event;
+    const input = args.join();
+    const nameMen = [];
+    const gendernam = [];
+    const gendernu = [];
+    const nope = [];
 
-        try {
-            const searchTerm = args.join(" ");
-            if (!searchTerm) {
-                return api.sendMessage("يرجى تحديد اسم التطبيق.", threadID);
-            }
-
-            const apiUrl = `https://zcdsphapilist.replit.app/search?q=${encodeURIComponent(searchTerm)}`;
-            const response = await axios.get(apiUrl);
-
-            if (response.data && response.data.length > 0) {
-                const selectedApp = response.data[0];
-                const message = `࿇ ══━━━━✥◈✥━━━━══ ࿇\n📝 | اسم التطبيق: ${selectedApp.name}\n💼 | المطور: ${selectedApp.developer}\n🌟 | التقييم: ${selectedApp.rate2}\n📎 | رابط التطبيق: ${selectedApp.link}\n࿇ ══━━━━✥◈✥━━━━══ ࿇`;
-
-                api.sendMessage(message, threadID);
-
-                // Download image and send it as attachment
-                const imagePath = path.join(process.cwd(), 'cache', 'play_store_app.jpg');
-                const imageResponse = await axios.get(selectedApp.image, { responseType: 'stream' });
-                const writer = fs.createWriteStream(imagePath);
-                imageResponse.data.pipe(writer);
-
-                writer.on('finish', () => {
-                    api.sendMessage({
-                        attachment: fs.createReadStream(imagePath),
-                    }, threadID, () => {
-                        // Clean up the image file after sending the message
-                        fs.unlinkSync(imagePath);
-                    });
-                });
-
-                writer.on('error', (err) => {
-                    console.error('Error writing image file:', err);
-                    api.sendMessage("❌ | حدث خطأ أثناء تنزيل صورة التطبيق.", threadID);
-                });
-
-                api.setMessageReaction("✅", messageID, (err) => {}, true);
-            } else {
-                api.sendMessage("لم يتم العثور على نتائج للبحث.", threadID);
-            }
-        } catch (error) {
-            console.error("Error fetching app info from Google Play:", error);
-            api.sendMessage("حدث خطأ أثناء جلب معلومات التطبيق من المتجر.", threadID);
+    try {
+      let threadInfo = await api.getThreadInfo(threadID);
+      for (let z in threadInfo.userInfo) {
+        const gioitinhone = threadInfo.userInfo[z].gender;
+        if (gioitinhone == "MALE") {
+          gendernam.push(gioitinhone);
+        } else if (gioitinhone == "FEMALE") {
+          gendernu.push(gioitinhone);
+        } else {
+          nope.push(gioitinhone);
         }
+      }
+
+      const threadList = [];
+      const inbox = await api.getThreadList(150, null, ['INBOX']);
+      const list = [...inbox].filter(group => group.isSubscribed && group.isGroup);
+      for (const groupInfo of list) {
+        threadList.push({ id: groupInfo });
+      }
+
+      const listLeave = [];
+      const archivedInbox = await api.getThreadList(100, null, ['ARCHIVED']);
+      for (const groupInfo of archivedInbox) {
+        listLeave.push({ id: groupInfo });
+      }
+
+      const threadData = (await Threads.getData(threadID)).threadInfo;
+      const boxget = await Threads.getAll(['threadID']);
+      const userget = await Users.getAll(['userID']);
+
+      const sendMessage = (msg) => api.sendMessage(msg, threadID, messageID);
+
+      if (!input) {
+        sendMessage(`أرجوك قم بإدخال بعض الفئات \n\nكيفية الإستعمال ؟\nاحسب الفئات*\n\nالفئات المتوفرة:\n\nالرسائل, المسؤولين, الأعضاء, ذكور, إناث, ألوان, الجميع, كل_المستخدمين, بيانات_المجموعة, عدد_المغادرات`);
+      } else if (input === "الرسائل") {
+        sendMessage(`هذه المجموعة لديها ${threadInfo.messageCount} رسالة`);
+      } else if (input === "المسؤولين") {
+        sendMessage(`المجموعة لديها  ${threadData.adminIDs.length} مسؤول`);
+      } else if (input === "الأعضاء") {
+        sendMessage(`هذه المجموعة لديها ${participantIDs.length} عضو`);
+      } else if (input === "ذكور") {
+        sendMessage(`هذه المجموعة لديها ${gendernam.length} ذكر`);
+      } else if (input === "إناث") {
+        sendMessage(`هذه المجموعة لديها ${gendernu.length} أنثى`);
+      } else if (input === "ألوان") {
+        sendMessage(`هذه المجموعة لديها ${nope.length} عضو شاذ`);
+      } else if (input === "الجميع") {
+        sendMessage(`الإجمالي: ${threadList.length} مجموعة تستعمل البوت`);
+      } else if (input === "كل_المستخدمين") {
+        sendMessage(`الإجمالي: ${userget.length} مستخدم يستعمل البوت`);
+      } else if (input === "بيانات_المجموعة") {
+        sendMessage(`الإجمالي ${boxget.length} مجموعة دردشة[البيانات] التي إستخدمها البوت`);
+      } else if (input === "عدد_المغادرات") {
+        sendMessage(`الإجمالي هو: ${listLeave.length} شخص قد غادر من المجموعة`);
+      } else {
+        sendMessage("الفئة غير معروفة. يرجى إدخال فئة صحيحة.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      api.sendMessage("حدث خطأ أثناء معالجة الطلب. يرجى المحاولة مرة أخرى.", threadID, messageID);
     }
+  }
 };
