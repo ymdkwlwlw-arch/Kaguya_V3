@@ -15,7 +15,6 @@ export default {
       }
 
       api.setMessageReaction('⏱️', event.messageID, (err) => {}, true);
-
       const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(args.join(' '))}`);
       const translatedText = translationResponse.data[0][0][0];
 
@@ -35,13 +34,13 @@ export default {
 
         imgData.push(fs.createReadStream(imgPath));
       }
-
+         api.setMessageReaction('✅', event.messageID, (err) => {}, true);
       await api.sendMessage({
         attachment: imgData,
       }, event.threadID, event.messageID);
 
       await fs.remove(path.join(process.cwd(), 'cache'));
-      api.setMessageReaction('✅', event.messageID, (err) => {}, true);
+      api.setMessageReaction('❌', event.messageID, (err) => {}, true);
     } catch (error) {
       console.error(error);
       api.sendMessage('حدث خطأ.', event.threadID, event.messageID);
