@@ -27,9 +27,9 @@ async function randomImageAndUptime({ api, event }) {
         const hours = Math.floor((uptime / (60 * 60)) % 24);
         const days = Math.floor(uptime / (60 * 60 * 24));
 
-        let uptimeString = `${days} يوم, ${hours} ساعة, ${minutes} دقيقة, و ${seconds} ثانية`;
+        let uptimeString = `${days} يوم,\n ${hours} ساعة,\n ${minutes} دقيقة, \nو ${seconds} ثانية`;
         if (days === 0) {
-            uptimeString = `${hours} ساعة, ${minutes} دقيقة, و ${seconds} ثانية`;
+            uptimeString = `${hours} ساعة,\n ${minutes} دقيقة, \n ${seconds} ثانية`;
             if (hours === 0) {
                 uptimeString = `${minutes} دقيقة, و ${seconds} ثانية`;
                 if (minutes === 0) {
