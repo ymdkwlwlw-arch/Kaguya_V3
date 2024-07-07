@@ -40,13 +40,15 @@ export default {
         fs.writeFileSync(imagePath, imageResponse.data);
 
         api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-         shorten(apiUrl, async function (shortUrl) {
-        api.sendMessage({
-          attachment: fs.createReadStream(imagePath),
-          body: ` ✅ | تم رفع جودة الصورة بنجاح\n📎 | رابط الصورة : ${shortUrl}`
-        }, threadID, () => {
-          fs.unlinkSync(imagePath);
-        }, messageID);
+        
+        tinyurl.shorten(imageUrl, async function (shortUrl) {
+          api.sendMessage({
+            attachment: fs.createReadStream(imagePath),
+            body: `✅ | تم رفع جودة الصورة بنجاح\n📎 | رابط الصورة: ${shortUrl}`
+          }, threadID, () => {
+            fs.unlinkSync(imagePath);
+          }, messageID);
+        });
       } catch (error) {
         console.error(error);
         api.sendMessage("❌ | حدث خطأ أثناء تحسين الصورة.", threadID, messageID);
