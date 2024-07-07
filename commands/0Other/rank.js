@@ -4,7 +4,7 @@ import path from 'path';
 const ManageApprovedGroupsCommand = {
   name: "موافقة",
   author: "YourName",
-  role: "admin",
+  role: "owner",
   description: "يضيف أو يزيل مجموعة من القائمة المعتمدة باستخدام آيدي المجموعة.",
   async execute({ api, event, args }) {
     if (args.length !== 2 || !['إضافة', 'إزالة'].includes(args[0].toLowerCase())) {
