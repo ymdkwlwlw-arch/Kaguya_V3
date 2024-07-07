@@ -11,13 +11,13 @@ export default {
     const request = axios.create();
     const content = args.join(" ");
 
-    if (content.length === 0 && event.type !== "message_reply") {
-      api.sendMessage("يرجى كتابة النص الذي تريد ترجمته.", event.threadID);
+    if (content.length === 0 && !event.messageReply) {
+      api.sendMessage("يرجى كتابة النص الذي تريد ترجمته أو الرد على الرسالة التي تحتوي على النص.", event.threadID, event.messageID);
       return;
     }
 
     let translateThis, lang;
-    if (event.type === "message_reply") {
+    if (event.messageReply) {
       translateThis = event.messageReply.body;
       lang = content.includes("->") ? content.split("->")[1].trim() : 'ar'; // تعيين اللغة الافتراضية إلى العربية 'ar'
     } else {
@@ -35,7 +35,7 @@ export default {
       const response = await request.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${lang}&dt=t&q=${encodeURIComponent(translateThis)}`);
       const translationData = response.data;
 
-      // Extract translated text from the response
+      // استخراج النص المترجم من الاستجابة
       let translatedText = '';
       translationData[0].forEach(item => {
         if (item[0]) {
@@ -43,13 +43,13 @@ export default {
         }
       });
 
-      // Determine source language
+      // تحديد اللغة المصدر
       const fromLang = (translationData[2] === translationData[8][0][0]) ? translationData[2] : translationData[8][0][0];
 
-      api.sendMessage(`🌐 الترجمة : ${translatedText}\n- تمت الترجمة من ${fromLang} إلى ${lang}`, event.threadID);
+      api.sendMessage(`🌐 الترجمة: ${translatedText}\n- تمت الترجمة من ${fromLang} إلى ${lang}`, event.threadID, event.messageID);
     } catch (error) {
       console.error(error);
-      api.sendMessage("حدث خطأ أثناء عملية الترجمة.", event.threadID);
+      api.sendMessage("حدث خطأ أثناء عملية الترجمة.", event.threadID, event.messageID);
     }
   },
 };
