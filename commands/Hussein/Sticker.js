@@ -12,7 +12,7 @@ async function translateText(text) {
     }
 }
 
-async function generateSticker({ kaguya, event, args, api }) {
+async function generateSticker({ api, event, args }) {
     api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
     try {
         const baseUrl = "https://kshitiz-t2i-fjfq.onrender.com/sdxl";
@@ -24,7 +24,7 @@ async function generateSticker({ kaguya, event, args, api }) {
             // Translate prompt from Arabic to English
             prompt = await translateText(prompt);
         } else {
-            return kaguya.reply("❌ | قم بإدخال اسم شخصية");
+            return api.sendMessage("❌ | ارجوك قم بادخال اسم الشخصية", event.threadID, event.messageID);
         }
 
         const apiResponse = await axios.get(baseUrl, {
@@ -41,17 +41,17 @@ async function generateSticker({ kaguya, event, args, api }) {
             const imageStream = imageResponse.data.pipe(fs.createWriteStream(imagePath));
             imageStream.on("finish", () => {
                 const stream = fs.createReadStream(imagePath);
-                kaguya.reply({
+                api.sendMessage({
                     body: "",
                     attachment: stream
-                });
+                }, event.threadID, event.messageID);
             });
         } else {
             throw new Error("Image URL not found in response");
         }
     } catch (error) {
         console.error("Error:", error);
-        message.reply("❌ | An error occurred. Please try again later.");
+        api.sendMessage("❌ | حدث خطأ ، المرجو اعادة المحاولة في مرة اخرى", event.threadID, event.messageID);
     }
 }
 
