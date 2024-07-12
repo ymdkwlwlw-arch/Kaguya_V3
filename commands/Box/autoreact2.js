@@ -69,7 +69,7 @@ export default {
                 api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
                 await api.sendMessage({
-                    body: `◆❯━━━━━▣✦▣━━━━━━❮◆\n\tاليك صور مشابهة\n◆❯━━━━━▣✦▣━━━━━━❮◆`,
+                    body: `◆❯━━━━━▣✦▣━━━━━━❮◆\n\tاليك صور مشابهة\n◆❯━━━━━▣✦▣━━━━━━❮◆\n${trackInfo}`,
                     attachment: attachments
                 }, event.threadID, event.messageID);
 
