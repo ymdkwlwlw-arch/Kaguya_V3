@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
 
-async function video({ api, event, args, message }) {
+async function video({ api, event, args }) {
     api.setMessageReaction("🕢", event.messageID, (err) => {}, true);
     try {
         let title = '';
@@ -26,10 +26,8 @@ async function video({ api, event, args, message }) {
             if (searchResponse.data.length > 0) {
                 videoId = searchResponse.data[0].videoId;
             }
-
-            shortUrl = await shortenURL(shortUrl);
         } else if (args.length === 0) {
-            kaguya.reply(" ❕ | قم بإدخال اسم المقطع او رد على مرفق");
+            api.sendMessage("❕ | قم بإدخال اسم المقطع أو الرد على مرفق", event.threadID);
             return;
         } else {
             title = args.join(" ");
@@ -37,15 +35,10 @@ async function video({ api, event, args, message }) {
             if (searchResponse.data.length > 0) {
                 videoId = searchResponse.data[0].videoId;
             }
-
-            const videoUrlResponse = await axios.get(`https://youtube-kshitiz.vercel.app/download?id=${encodeURIComponent(videoId)}`);
-            if (videoUrlResponse.data.length > 0) {
-                shortUrl = await shortenURL(videoUrlResponse.data[0]);
-            }
         }
 
         if (!videoId) {
-            kaguya.reply(" [❕] | لم يتم العثور على المقطع");
+            api.sendMessage("[❕] | لم يتم العثور على المقطع", event.threadID);
             return;
         }
 
@@ -53,7 +46,7 @@ async function video({ api, event, args, message }) {
         const videoUrl = downloadResponse.data[0];
 
         if (!videoUrl) {
-            message.reply("Failed to retrieve download link for the video.");
+            api.sendMessage("Failed to retrieve download link for the video.", event.threadID);
             return;
         }
 
@@ -69,7 +62,7 @@ async function video({ api, event, args, message }) {
 
         writer.on('finish', () => {
             const videoStream = fs.createReadStream(videoPath);
-            api.sendMessage({ body: `📹 | تشغيل الآن : ${title}`, attachment: videoStream }, event.threadID, () => {
+            api.sendMessage({ body: `📹 | تشغيل الآن: ${title}`, attachment: videoStream }, event.threadID, () => {
                 fs.unlinkSync(videoPath); // Remove the temporary file
                 api.setMessageReaction("✅", event.messageID, () => {}, true);
             });
@@ -77,21 +70,20 @@ async function video({ api, event, args, message }) {
 
         writer.on('error', (error) => {
             console.error("Error:", error);
-            kaguya.reply("❌ | حدث خطأ أثناء تنزيل المقطع.");
+            api.sendMessage("❌ | حدث خطأ أثناء تنزيل المقطع.", event.threadID);
         });
     } catch (error) {
         console.error("Error:", error);
-        message.reply("An error occurred.");
+        api.sendMessage("An error occurred.", event.threadID);
     }
 }
 
 export default {
-        name: "مقطع",
-        version: "1.0",
-        author: "Kshitiz",
-        countDown: 10,
-        role: "member",
-        Description: "play video from youtube"
-    },
+    name: "مقطع",
+    version: "1.0",
+    author: "Kshitiz",
+    countDown: 10,
+    role: "member",
+    description: "Play video from YouTube",
     execute: video
 };
