@@ -47,7 +47,7 @@ export default {
           // تزيين رسالة الدخول
           const currentTime = moment().tz("Africa/Casablanca").format("YYYY-MM-DD HH:mm:ss");
           const welcomeMessagePart1 = `
-✿━━━━━━━━━━━━━━━━━✿\n
+✿━━━━━━━━━━━━━━━━✿\n
 ✅ | تم توصيل كاغويا البوت بنجاح
 ❏ الرمز : 『${global.client.config.prefix}』
 ❏ إسم البوت : 『${botName}』
@@ -57,7 +57,7 @@ export default {
           const welcomeMessagePart2 = `✿━━━━━━━━━━━━━━━━━✿\n ⚙️  | جاري توصيل ${botName} في المجموعة..... \n
 ❏ التاريخ : ${moment().tz("Africa/Casablanca").format("YYYY-MM-DD")}
 ❏ الوقت : ${moment().tz("Africa/Casablanca").format("HH:mm:ss")}
-\n✿━━━━━━━━━━━━━━━━━✿`;
+\n✿━━━━━━━━━━━━━━━━✿`;
 
           // إرسال رسالة الدخول
           const videoPath = "cache12/welcome.mp4";
