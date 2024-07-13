@@ -58,12 +58,21 @@ export default {
                 if (!error) {
                     try {
                         await Economy.getBalance(event.senderID); // Check user's economy info
-                        client.handler.reply.set(info.messageID, {
-                            author: event.senderID,
-                            type: "reply",
-                            name: "الاسرع",
-                            correctEmoji: randomEmoji.emoji, // Add the correct emoji
-                            unsend: true
+                        api.getUserInfo(event.senderID, (err, result) => {
+                            if (err) {
+                                console.error("Error getting user info:", err);
+                                return;
+                            }
+                            const userName = result[event.senderID].name;
+
+                            api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
+                            client.handler.reply.set(info.messageID, {
+                                author: event.senderID,
+                                type: "reply",
+                                name: "الاسرع",
+                                correctEmoji: randomEmoji.emoji,
+                                unsend: true
+                            });
                         });
                     } catch (e) {
                         console.error("Error checking user's economy info:", e);
@@ -84,26 +93,29 @@ export default {
 
             if (userEmoji === correctEmoji) {
                 try {
-                    // Handle winning action here, like increasing points
-                    
+                    api.getUserInfo(event.senderID, (err, result) => {
+                        if (err) {
+                            console.error("Error getting user info:", err);
+                            return;
+                        }
+                        const userName = result[event.senderID].name;
+
                         const pointsData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
-                        const userPoints = pointsData[event.senderID] || { name: userName, points: 0 }; // تحقق من وجود بيانات المستخدم، وإذا لم يكن موجودًا، قم بإنشاء بيانات جديدة
-                        userPoints.points += 50; // زيادة عدد النقاط
-                        pointsData[event.senderID] = userPoints; // تحديث بيانات المستخدم في الكائن
+                        const userPoints = pointsData[event.senderID] || { name: userName, points: 0 }; // Check if user data exists, create new if not
+                        userPoints.points += 50; // Increase points
+                        pointsData[event.senderID] = userPoints; // Update user data in object
                         fs.writeFileSync(userDataFile, JSON.stringify(pointsData, null, 2));
 
-                    api.sendMessage(`✅ | تهانينا يا ${userName} ! أنت كنت الأسرع وحصلت بذالك على 50 نقطة.`, event.threadID);
-                    api.unsendMessage(reply.messageID);
-                    api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-                    
+                        api.sendMessage(`✅ | تهانينا يا ${userName} ! أنت كنت الأسرع وحصلت بذالك على 50 نقطة.`, event.threadID);
+                        api.unsendMessage(reply.messageID);
+                        api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+                    });
                 } catch (e) {
                     console.error("Error handling winning action:", e);
                 }
             } else {
-                api.sendMessage(`❌ | آسفة هذا ليس الإيموحي الصحيح `, event.threadID);
-
+                api.sendMessage(`❌ | آسفة هذا ليس الإيموجي الصحيح`, event.threadID);
                 api.setMessageReaction("❌", event.messageID, (err) => {}, true);
-                
             }
         }
         fs.unlinkSync(tempImageFilePath);
