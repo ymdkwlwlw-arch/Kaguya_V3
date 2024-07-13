@@ -9,27 +9,26 @@ export default {
   role: "member",
   execute: async ({ api, event, Economy }) => {
     try {
-
-const userMoney = (await Economy.getBalance(event.senderID)).data;
+      const userMoney = (await Economy.getBalance(event.senderID)).data;
       const cost = 500;
       if (userMoney < cost) {
         return api.sendMessage(`🔖 | سيكلفك ذالك ${cost} دولار للتطقيم الواحد`, event.threadID);
       }
 
       // الخصم من الرصيد
-      await Economy.decrease(cost, event.senderID)
+      await Economy.decrease(cost, event.senderID);
       
-      // جلب البيانات من الرابط المعطى
-      const response = await axios.get("https://api.erdwpe.com/api/randomgambar/couplepp");
+      // جلب البيانات من الرابط الجديد
+      const response = await axios.get("https://joshweb.click/cdp");
 
       // التحقق من وجود البيانات المطلوبة
-      if (!response.data.status || !response.data.result || !response.data.result.male || !response.data.result.female) {
+      if (!response.data.message || !response.data.result || !response.data.result.one || !response.data.result.two) {
         throw new Error("لا توجد بيانات صالحة للصور");
       }
 
       // جلب روابط الصور
-      const imageUrl1 = response.data.result.male;
-      const imageUrl2 = response.data.result.female;
+      const imageUrl1 = response.data.result.one;
+      const imageUrl2 = response.data.result.two;
 
       // تحميل الصور
       const image1Response = await axios.get(imageUrl1, { responseType: "arraybuffer" });
@@ -44,7 +43,7 @@ const userMoney = (await Economy.getBalance(event.senderID)).data;
       // إرسال الصور إلى المستخدم
       await api.sendMessage(
         {
-          body: '✿━━━━━━━━━━━━━━━━━✿\n\t\t「 إليك التطقيم الخاص بك ✨ 」\n✿━━━━━━━━━━━━━━━━━✿',
+          body: '✿━━━━━━━━━━━━━━━━✿\n\t\t「 إليك التطقيم الخاص بك ✨ 」\n✿━━━━━━━━━━━━━━━━✿',
           attachment: [
             fs.createReadStream(path1),
             fs.createReadStream(path2)
