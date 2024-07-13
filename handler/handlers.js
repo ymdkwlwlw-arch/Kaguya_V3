@@ -21,105 +21,70 @@ export class CommandHandler {
     this.handler = this.client?.handler || {};
     this.events = this.client?.events || {};
   }
+async handleCommand() {
+  try {
+    const { Users, Threads, api, event } = this.arguments;
+    const { body, threadID, senderID, isGroup, messageID } = event;
+    const getThreadPromise = Threads.find(event.threadID);
+    const getUserPromise = Users.find(senderID);
 
-  async handleCommand() {
-    try {
-      const { Users, Threads, api, event } = this.arguments;
-      const { body, threadID, senderID, isGroup, messageID } = event;
-      const getThreadPromise = Threads.find(event.threadID);
-      const getUserPromise = Users.find(senderID);
+    const [getThread, banUserData] = await Promise.all([getThreadPromise, getUserPromise]);
 
-      const [getThread, banUserData] = await Promise.all([getThreadPromise, getUserPromise]);
-
-      const prefix = getThread?.data?.data?.prefix || this.config.prefix;
-      const banUser = banUserData?.data?.data?.banned;
-      if (!body.startsWith(prefix)) {
-        return;
-      }
-
-      if (banUser?.status && !this.config.ADMIN_IDS.includes(event.senderID)) {
-        return api.sendMessage(getLang("handler.user_ban", banUser.reason), threadID);
-      }
-
-      if (isGroup) {
-        const banThread = getThread?.data?.data?.banned;
-
-        if (banThread?.status && !this.config.ADMIN_IDS.includes(event.senderID)) {
-          return api.sendMessage(getLang("handler.thread_ban", banThread.reason), threadID);
-        }
-      }
-
-      const [cmd, ...args] = body.slice(prefix.length).trim().split(/\s+/);
-      const commandName = cmd.toLowerCase();
-      const command = this.commands.get(commandName) || this.commands.get(this.aliases.get(commandName));
-      if (!command) {
-        api.setMessageReaction("❓", event.messageID, (err) => {}, true);
-
-        // Download the image
-        const imageUrl = 'https://i.imgur.com/HIk9V0w.jpeg';
-        const cacheDir = path.join(process.cwd(), 'cache');
-        const imagePath = path.join(cacheDir, 'not_found.jpeg');
-
-        if (!fs.existsSync(cacheDir)) {
-          fs.mkdirSync(cacheDir, { recursive: true });
-        }
-
-        try {
-          const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-          fs.writeFileSync(imagePath, response.data);
-
-          // Send the message with the attachment
-          const message = getLang("handler.command_not_found");
-          const attachment = fs.createReadStream(imagePath);
-          api.sendMessage({ body: message, attachment }, threadID, messageID);
-        } catch (error) {
-          console.error('Error downloading or sending image:', error);
-          api.sendMessage(getLang("handler.command_not_found"), threadID, messageID);
-        }
-
-        return;
-      }
-
-      if (!this.cooldowns.has(command.name)) {
-        this.cooldowns.set(command.name, new Map());
-      }
-
-      const currentTime = Date.now();
-      const timeStamps = this.cooldowns.get(commandName);
-      const cooldownAmount = (command.cooldowns ?? 5) * 1000;
-
-      if (!this.config.ADMIN_IDS.includes(senderID)) {
-        if (timeStamps.has(senderID)) {
-          const expTime = timeStamps.get(senderID) + cooldownAmount;
-          if (currentTime < expTime) {
-            const timeLeft = (expTime - currentTime) / 1000;
-            return api.sendMessage(getLang("handler.command_cooldowns", timeLeft.toFixed(1)), threadID, messageID);
-          }
-        }
-
-        timeStamps.set(senderID, currentTime);
-        setTimeout(() => {
-          timeStamps.delete(senderID);
-        }, cooldownAmount);
-      }
-
-      const { adminIDs: threadAdminIDs } = await api.getThreadInfo(threadID);
-
-      if ((command.role === "admin" || command.role === "owner") && !threadAdminIDs.includes(senderID) && !this.config.ADMIN_IDS.includes(senderID)) {
-        api.setMessageReaction("🚫", event.messageID, (err) => {}, true);
-        return api.sendMessage(getLang("handler.command_noPermission"), threadID, messageID);
-      }
-
-      // التحقق من وجود كلمة محددة في الجملة
-      const targetWord = "بوت"; // استبدل هذه الكلمة بالكلمة التي تريد التحقق منها
-      if (body.includes(targetWord)) {
-        return api.sendMessage(`✅ | لقد ذكرت الكلمة المحددة: ${targetWord}`, threadID, messageID);
-      }
-
-      command.execute({ ...this.arguments, args });
-    } catch (error) {
-      console.log(error);
+    const banUser = banUserData?.data?.data?.banned;
+    if (banUser?.status && !this.config.ADMIN_IDS.includes(event.senderID)) {
+      return api.sendMessage(getLang("handler.user_ban", banUser.reason), threadID);
     }
+
+    if (isGroup) {
+      const banThread = getThread?.data?.data?.banned;
+
+      if (banThread?.status && !this.config.ADMIN_IDS.includes(event.senderID)) {
+        return api.sendMessage(getLang("handler.thread_ban", banThread.reason), threadID);
+      }
+    }
+
+    const [cmd, ...args] = body.trim().split(/\s+/); // حذف استخدام البادئة وتحديد الكلمة الأولى مباشرة
+    const commandName = cmd.toLowerCase();
+    const command = this.commands.get(commandName) || this.commands.get(this.aliases.get(commandName));
+    if (!command) {
+      return api.sendMessage(getLang("handler.command_not_found"), threadID, messageID);
+    }
+
+    if (!this.cooldowns.has(command.name)) {
+      this.cooldowns.set(command.name, new Map());
+    }
+
+    const currentTime = Date.now();
+    const timeStamps = this.cooldowns.get(commandName);
+    const cooldownAmount = (command.cooldowns ?? 5) * 1000;
+
+    if (!this.config.ADMIN_IDS.includes(senderID)) {
+      if (timeStamps.has(senderID)) {
+        const expTime = timeStamps.get(senderID) + cooldownAmount;
+        if (currentTime < expTime) {
+          const timeLeft = (expTime - currentTime) / 1000;
+          return api.sendMessage(getLang("handler.command_cooldowns", timeLeft.toFixed(1)), threadID, messageID);
+        }
+      }
+
+      timeStamps.set(senderID, currentTime);
+      setTimeout(() => {
+        timeStamps.delete(senderID);
+      }, cooldownAmount);
+    }
+
+    const { adminIDs: threadAdminIDs } = await api.getThreadInfo(threadID);
+
+    if ((command.role === "admin" || command.role === "owner") && !threadAdminIDs.includes(senderID) && !this.config.ADMIN_IDS.includes(senderID)) {
+      return 
+         api.setMessageReaction("🚫", event.messageID, (err) => {}, true);
+      api.sendMessage(getLang("handler.command_noPermission"), threadID, messageID);
+    }
+
+    command.execute({ ...this.arguments, args });
+  } catch (error) {
+    console.log(error);
+  }
   }
 
   handleEvent() {
