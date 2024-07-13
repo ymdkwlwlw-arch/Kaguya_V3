@@ -18,6 +18,7 @@ export default {
     execute: async function ({ api, event, Economy }) {
         try {
             const characters = [
+    
                 {
                   name: "نوبي",
                   image: "https://i.imgur.com/P3xPruS.jpeg"
@@ -383,6 +384,7 @@ export default {
                   image: "https://i.imgur.com/eg8GkDh.jpg"
                 }
                 // Add more character-image pairs here
+                // Add more character-image pairs here
             ];
 
             const randomCharacter = characters[Math.floor(Math.random() * characters.length)];
@@ -423,19 +425,18 @@ export default {
 
             if (userGuess === correctName) {
                 try {
-                    // Handle winning action here, like increasing points
-
-                      const pointsData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
-                      const userPoints = pointsData[event.senderID] || { name: userName, points: 0 }; // تحقق من وجود بيانات المستخدم، وإذا لم يكن موجودًا، قم بإنشاء بيانات جديدة
-                      userPoints.points += 50; // زيادة عدد النقاط
-                      pointsData[event.senderID] = userPoints; // تحديث بيانات المستخدم في الكائن
-                      fs.writeFileSync(userDataFile, JSON.stringify(pointsData, null, 2));
-
                     const userInfo = await api.getUserInfo(event.senderID);
-                    const userName = userInfo ? userInfo[event.senderID].name : 'الفائز'; 
+                    const userName = userInfo ? userInfo[event.senderID].name : 'الفائز';
 
-                    api.sendMessage(`✅ | تهانينا يا ${userName}! 🥳لقد قمت بتخمين إسم الشخصية بشكل صحيح. و حصلت بذالك على 50 نقطة.`,
-                    event.threadID);
+                    const pointsData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
+                    const userPoints = pointsData[event.senderID] || { name: userName, points: 0 };
+                    userPoints.name = userName; // تأكد من تسجيل الاسم
+                    userPoints.points += 50;
+                    pointsData[event.senderID] = userPoints;
+                    fs.writeFileSync(userDataFile, JSON.stringify(pointsData, null, 2));
+
+                    api.sendMessage(`✅ | تهانينا يا ${userPoints.name}! 🥳لقد قمت بتخمين إسم الشخصية بشكل صحيح. و حصلت بذالك على 50 نقطة.`,
+                        event.threadID);
 
                     api.setMessageReaction("✅", event.messageID, (err) => {}, true);
                     api.unsendMessage(reply.messageID);
@@ -446,7 +447,6 @@ export default {
                 api.sendMessage(`❌ | آسف، لقد تخمين الشخصية بشكل خاطئ. حاول مرة أخرى.`, event.threadID);
 
                 api.setMessageReaction("❌", event.messageID, (err) => {}, true);
-                
             }
         }
         fs.unlinkSync(tempImageFilePath);
