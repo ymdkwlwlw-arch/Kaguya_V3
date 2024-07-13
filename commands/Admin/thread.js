@@ -38,7 +38,7 @@ async function randomImageAndUptime({ api, event }) {
             }
         }
 
-        const message = `✿━━━━━━━━━━━━━━━━━✿\n 🔖 | تحياتي ! كاغويا البوت\nكانت شغالة منذ :\n${uptimeString}\n✿━━━━━━━━━━━━━━━━━✿`;
+        const message = `✿━━━━━━━━━━━━━━━━✿\n 🔖 | تحياتي ! كاغويا البوت\nكانت شغالة منذ :\n${uptimeString}\n✿━━━━━━━━━━━━━━━━✿`;
         const imageStream = fs.createReadStream(imagePath);
 
       api.setMessageReaction("🚀", event.messageID, (err) => {}, true);
