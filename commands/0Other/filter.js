@@ -20,7 +20,7 @@ async function getPairDp({ api, event, args }) {
         await fs.writeFile(femaleImgPath, Buffer.from(femaleImg.data, "utf-8"));
 
         // Prepare the message and attachments
-        const msg = "✿━━━━━━━━━━━━━━━━━✿\n「 إليك التطقيم الخاص بك✨ 」\n✿━━━━━━━━━━━━━━━━━✿";
+        const msg = "✿━━━━━━━━━━━━━━━━✿\n「 إليك التطقيم الخاص بك✨ 」\n✿━━━━━━━━━━━━━━━━✿";
         const allImages = [
             fs.createReadStream(maleImgPath),
             fs.createReadStream(femaleImgPath)
