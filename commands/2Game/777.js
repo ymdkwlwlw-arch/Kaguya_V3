@@ -1,9 +1,9 @@
 class JackpotGame {
-  name = "رهان";
+  name = "سلوت";
   author = "Kaguya Project";
   cooldowns = 10;
   description = "مغامرة رهانات فاكهية مع فرص الفوز بالجائزة الكبرى !";
-  role = "member";
+  role = "مراهنة";
   aliases = [];
 
   async execute({ event, Economy, args }) {
