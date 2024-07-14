@@ -4,7 +4,7 @@ export default {
   name: "رابط2",
   author: "Hussein Yacoubi",
   role: "member",
-  description: "رفع صورة إلى Imgur عند الرد على صورة في الرسالة.",
+  description: "رفع صورة إلى JoshWeb عند الرد على صورة في الرسالة.",
 
   execute: async function ({ api, event }) {
     try {
@@ -19,21 +19,21 @@ export default {
         return api.sendMessage('لم يتم العثور على رابط للصورة.', event.threadID, event.messageID);
       }
 
-      // طلب رفع الصورة إلى Imgur
-      const response = await axios.get(`https://api.kenliejugarap.com/imgur/?imageLink=${encodeURIComponent(imageUrl)}`);
+      // طلب رفع الصورة إلى JoshWeb
+      const response = await axios.get(`https://joshweb.click/others/image/upload?url=${encodeURIComponent(imageUrl)}`);
 
       // التعامل مع الخطأ إذا وجد
-      if (response.data.error) {
-        return api.sendMessage(response.data.error, event.threadID, event.messageID);
+      if (!response.data.status) {
+        return api.sendMessage(response.data.message, event.threadID, event.messageID);
       }
 
-      // الحصول على رابط Imgur
-      const imgurLink = response.data.link;
-      return api.sendMessage(`${imgurLink}`, event.threadID, event.messageID);
+      // الحصول على رابط JoshWeb
+      const uploadedImageUrl = response.data.imageUrl;
+      return api.sendMessage(`${uploadedImageUrl}`, event.threadID, event.messageID);
 
     } catch (error) {
-      console.error('Error uploading to Imgur:', error);
-      return api.sendMessage('حدث خطأ أثناء رفع الصورة إلى Imgur. يرجى المحاولة مرة أخرى لاحقًا.', event.threadID, event.messageID);
+      console.error('Error uploading to JoshWeb:', error);
+      return api.sendMessage('حدث خطأ أثناء رفع الصورة إلى JoshWeb. يرجى المحاولة مرة أخرى لاحقًا.', event.threadID, event.messageID);
     }
   }
 };
