@@ -51,12 +51,12 @@ export default {
   name: "هيناتا",
   author: "Kaguya Project",
   role: "member",
-  description: "يقوم بعرض صور عشوائية لشخصية الأنمي هيناتا مقابل 1000 دولار",
+  description: "يقوم بعرض صور عشوائية لشخصية الأنمي هيناتا مقابل 100 دولار",
   async execute({ api, event, Economy }) {
     try {
       // التحقق مما إذا كان لديه الرصيد الكافي
       const userMoney = (await Economy.getBalance(event.senderID)).data;
-      const cost = 1000;
+      const cost = 100;
       if (userMoney < cost) {
         return api.sendMessage(`⚠️ | لا يوجد لديك رصيد كافٍ. يجب عليك الحصول على ${cost} دولار أولاً.`, event.threadID);
       }
