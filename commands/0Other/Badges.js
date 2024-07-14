@@ -64,7 +64,7 @@ export default {
             writeStream.on("finish", async () => {
                 // Send the message with the attachment as a stream
                 const readableStream = fs.createReadStream(tempAudioPath);
-                const message = `●❯────────────────❮●\n 🎵   |إستمتع بالإستماع للشارة 🥰\n 🧿 | وإحزر إسم الشارة تعودة لأي مسلسل ؟\n●❯────────────────❮●`;
+                const message = `●❯───────────────❮●\n 🎵   |إستمتع بالإستماع للشارة 🥰\n 🧿 | وإحزر إسم الشارة تعودة لأي مسلسل ؟\n●❯───────────────❮●`;
                 api.sendMessage({ body: message, attachment: readableStream }, event.threadID, async (error, info) => {
                     if (!error) {
                         try {
