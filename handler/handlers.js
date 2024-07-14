@@ -46,9 +46,6 @@ async handleCommand() {
     const [cmd, ...args] = body.trim().split(/\s+/); // حذف استخدام البادئة وتحديد الكلمة الأولى مباشرة
     const commandName = cmd.toLowerCase();
     const command = this.commands.get(commandName) || this.commands.get(this.aliases.get(commandName));
-    if (!command) {
-      return api.sendMessage(getLang("handler.command_not_found"), threadID, messageID);
-    }
 
     if (!this.cooldowns.has(command.name)) {
       this.cooldowns.set(command.name, new Map());
