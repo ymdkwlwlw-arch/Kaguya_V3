@@ -107,7 +107,7 @@ export default {
 
       // إرسال الصورة
       api.sendMessage({
-        body: '◆❯━━━━━━▣✦▣━━━━━━━❮◆\n𒈞SHIKAMARU𒈞\n $100 deducted \n◆❯━━━━━━▣✦▣━━━━━━━❮◆',
+        body: '◆❯━━━━━▣✦▣━━━━━━❮◆\n𒈞SHIKAMARU𒈞\n $100 deducted \n◆❯━━━━━▣✦▣━━━━━━❮◆',
         attachment: fs.createReadStream(imgPath)
       }, event.threadID, event.messageID);
     } catch (error) {
