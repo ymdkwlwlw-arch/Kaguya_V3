@@ -12,7 +12,7 @@ export default {
         try {
             const pointsData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
             const topUsers = Object.values(pointsData).sort((a, b) => b.points - a.points).slice(0, 5); // احصل على أعلى 5 مستخدمين
-            let topMessage = "《🏆أعلى متصدرين في النقاط🏆》\n";
+            let topMessage = "🏆أعلى متصدرين في النقاط🏆\n";
 
             topUsers.forEach((user, index) => {
                 const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "🏅"; // تحديد الوسام حسب المركز
