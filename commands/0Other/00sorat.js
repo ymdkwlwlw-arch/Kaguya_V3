@@ -39,7 +39,7 @@ export default {
             fs.writeFileSync(tempImageFilePath, Buffer.from(imageResponse.data, "binary"));
 
             const attachment = [fs.createReadStream(tempImageFilePath)];
-            const message = `✿━━━━━━━━━━━━━━━━━✿\n🌟 | ماهو إسم السورة الكريمة ؟\n✿━━━━━━━━━━━━━━━━━✿`;
+            const message = `✿━━━━━━━━━━━━━━━━✿\n🌟 | ماهو إسم السورة الكريمة ؟\n✿━━━━━━━━━━━━━━━━✿`;
 
             api.sendMessage({ body: message, attachment }, event.threadID, async (error, info) => {
                 if (!error) {
