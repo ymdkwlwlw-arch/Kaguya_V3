@@ -1,6 +1,7 @@
 import axios from "axios";
 import fs from "fs";
 import path from "path";
+import moment from "moment-timezone";
 
 async function execute({ api, event }) {
   try {
@@ -68,23 +69,18 @@ async function onReply({ api, event, reply, Economy, Users }) {
       return api.sendMessage("⚠️ | أرجوك قم بالرد برقم الدولة المتوفرة.", event.threadID);
     }
 
-    const currentTime = Math.floor(Date.now() / 1000);
-    const timeStamps = 86400; // يوم واحد بالثواني
+    const currentTime = moment().unix();
+    const cooldownPeriod = 86400; // فترة الانتظار: يوم واحد بالثواني
+    const cooldownKey = `cooldowns_kahf_${event.senderID}`;
 
     try {
-      const lastCheckedTime = await Users.find(event.senderID);
-      if (
-        lastCheckedTime &&
-        lastCheckedTime.data &&
-        lastCheckedTime.data.data &&
-        lastCheckedTime.data.data.other &&
-        lastCheckedTime.data.data.other.cooldowns &&
-        currentTime - parseInt(lastCheckedTime.data.data.other.cooldowns) < timeStamps
-      ) {
-        const remainingTime = timeStamps - (currentTime - lastCheckedTime.data.data.other.cooldowns);
-        const minutes = Math.floor(remainingTime / 60);
-        const seconds = remainingTime % 60;
-        return api.sendMessage(`⚠️ | لقد عملت اليوم. لتجنب الإرهاق، يرجى العودة بعد: دقيقة ${minutes} دقيقة ${seconds} ثانية.`, event.threadID);
+      const user = await Users.find(event.senderID);
+      const lastCheckedTime = user?.data?.data?.other?.[cooldownKey];
+
+      if (lastCheckedTime && currentTime - lastCheckedTime < cooldownPeriod) {
+        const remainingTime = cooldownPeriod - (currentTime - lastCheckedTime);
+        const duration = moment.duration(remainingTime, 'seconds');
+        return api.sendMessage(`⚠️ | لقد عملت اليوم. لتجنب الإرهاق، يرجى العودة بعد: ${duration.hours()} ساعات ${duration.minutes()} دقائق ${duration.seconds()} ثواني.`, event.threadID);
       }
 
       api.setMessageReaction("✅", event.messageID, () => {}, true);
@@ -96,7 +92,7 @@ async function onReply({ api, event, reply, Economy, Users }) {
 
       await Users.update(event.senderID, {
         other: {
-          cooldowns: currentTime,
+          [cooldownKey]: currentTime,
         },
       });
 
