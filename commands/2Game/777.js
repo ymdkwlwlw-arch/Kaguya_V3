@@ -17,15 +17,15 @@ class JackpotGame {
     const [moneyBet] = args;
 
     if (isNaN(moneyBet) || moneyBet <= 0) {
-      return kaguya.reply(" ⚠️ |مبلغ الرهان غير صالح! \n أنزر إلى رصيدك");
+      return kaguya.reply(" ⚠️ | مبلغ الرهان غير صالح! \n أنزر إلى رصيدك");
     }
 
     if (moneyBet > userMoney) {
-      return kaguya.reply(`أنت تحتاح  ${kaguya.formatCurrency(moneyBet - userMoney)} دولار من أحل بدأ الرهان `);
+      return kaguya.reply(`أنت تحتاح  ${kaguya.formatCurrency(moneyBet - userMoney)} من أحل بدأ الرهان `);
     }
 
     if (moneyBet < MIN_BET_AMOUNT || moneyBet > MAX_BET_AMOUNT) {
-      return kaguya.reply(` ⚠️ |مبلغ الرهان غير صالح!\n على الأقل قم بالمراهنة ب : ${kaguya.formatCurrency(MIN_BET_AMOUNT)}\nالحد الأقصى : ${kaguya.formatCurrency(MAX_BET_AMOUNT)}`);
+      return kaguya.reply(` ⚠️ | مبلغ الرهان غير صالح!\n على الأقل قم بالمراهنة ب : ${kaguya.formatCurrency(MIN_BET_AMOUNT)}\nالحد الأقصى : ${kaguya.formatCurrency(MAX_BET_AMOUNT)}`);
     }
 
     const spins = Array.from({ length: 3 }, () => SLOT_ITEMS[Math.floor(Math.random() * SLOT_ITEMS.length)]);
