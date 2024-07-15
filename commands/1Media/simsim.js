@@ -5,7 +5,7 @@ const command = {
   author: "Kaguya Project",
   role: "member",
   description: "يدردش معك ويرد برسالة مع ستيكر عند الرد عليه.",
-  aliases: ["بوت"],
+  aliases: [بوت];
 
   async execute({ api, event, Threads, Users }) {
     const { threadID, messageID, body, senderID } = event;
