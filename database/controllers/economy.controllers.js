@@ -1,7 +1,7 @@
 import usersController from "./users.controllers.js";
 
 export default function ({ api, event }) {
-  const formatCurrency = (number) => new Intl.NumberFormat("ar-MA", { style: "currency", currency: "MAD", maximumFractionDigits: 9 }).format(number);
+  const formatCurrency = (number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USA", maximumFractionDigits: 9 }).format(number);
 
   const performTransaction = async ({ action, uid, coins }) => {
     try {
