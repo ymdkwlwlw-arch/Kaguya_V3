@@ -49,15 +49,15 @@ export default {
           const welcomeMessagePart1 = `
 ✿━━━━━━━━━━━━━━━━✿\n
 ✅ | تم توصيل كاغويا البوت بنجاح
-❏ الرمز : 『${global.client.config.prefix}』
+❏ الرمز : 『بدون رمز』
 ❏ إسم البوت : 『${botName}』
 ❏ إسم المطور : 『حسين يعقوبي』
-❏ رابط المطور : https://www.facebook.com/profile.php?id=100076269693499\n⚠️  | لا تعمل سبام للبوت وإلا سيغادر البوت مجوعتكم\n🔖 | اكتب *ضيفيني من اجل ان تدخل مجموعة البوت في حالة واجهتك اي مشكلة \n✿━━━━━━━━━━━━━━━━━✿`;
+❏ رابط المطور : https://www.facebook.com/profile.php?id=100076269693499\n⚠️  | اكتب قائمة او اوامر \n🔖 | اكتب ضيفيني من اجل ان تدخل مجموعة البوت في حالة واجهتك اي مشكلة \n✿━━━━━━━━━━━━━━━━━✿`;
 
           const welcomeMessagePart2 = `✿━━━━━━━━━━━━━━━━✿\n ⚙️  | جاري توصيل ${botName} في المجموعة..... \n
 ❏ التاريخ : ${moment().tz("Africa/Casablanca").format("YYYY-MM-DD")}
 ❏ الوقت : ${moment().tz("Africa/Casablanca").format("HH:mm:ss")}
-\n✿━━━━━━━━━━━━━━━━✿`;
+\n✿━━━━━━━━━━━━━━━✿`;
 
           // إرسال رسالة الدخول
           const videoPath = "cache12/welcome.mp4";
