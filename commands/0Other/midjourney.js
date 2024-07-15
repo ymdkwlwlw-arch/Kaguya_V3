@@ -58,7 +58,6 @@ class Game {
 
   async execute({ api, event, args }) {
     const { threadID, messageID } = event;
-    const commandName = "طلبات";
     const secretNumber = generateRandomNumber();
     let maxAttempts = parseInt(args[0]);
     if (isNaN(maxAttempts) || !maxAttempts) {
@@ -71,13 +70,24 @@ class Game {
         return;
       }
 
-      this.handleReply.set(info.messageID, {
+      // إضافة تسجيل بيانات الرد
+      console.log("Setting reply data:", {
         author: event.senderID,
-        commandName,
         secretNumber,
         attempts: maxAttempts,
         guesses: [],
       });
+
+      this.handleReply.set(info.messageID, {
+        author: event.senderID,
+        secretNumber,
+        attempts: maxAttempts,
+        guesses: [],
+      });
+
+      if (!global.client.handler) {
+        global.client.handler = { reply: new Map() };
+      }
 
       global.client.handler.reply.set(info.messageID, {
         author: event.senderID,
@@ -85,6 +95,8 @@ class Game {
         name: "ارقام",
         unsend: true,
       });
+
+      console.log("Reply set successfully with messageID:", info.messageID);
     });
   }
 
@@ -92,6 +104,8 @@ class Game {
     if (reply.type !== 'pick') return;
 
     const { senderID, body, threadID, messageID } = event;
+    console.log("Received reply with messageID:", messageID);
+    
     const replyData = this.handleReply.get(reply.messageID);
 
     if (!replyData) {
@@ -99,7 +113,10 @@ class Game {
       return api.sendMessage("حدث خطأ أثناء معالجة الرد. يرجى المحاولة مرة أخرى لاحقًا.", threadID, messageID);
     }
 
-    if (String(senderID) !== String(replyData.author)) return;
+    if (String(senderID) !== String(replyData.author)) {
+      console.log("Sender ID does not match the author of the reply data.");
+      return;
+    }
 
     const userGuess = body.trim();
     if (!isValidGuess(userGuess)) {
@@ -115,6 +132,7 @@ class Game {
       api.sendMessage(`✅ | توقعت الرقم (${secretNumber}). لقد فزت!`, threadID);
       this.handleReply.delete(reply.messageID);
       global.client.handler.reply.delete(reply.messageID);
+      console.log("Game won. Reply data deleted.");
     } else if (remainingAttempts > 0) {
       const replyMessage = `${guesses.join('\n')}\n\n🛡️ | تبقى لك ${remainingAttempts} فرص.\n📜 | إجمالي عدد الفرص ${attempts} فرص`;
 
@@ -124,9 +142,16 @@ class Game {
           return;
         }
 
+        // تحديث تسجيل بيانات الرد
+        console.log("Updating reply data:", {
+          author: senderID,
+          secretNumber,
+          attempts: remainingAttempts,
+          guesses,
+        });
+
         this.handleReply.set(info.messageID, {
           author: senderID,
-          commandName: replyData.commandName,
           secretNumber,
           attempts: remainingAttempts,
           guesses,
@@ -138,11 +163,14 @@ class Game {
           name: "ارقام",
           unsend: true,
         });
+
+        console.log("Reply updated successfully with new messageID:", info.messageID);
       });
     } else {
       api.sendMessage(`⚔️ | إنتهت اللعبة و الرقم الصحيح كان ${secretNumber}.`, threadID);
       this.handleReply.delete(reply.messageID);
       global.client.handler.reply.delete(reply.messageID);
+      console.log("Game over. Reply data deleted.");
     }
   }
 }
