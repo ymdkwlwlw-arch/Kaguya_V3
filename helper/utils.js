@@ -2,7 +2,7 @@ import axios from "axios";
 import fs from "fs-extra";
 
 export default function ({ api, event }) {
-  const formatCurrency = (number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "دولار", maximumFractionDigits: 9 }).format(number);
+  const formatCurrency = (number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USA", maximumFractionDigits: 9 }).format(number);
 
   const send = (message, callback) => (typeof callback === "function" ? api.sendMessage(message, event.threadID, callback) : api.sendMessage(message, event.threadID));
 
