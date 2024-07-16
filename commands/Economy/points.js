@@ -8,7 +8,7 @@ export default {
     author: "Your Name",
     role: "member",
     description: "عرض نقاطك.",
-    aliases = ["نقاطي"],
+    aliases : ["نقاطي"],
     execute: async function ({ api, event }) {
         try {
             // تأكد من وجود ملف البيانات قبل قراءته
