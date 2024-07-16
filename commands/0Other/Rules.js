@@ -47,13 +47,13 @@ const ZiaRein = [
 ];
 
 const ZiaRein2 = (api, event, part) => {
-  const imageUrl = process.cwd() + "/cache/ZiaRein1.jpg";
+  const imageUrl = path.join(process.cwd(), "cache/ZiaRein1.jpg");
   api.sendMessage({ body: part, attachment: fs.createReadStream(imageUrl) }, event.threadID, () => {
     fs.unlinkSync(imageUrl);
   }, event.messageID);
 };
 
-const execute = async ({ api, event }) => {
+const execute = async ({ api, event, client }) => {
   const userListPath = path.join(process.cwd(), "rules.json");
   let userList = [];
 
@@ -67,13 +67,13 @@ const execute = async ({ api, event }) => {
     return api.sendMessage("❌ | أنت بالفعل وافقت على شروط المجموعة وتم إدراج اسمك بين الأعضاء الرسميين.", event.threadID, event.messageID);
   }
 
-  return request(encodeURI(ZiaRein[Math.floor(Math.random() * ZiaRein.length)]))
-    .pipe(fs.createWriteStream(process.cwd() + "/cache/ZiaRein1.jpg"))
+  request(encodeURI(ZiaRein[Math.floor(Math.random() * ZiaRein.length)]))
+    .pipe(fs.createWriteStream(path.join(process.cwd(), "cache/ZiaRein1.jpg")))
     .on("close", () => {
       ZiaRein2(api, event, ZiaRein3Part1);
       api.sendMessage("رد على هذه الرسالة بـ 'التالي' لمتابعة القراءة", event.threadID, (err, info) => {
         if (!err) {
-          global.client.handler.reply.set(info.messageID, {
+          client.handler.reply.set(info.messageID, {
             author: event.senderID,
             type: "rulesPart1",
             name: "قواعد",
@@ -84,7 +84,7 @@ const execute = async ({ api, event }) => {
     });
 };
 
-const onReply = async ({ api, event, reply }) => {
+const onReply = async ({ api, event, reply, client }) => {
   const userListPath = path.join(process.cwd(), "rules.json");
   let userList = [];
 
@@ -103,7 +103,7 @@ const onReply = async ({ api, event, reply }) => {
       ZiaRein2(api, event, ZiaRein3Part2);
       api.sendMessage("رد على هذه الرسالة بـ 'مفهوم' لمتابعة القراءة", event.threadID, (err, info) => {
         if (!err) {
-          global.client.handler.reply.set(info.messageID, {
+          client.handler.reply.set(info.messageID, {
             author: event.senderID,
             type: "rulesPart2",
             name: "قواعد",
@@ -120,7 +120,7 @@ const onReply = async ({ api, event, reply }) => {
       ZiaRein2(api, event, ZiaRein3Part3);
       api.sendMessage("رد على هذه الرسالة بـ 'تم' إذا قرأت القواعد ووافقت على شروطها.", event.threadID, (err, info) => {
         if (!err) {
-          global.client.handler.reply.set(info.messageID, {
+          client.handler.reply.set(info.messageID, {
             author: event.senderID,
             type: "confirmRules",
             name: "قواعد",
