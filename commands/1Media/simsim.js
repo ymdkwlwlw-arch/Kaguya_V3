@@ -117,4 +117,5 @@ const commands = [
 ];
 
 // تصدير الدالة والأوامر
-export { handleEvent, commands };
+export default { commands };
+export { handleEvent };
