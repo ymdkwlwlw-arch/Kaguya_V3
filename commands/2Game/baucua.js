@@ -80,6 +80,7 @@ export default {
   author: "Kaguya Project",
   role: "member",
   description: "يقوم بعرض صورة عشوائية لشخصية أنمي",
+  aliase: ["انمي"],
   async execute({ api, event }) {
     try {
       api.setMessageReaction("⏱️", event.messageID, () => {}, true);
