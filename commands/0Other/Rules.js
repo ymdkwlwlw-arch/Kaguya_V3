@@ -3,7 +3,7 @@ import request from "request";
 import fs from "fs-extra";
 import path from "path";
 
-const ZiaRein3 = `●═══════❍═══════●\nالــصَـداقَــة هِــي أنْ تَــذهَـبْ وَتَــعُـود وَتَــجــد لِــ نَــفــسَـكْ “ مَــكـانـاً ” بِـيـنَـهُـمْ
+const ZiaRein3Part1 = `●═══════❍═══════●\nالــصَـداقَــة هِــي أنْ تَــذهَـبْ وَتَــعُـود وَتَــجــد لِــ نَــفــسَـكْ “ مَــكـانـاً ” بِـيـنَـهُـمْ
 قواعد وشروط الجروب♥
 1-احترام آراء الآخرين وعدم التلفظ بألفاظ تخدش الحياء
 2- الحفاظ على القيم والعادات والتقاليد
@@ -12,9 +12,10 @@ const ZiaRein3 = `●═══════❍═══════●\nالــ�
 يتعامل فيها كل عضو بمايريد مع العلم ان التعليق يعبر عن شخصيتك
 5 - عدم وضع صور إباحية ومثيرة جدا وذلك تفاديا لإثارة المشاكل من قبل بعض
 الأعضاء
-6- عدم إزعاج البنات بطلبات الأضافة داخل الجروب أو الرسائل غير
-اللائقة.....يتم تنبيه العضو لمره واحده واذا لم يستجب العضو المعني يحذف
-على الفور
+\n●═══════❍═══════●`;
+
+const ZiaRein3Part2 = `●═══════❍═══════●\n
+6- عدم إزعاج البنات بطلبات الأضافة داخل الجروب أو الرسائل غير اللائقة.....يتم تنبيه العضو لمره واحده واذا لم يستجب العضو المعني يحذف على الفور
 7- عدم نشر اي صفحه في هذا للجروب
 تنبيه العضو لمره واحده واذا لم يستجب العضو المعني يحذف على الفور
 8- التشهير والتشويه لعضو ما او إنسان ما ؟ داخل الجروب يمنع منعا باتا
@@ -28,11 +29,14 @@ const ZiaRein3 = `●═══════❍═══════●\nالــ�
 12_ اى شاب يحاول الدخول باسم بنت مصيره #الطرد
 .......اي شخص يسيء للجروب سيتم حظره
 ...... ? فأتمنى أن نبقى اخوة ? .....
+\n●═══════❍═══════●`;
+
+const ZiaRein3Part3 = `●═══════❍═══════●\n
 لن نجبر أحداً على دخول المجموعة ولا على البقاء فيها !!!
 ولكني ألتمس من الموجودين فيها إحترام قوانينها.
 المجموعه منكم ولكم وانتم من يتصرف بمجريات الامور وكلنا تقة فيكم
 ارجوا من الجميع الالتزام ولكم خالص الشكر والتقدير على التعاون
-\n\t\tAdmins\n●═══════❍═══════●`;
+\n●═══════❍═══════●`;
 
 const ZiaRein = [
   "https://i.imgur.com/huumLca.jpg",
@@ -42,9 +46,10 @@ const ZiaRein = [
   "https://i.imgur.com/NcbC8Pn.jpg",
 ];
 
-const ZiaRein2 = (api, event) => {
-  api.sendMessage({ body: ZiaRein3, attachment: fs.createReadStream(process.cwd() + "/cache/ZiaRein1.jpg") }, event.threadID, () => {
-    fs.unlinkSync(process.cwd() + "/cache/ZiaRein1.jpg");
+const ZiaRein2 = (api, event, part) => {
+  const imageUrl = process.cwd() + "/cache/ZiaRein1.jpg";
+  api.sendMessage({ body: part, attachment: fs.createReadStream(imageUrl) }, event.threadID, () => {
+    fs.unlinkSync(imageUrl);
   }, event.messageID);
 };
 
@@ -65,12 +70,12 @@ const execute = async ({ api, event }) => {
   return request(encodeURI(ZiaRein[Math.floor(Math.random() * ZiaRein.length)]))
     .pipe(fs.createWriteStream(process.cwd() + "/cache/ZiaRein1.jpg"))
     .on("close", () => {
-      ZiaRein2(api, event);
-      api.sendMessage("رد على هذه الرسالة بـ 'تم' إذا قرأت القواعد ووافقت على شروطها", event.threadID, (err, info) => {
+      ZiaRein2(api, event, ZiaRein3Part1);
+      api.sendMessage("رد على هذه الرسالة بـ 'التالي' لمتابعة القراءة", event.threadID, (err, info) => {
         if (!err) {
           global.client.handler.reply.set(info.messageID, {
             author: event.senderID,
-            type: "pick",
+            type: "rulesPart1",
             name: "قواعد",
             unsend: true,
           });
@@ -88,20 +93,63 @@ const onReply = async ({ api, event, reply }) => {
     userList = JSON.parse(data);
   }
 
-  if (reply.type === "pick" && event.senderID === reply.author) {
+  if (reply.author !== event.senderID) {
+    api.setMessageReaction("🚫", event.messageID, () => {}, true);
+    return api.sendMessage("❌ | لا يمكنك تأكيد الموافقة على القواعد. هذا الرد مخصص للشخص الذي طلب القواعد فقط.", event.threadID, event.messageID);
+  }
+
+  if (reply.type === "rulesPart1") {
+    if (event.body.trim().toLowerCase() === "التالي") {
+      ZiaRein2(api, event, ZiaRein3Part2);
+      api.sendMessage("رد على هذه الرسالة بـ 'مفهوم' لمتابعة القراءة", event.threadID, (err, info) => {
+        if (!err) {
+          global.client.handler.reply.set(info.messageID, {
+            author: event.senderID,
+            type: "rulesPart2",
+            name: "قواعد",
+            unsend: true,
+          });
+        }
+      });
+    } else {
+      api.setMessageReaction("🚫", event.messageID, () => {}, true);
+      api.sendMessage("⚠️ | يجب الرد بـ 'التالي' لمتابعة القراءة.", event.threadID, event.messageID);
+    }
+  } else if (reply.type === "rulesPart2") {
+    if (event.body.trim().toLowerCase() === "مفهوم") {
+      ZiaRein2(api, event, ZiaRein3Part3);
+      api.sendMessage("رد على هذه الرسالة بـ 'تم' إذا قرأت القواعد ووافقت على شروطها.", event.threadID, (err, info) => {
+        if (!err) {
+          global.client.handler.reply.set(info.messageID, {
+            author: event.senderID,
+            type: "confirmRules",
+            name: "قواعد",
+            unsend: true,
+          });
+        }
+      });
+    } else {
+      api.setMessageReaction("🚫", event.messageID, () => {}, true);
+      api.sendMessage("⚠️ | يجب الرد بـ 'مفهوم' لمتابعة القراءة.", event.threadID, event.messageID);
+    }
+  } else if (reply.type === "confirmRules") {
     if (event.body.trim().toLowerCase() === "تم") {
       userList.push(event.senderID);
       fs.writeFileSync(userListPath, JSON.stringify(userList, null, 2));
 
-      api.setMessageReaction("✅", event.messageID, () => {}, true);
-      api.sendMessage(`تهانينا يا ${event.senderID} أنت الآن قد وافقت على شروط مجموعتنا. نتمنى أن تطبق القواعد وأن تستمتع معنا هنا ☺️`, event.threadID, event.messageID);
+      api.getUserInfo(event.senderID, (err, userInfo) => {
+        if (err) {
+          return console.error(err);
+        }
+        const userName = userInfo[event.senderID].name;
+
+        api.setMessageReaction("✅", event.messageID, () => {}, true);
+        api.sendMessage(`تهانينا يا ${userName} أنت الآن قد وافقت على شروط مجموعتنا ، أهلا بك معنا ☺️`, event.threadID, event.messageID);
+      });
     } else {
       api.setMessageReaction("🚫", event.messageID, () => {}, true);
       api.sendMessage("⚠️ | يجب الرد بـ 'تم' لتأكيد الموافقة على القواعد.", event.threadID, event.messageID);
     }
-  } else {
-    api.setMessageReaction("🚫", event.messageID, () => {}, true);
-    api.sendMessage("❌ | لا يمكنك تأكيد الموافقة على القواعد. هذا الرد مخصص للشخص الذي طلب القواعد فقط.", event.threadID, event.messageID);
   }
 };
 
