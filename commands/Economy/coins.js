@@ -4,6 +4,7 @@ export default {
   cooldowns: 5,
   description: "يعرض رصيدك المالي أو رصيد شخص آخر!",
   role: "member",
+  aliases:["رصيد"];
   async execute({ api, event, Economy, args }) {
     try {
       let targetID = event.senderID; // افتراضيًا، نبدأ برصيد المستخدم الحالي
