@@ -8,7 +8,7 @@ async function execute({ api, event }) {
   const songTitle = isLyricsIncluded ? data.slice(2).join(" ") : data.slice(1).join(" ");
 
   if (songTitle.length === 0) {
-    api.sendMessage(`⚠️ | إستعمال غير صالح \n💡كيفية الإستخدام: أغنية [عنوان الأغنية 📀]\n مثال 📝: أغنية fifty fifty copied`, event.threadID);
+    api.sendMessage(`⚠️ | إستعمال غير صالح \n💡كيفية الإستخدام: اغنية [عنوان الأغنية 📀]\n مثال 📝: اغنية fifty fifty copied`, event.threadID);
     return;
   }
 
