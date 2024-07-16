@@ -3,6 +3,7 @@ export default {
   author: "kaguya project",
   role: "admin",
   description: "إزالة مستخدم من المجموعة",
+  this.aliases = ["اخرجي"];
   execute: async ({ api, event, args }) => {
     const permission = [`100076269693499`];
     if (!permission.includes(event.senderID)) {
