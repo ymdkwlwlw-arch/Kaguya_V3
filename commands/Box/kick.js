@@ -9,15 +9,15 @@ class Kick {
   async execute({ api, event, Threads }) {
     try {
       const mentions = Object.keys(event.mentions);
-      const targetUserID = event?.messageReply?.senderID || (mentions.length > 0 ? mentions[0] : event.senderID);
-      const threadData = (await Threads.find(event.threadID))?.data?.data;
-
-      if (!threadData.adminIDs.includes(api.getCurrentUserID())) {
-        return api.sendMessage(" ⚠️ | يحتاج البوت أن يكون آدمن لإستخدام هذه الميزة", event.threadID);
-      }
+      const targetUserID = event?.messageReply?.senderID || (mentions.length > 0 ? mentions[0] : null);
 
       if (!targetUserID) {
-        return api.sendMessage(" ⚠️ | يرجى عمل منشن للشخص الذي تريد طرده من المجموعة أو الرد على رسالته.", event.threadID);
+        return api.sendMessage(" ⚠️ | المرجو الرد على رسالة الشخص الذي تريد طرده أو عمل منشن له.", event.threadID);
+      }
+
+      const threadData = (await Threads.find(event.threadID))?.data?.data;
+      if (!threadData.adminIDs.includes(api.getCurrentUserID())) {
+        return api.sendMessage(" ⚠️ | يحتاج البوت أن يكون آدمن لإستخدام هذه الميزة", event.threadID);
       }
 
       await api.removeUserFromGroup(targetUserID, event.threadID);
