@@ -7,7 +7,7 @@ class CheckTT {
     this.author = "Kaguya Project";
     this.role = "member";
     this.description = "الحصول على مال اليومي كل يوم";
-    this.aliases = ["diemdanh"];
+    this.aliases = ["هديه"];
     this.cooldowns = 3600; // 3600 ثانية تعني ساعة واحدة
   }
 
