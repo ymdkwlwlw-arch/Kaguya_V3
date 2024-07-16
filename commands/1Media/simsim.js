@@ -5,6 +5,7 @@ export default {
   author: "Kaguya Project",
   role: "member",
   description: "يدردش معك ويرد برسالة عند الرد عليه.",
+  aliases:["بوت"],
 
   async execute({ api, event, client }) {
     const { threadID, messageID, body, senderID } = event;
