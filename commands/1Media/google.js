@@ -14,7 +14,7 @@ export default {
 
     if (searchQuery) {
         try {
-            const response = await axios.get(`https://samirxpikachu.onrender.com/google/imagesearch?q=${encodeURIComponent(searchQuery)}`);
+            const response = await axios.get(`https://www.samirxpikachu.run.place/google/imagesearch?q=${encodeURIComponent(searchQuery)}`);
             const data = response.data.data;
             const imgData = [];
 
