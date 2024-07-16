@@ -21,8 +21,7 @@ async function getMessageCounts(api, threadId) {
 
     const messages = await api.getThreadHistory(threadId, 10000); // زيادة الحد لزيادة عدد الرسائل المسترجعة
     messages.forEach(message => {
-      const messageSender = message.senderID;
-      if (messageCounts[messageSender] !== undefined) {
+ lll      if (messageCounts[messageSender] !== undefined) {
         messageCounts[messageSender]++;
       }
     });
@@ -35,11 +34,11 @@ async function getMessageCounts(api, threadId) {
 }
 
 export default {
-  name: "ايدي",
+  name: "معلوماتي",
   author: "Kaguya Project",
   role: "member",
   description: "جلب معلومات العضو.",
-   aliases : ["ستالك"];
+  aliases: ["ايدي"],
   execute: async function({ api, event, args, Economy }) {
     try {
       const uid = event?.messageReply?.senderID || (Object.keys(event.mentions).length > 0 ? Object.keys(event.mentions)[0] : event.senderID);
@@ -58,18 +57,18 @@ export default {
       const money = balanceResult.data;
 
       const userDataFile = path.join(process.cwd(), 'pontsData.json');
-      const userData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
-      const userPoints = userData[event.senderID]?.points || 0;
+  const userData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
+  const userPoints = userData[event.senderID]?.points || 0;
 
       // جلب عدد الرسائل للمستخدم
       const messageCounts = await getMessageCounts(api, event.threadID);
       const userMessageCount = messageCounts[uid] || 0;
 
-      // تصنيف المستخدم باستخدام عدد النقاط
-      const rank = getRank(userPoints);
+      // تصنيف المستخدم باستخدام عدد الرسائل
+      const rank = getRank(userMessageCount);
 
-      const message = `
-•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${money}』 دولار\n❏🎖️ نقاطك : 『${userPoints}』 نقطة\n❏📩 عدد الرسائل : 『${userMessageCount}』\n❏صديق؟: 『${userIsFriend}』\n❏عيد ميلاد اليوم؟: 『${isBirthdayToday}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』\n🔖 | العب الالعاب من أجل ان تكسب نقاط تجعلك في القمة\n`;
+      const message = `╼╾────⊹⊱⊰⊹────╼╾\n\t\t
+•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${money}』 دولار\n❏🎖️ نقاطك : 『${userPoints}』 نقطة\n❏📩 عدد الرسائل : 『${userMessageCount}』\n❏صديق؟: 『${userIsFriend}』\n❏عيد ميلاد اليوم؟: 『${isBirthdayToday}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』\n╼╾────⊹⊱⊰⊹────╼╾`;
 
       api.sendMessage({
         body: message,
@@ -83,18 +82,18 @@ export default {
   }
 }
 
-// دالة لتحديد تصنيف المستخدم بناءً على عدد النقاط
-function getRank(userPoints) {
-  if (userPoints >= 10000) return 'خارق🥇';
-  if (userPoints >= 7000) return '🥈عظيم';
-  if (userPoints >= 6000) return '👑أسطوري';
-  if (userPoints >= 5000) return 'نشط🔥 قوي';
-  if (userPoints >= 4000) return '🌠نشط';
-  if (userPoints >= 3000) return 'متفاعل🏅 قوي';
-  if (userPoints >= 2000) return '🎖️متفاعل جيد';
-  if (userPoints >= 1000) return '🌟متفاعل';
-  if (userPoints >= 800) return '✨لا بأس';
-  if (userPoints >= 600) return '👾مبتدأ';
-  if (userPoints >= 300) return '🗿صنم';
+// دالة لتحديد تصنيف المستخدم بناءً على عدد الرسائل
+function getRank(userMessageCount) {
+  if (userMessageCount >= 3000) return 'خارق🥇';
+  if (userMessageCount >= 2000) return '🥈عظيم';
+  if (userMessageCount >= 1000) return '👑أسطوري';
+  if (userMessageCount >= 500) return 'نشط🔥 قوي';
+  if (userMessageCount >= 400) return '🌠نشط';
+  if (userMessageCount >= 300) return 'متفاعل🏅 قوي';
+  if (userMessageCount >= 200) return '🎖️متفاعل جيد';
+  if (userMessageCount >= 100) return '🌟متفاعل';
+  if (userMessageCount >= 50) return '✨لا بأس';
+  if (userMessageCount >= 10) return '👾مبتدأ';
+  if (userMessageCount >= 5) return '🗿صنم';
   return 'ميت⚰️';
-          }
+    }
