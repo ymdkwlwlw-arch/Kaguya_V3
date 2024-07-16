@@ -39,6 +39,7 @@ export default {
   author: "Kaguya Project",
   role: "member",
   description: "جلب معلومات العضو.",
+   aliases : ["ستالك"];
   execute: async function({ api, event, args, Economy }) {
     try {
       const uid = event?.messageReply?.senderID || (Object.keys(event.mentions).length > 0 ? Object.keys(event.mentions)[0] : event.senderID);
