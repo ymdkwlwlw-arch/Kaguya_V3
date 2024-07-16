@@ -21,7 +21,8 @@ async function getMessageCounts(api, threadId) {
 
     const messages = await api.getThreadHistory(threadId, 10000); // زيادة الحد لزيادة عدد الرسائل المسترجعة
     messages.forEach(message => {
- lll      if (messageCounts[messageSender] !== undefined) {
+      const messageSender = message.senderID;
+      if (messageCounts[messageSender] !== undefined) {
         messageCounts[messageSender]++;
       }
     });
@@ -57,8 +58,8 @@ export default {
       const money = balanceResult.data;
 
       const userDataFile = path.join(process.cwd(), 'pontsData.json');
-  const userData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
-  const userPoints = userData[event.senderID]?.points || 0;
+      const userData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
+      const userPoints = userData[event.senderID]?.points || 0;
 
       // جلب عدد الرسائل للمستخدم
       const messageCounts = await getMessageCounts(api, event.threadID);
@@ -96,4 +97,4 @@ function getRank(userMessageCount) {
   if (userMessageCount >= 10) return '👾مبتدأ';
   if (userMessageCount >= 5) return '🗿صنم';
   return 'ميت⚰️';
-    }
+  }
