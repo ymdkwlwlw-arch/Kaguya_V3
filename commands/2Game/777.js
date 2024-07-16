@@ -4,7 +4,7 @@ class JackpotGame {
   cooldowns = 10;
   description = "مغامرة رهانات فاكهية مع فرص الفوز بالجائزة الكبرى !";
   role = "member";
-  aliases = [مراهنة];
+  aliases = ["مراهنة"];
 
   async execute({ event, Economy, args }) {
     const MIN_BET_AMOUNT = 100;
