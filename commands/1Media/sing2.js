@@ -108,6 +108,7 @@ export default {
   name: "غني", 
   author: "حسين يعقوبي", 
   role: "member", 
-  description: "تشغيل الأغاني وعرض كلماتها إذا توفرت.", 
+  description: "تشغيل الأغاني وعرض كلماتها إذا توفرت.",
+  aliases : ["اغنية"];
   execute: execute 
 };
