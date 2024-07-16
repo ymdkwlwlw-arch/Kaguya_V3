@@ -4,35 +4,6 @@ import path from 'path';
 import tinyurl from 'tinyurl';
 import { join } from 'path';
 
-const handleEvent = async ({ api, event, commands, client }) => {
-  try {
-    // التحقق مما إذا كان الحدث يتعلق برسالة جديدة أو رد على رسالة
-    if (event.type === "message" || event.type === "message_reply") {
-      const command = commands.find(cmd => event.body && event.body.toLowerCase().includes(cmd.name.toLowerCase()));
-
-      if (command) {
-        // تنفيذ الدالة execute للرسائل الجديدة
-        if (typeof command.execute === "function") {
-          await command.execute({ api, event, client });
-        }
-      }
-
-      // التحقق مما إذا كان هناك ردود محددة
-      client.handler.reply.forEach(async (reply) => {
-        if (reply.author === event.senderID) {
-          const commandReply = commands.find(cmd => cmd.name === reply.name);
-
-          if (commandReply && typeof commandReply.onReply === "function") {
-            await commandReply.onReply({ api, event, reply, client });
-          }
-        }
-      });
-    }
-  } catch (error) {
-    console.error("Error in handleEvent:", error);
-  }
-};
-
 // مثال على تعريف الأوامر
 const commands = [
   {
@@ -116,6 +87,5 @@ const commands = [
   }
 ];
 
-// تصدير الدالة والأوامر
+// تصدير الأوامر
 export default { commands };
-export { handleEvent };
