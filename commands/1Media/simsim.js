@@ -34,8 +34,8 @@ export default {
 
     if (reply.author === senderID) {
       try {
-        const response = await axios.get(`https://joshweb.click/new/gpt-4_adv?prompt=${encodeURIComponent(body)}`);
-        const replyMessage = response.data.result.reply || "عذرا، لم أتمكن من فهم رسالتك.";
+        const response = await axios.get(`https://simsimi.site/api/v2/?mode=talk&lang=ar&message=${encodeURIComponent(body)}&filter=true`);
+        const replyMessage = response.data.success || "عذرا، لم أتمكن من فهم رسالتك.";
 
         api.sendMessage(replyMessage, threadID, (error, info) => {
           if (!error) {
