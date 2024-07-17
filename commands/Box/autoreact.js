@@ -8,7 +8,7 @@ export default {
 
   execute: async ({ api, event, client }) => {
     try {
-      api.sendMessage("💬 𝗖𝗵𝗮𝘁𝗚𝗣𝗧\n\nاهلا كيف يمكنني مساعدتك ؟ ☺️", event.threadID, event.messageID);
+      api.sendMessage("", event.threadID, event.messageID);
 
       const { threadID, messageID, body, senderID } = event;
 
