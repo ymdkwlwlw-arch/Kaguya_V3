@@ -6,7 +6,7 @@ export default {
   cooldowns: 60,
   
   async execute({ api, event }) {
-    const supportGroupId = ""; // uid/tid of your support group
+    const supportGroupId = "7474918272587613"; // uid/tid of your support group
     const threadID = event.threadID;
 
     try {
