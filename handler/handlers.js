@@ -21,67 +21,72 @@ export class CommandHandler {
     this.handler = this.client?.handler || {};
     this.events = this.client?.events || {};
   }
-async handleCommand() {
-  try {
-    const { Users, Threads, api, event } = this.arguments;
-    const { body, threadID, senderID, isGroup, messageID } = event;
-    const getThreadPromise = Threads.find(event.threadID);
-    const getUserPromise = Users.find(senderID);
 
-    const [getThread, banUserData] = await Promise.all([getThreadPromise, getUserPromise]);
+  async handleCommand() {
+    try {
+      const { Users, Threads, api, event } = this.arguments;
+      const { body, threadID, senderID, isGroup, messageID } = event;
+      const getThreadPromise = Threads.find(event.threadID);
+      const getUserPromise = Users.find(senderID);
 
-    const banUser = banUserData?.data?.data?.banned;
-    if (banUser?.status && !this.config.ADMIN_IDS.includes(event.senderID)) {
-      return api.sendMessage(getLang("handler.user_ban", banUser.reason), threadID);
-    }
+      const [getThread, banUserData] = await Promise.all([getThreadPromise, getUserPromise]);
 
-    if (isGroup) {
-      const banThread = getThread?.data?.data?.banned;
-
-      if (banThread?.status && !this.config.ADMIN_IDS.includes(event.senderID)) {
-        return api.sendMessage(getLang("handler.thread_ban", banThread.reason), threadID);
+      const banUser = banUserData?.data?.data?.banned;
+      if (banUser?.status && !this.config.ADMIN_IDS.includes(event.senderID)) {
+        return api.sendMessage(getLang("handler.user_ban", banUser.reason), threadID);
       }
-    }
 
-    const [cmd, ...args] = body.trim().split(/\s+/); // حذف استخدام البادئة وتحديد الكلمة الأولى مباشرة
-    const commandName = cmd.toLowerCase();
-    const command = this.commands.get(commandName) || this.commands.get(this.aliases.get(commandName));
+      if (isGroup) {
+        const banThread = getThread?.data?.data?.banned;
 
-    if (!this.cooldowns.has(command.name)) {
-      this.cooldowns.set(command.name, new Map());
-    }
-
-    const currentTime = Date.now();
-    const timeStamps = this.cooldowns.get(commandName);
-    const cooldownAmount = (command.cooldowns ?? 5) * 1000;
-
-    if (!this.config.ADMIN_IDS.includes(senderID)) {
-      if (timeStamps.has(senderID)) {
-        const expTime = timeStamps.get(senderID) + cooldownAmount;
-        if (currentTime < expTime) {
-          const timeLeft = (expTime - currentTime) / 1000;
-          return api.sendMessage(getLang("handler.command_cooldowns", timeLeft.toFixed(1)), threadID, messageID);
+        if (banThread?.status && !this.config.ADMIN_IDS.includes(event.senderID)) {
+          return api.sendMessage(getLang("handler.thread_ban", banThread.reason), threadID);
         }
       }
 
-      timeStamps.set(senderID, currentTime);
-      setTimeout(() => {
-        timeStamps.delete(senderID);
-      }, cooldownAmount);
+      const [cmd, ...args] = body.trim().split(/\s+/);
+      const commandName = cmd.toLowerCase();
+      const command = this.commands.get(commandName) || this.commands.get(this.aliases.get(commandName));
+
+      if (!command) {
+        return api.sendMessage(getLang("handler.command_not_found"), threadID, messageID);
+      }
+
+      if (!this.cooldowns.has(command.name)) {
+        this.cooldowns.set(command.name, new Map());
+      }
+
+      const currentTime = Date.now();
+      const timeStamps = this.cooldowns.get(command.name);
+      const cooldownAmount = (command.cooldowns ?? 5) * 1000;
+
+      if (!this.config.ADMIN_IDS.includes(senderID)) {
+        if (timeStamps.has(senderID)) {
+          const expTime = timeStamps.get(senderID) + cooldownAmount;
+          if (currentTime < expTime) {
+            const timeLeft = (expTime - currentTime) / 1000;
+            return api.sendMessage(getLang("handler.command_cooldowns", timeLeft.toFixed(1)), threadID, messageID);
+          }
+        }
+
+        timeStamps.set(senderID, currentTime);
+        setTimeout(() => {
+          timeStamps.delete(senderID);
+        }, cooldownAmount);
+      }
+
+      const threadInfo = await api.getThreadInfo(threadID);
+      const threadAdminIDs = threadInfo.adminIDs;
+
+      if ((command.role === "admin" || command.role === "owner") && !threadAdminIDs.includes(senderID) && !this.config.ADMIN_IDS.includes(senderID)) {
+        api.setMessageReaction("🚫", event.messageID, (err) => {}, true);
+        return api.sendMessage(getLang("handler.command_noPermission"), threadID, messageID);
+      }
+
+      command.execute({ ...this.arguments, args });
+    } catch (error) {
+      console.log(error);
     }
-
-    const { adminIDs: threadAdminIDs } = await api.getThreadInfo(threadID);
-
-    if ((command.role === "admin" || command.role === "owner") && !threadAdminIDs.includes(senderID) && !this.config.ADMIN_IDS.includes(senderID)) {
-      return 
-         api.setMessageReaction("🚫", event.messageID, (err) => {}, true);
-      api.sendMessage(getLang("handler.command_noPermission"), threadID, messageID);
-    }
-
-    command.execute({ ...this.arguments, args });
-  } catch (error) {
-    console.log(error);
-  }
   }
 
   handleEvent() {
@@ -141,4 +146,4 @@ async handleCommand() {
     }
     command.onReaction && (await command.onReaction({ ...this.arguments, reaction }));
   }
-}
+          }
