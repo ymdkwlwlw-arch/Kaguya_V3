@@ -48,10 +48,6 @@ export class CommandHandler {
       const commandName = cmd.toLowerCase();
       const command = this.commands.get(commandName) || this.commands.get(this.aliases.get(commandName));
 
-      if (!command) {
-        return api.sendMessage(getLang("handler.command_not_found"), threadID, messageID);
-      }
-
       if (!this.cooldowns.has(command.name)) {
         this.cooldowns.set(command.name, new Map());
       }
@@ -146,4 +142,4 @@ export class CommandHandler {
     }
     command.onReaction && (await command.onReaction({ ...this.arguments, reaction }));
   }
-          }
+      }
