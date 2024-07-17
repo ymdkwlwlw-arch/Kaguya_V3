@@ -18,18 +18,18 @@ export default {
   execute: async function ({ api, event, args }) {
     try {
       if (event.type === "message_reply") {
-        if (event.messageReply.attachments[0].type === "sticker") {
-          const stickerID = event.messageReply.attachments[0].ID;
-          const caption = await translate(event.messageReply.attachments[0].description || "No caption");
-          const message = `المعرف : ${stickerID}\n التسمية التوضيحية: ${caption}`;
-          return api.sendMessage({ body: message }, event.threadID);
+        const attachment = event.messageReply.attachments[0];
+        
+        if (attachment.type === "sticker" || attachment.type === "photo") {
+          const itemID = attachment.ID;
+          return api.sendMessage({ body: itemID }, event.threadID);
         } else {
-          return api.sendMessage(" ⚠️ | قم بالرد على ملصق", event.threadID);
+          return api.sendMessage(" ⚠️ | قم بالرد على ملصق أو صورة رمزية", event.threadID);
         }
       } else if (args[0]) {
         return api.sendMessage({ sticker: args[0] }, event.threadID);
       } else {
-        return api.sendMessage(" فقط رد على الملصق اللعيت 😒", event.threadID);
+        return api.sendMessage(" فقط رد على الملصق أو الصورة الرمزية 😒", event.threadID);
       }
     } catch (error) {
       console.error('Error:', error.message);
