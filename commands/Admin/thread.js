@@ -6,21 +6,25 @@ async function randomImageAndUptime({ api, event }) {
     try {
         const searchQueries = ["zoro", "madara", "obito", "luffy", "boa", "kaguya", "hinata",  "itashi", "nizko", "mikasa Ackerman", "nami"]; // إضافة استعلامات البحث عن الصور هنا
 
-        const randomQueryIndex = Math.floor(Math.random() * searchQueries.length);
-        const searchQuery = searchQueries[randomQueryIndex];
+const randomQueryIndex = Math.floor(Math.random() * searchQueries.length);
+const searchQuery = searchQueries[randomQueryIndex];
 
-        const apiUrl = `https://pin-two.vercel.app/pin?search=${encodeURIComponent(searchQuery)}`;
+const apiUrl = `https://joshweb.click/api/pinterest?q=${encodeURIComponent(searchQuery)}`;
 
-        const response = await axios.get(apiUrl);
-        const imageLinks = response.data.result;
+const response = await axios.get(apiUrl);
+const imageLinks = response.data.result;
 
-        const randomImageIndex = Math.floor(Math.random() * imageLinks.length);
-        const imageUrl = imageLinks[randomImageIndex];
+if (imageLinks.length > 0) {
+    const randomImageIndex = Math.floor(Math.random() * imageLinks.length);
+    const imageUrl = imageLinks[randomImageIndex];
 
-        const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-        const imagePath = path.join(process.cwd(), 'cache', `uptime_image.jpg`);
-        await fs.promises.writeFile(imagePath, imageResponse.data);
-
+    const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+    const imagePath = path.join(process.cwd(), 'cache', `uptime_image.jpg`);
+    await fs.promises.writeFile(imagePath, imageResponse.data);
+    console.log(`Image saved to ${imagePath}`);
+} else {
+    console.log("No images found for the given query.");
+}
         const uptime = process.uptime();
         const seconds = Math.floor(uptime % 60);
         const minutes = Math.floor((uptime / 60) % 60);
@@ -59,5 +63,7 @@ async function randomImageAndUptime({ api, event }) {
 export default {
     name: "اوبتايم",
     description: "مدة تشغيل البوت.",
+    role:"member",
+    aliase:["up","ابتايم"]
     execute: randomImageAndUptime
 };
