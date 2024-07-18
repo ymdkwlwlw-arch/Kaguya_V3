@@ -1,7 +1,5 @@
 import moment from 'moment-timezone';
 
-const pendingReports = new Map(); // لتخزين الرسائل المرسلة ومعرفات الرسائل
-
 export default {
   name: "تقرير",
   version: "1.0.0",
@@ -23,7 +21,7 @@ export default {
     const date = moment().tz(timezone).format('MM/DD/YY');
     const time = moment().tz(timezone).format('h:mm:ss A');
 
-    const developerMessage = `◆❯━━━━━▣✦▣━━━━━━❮◆\n🧾 | لديك رسالة ، سينسي\n من طرف @${senderName}\n\n${message}\n⏰ | الوقت : ${time} (${timezone})\n📅 | التاريخ : ${date}\n◆❯━━━━━▣✦▣━━━━━━❮◆`;
+    const developerMessage = `◆❯━━━━━▣✦▣━━━━━━━❮◆\n🧾 | لديك رسالة ، سينسي\n من طرف @${senderName}\n\n${message}\n⏰ | الوقت : ${time} (${timezone})\n📅 | التاريخ : ${date}\n◆❯━━━━━▣✦▣━━━━━━━❮◆`;
     const developerThreadID = '100076269693499';
 
     try {
@@ -35,7 +33,13 @@ export default {
         }],
       }, developerThreadID);
 
-      pendingReports.set(sentMessage.messageID, senderID);
+      // تخزين معلومات الرسالة
+      global.client.handler.reply.set(sentMessage.messageID, {
+        author: senderID,
+        type: "reply",
+        name: "تقرير",
+        unsend: false,
+      });
 
       api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
@@ -46,18 +50,17 @@ export default {
     }
   },
 
-  async onReply({ api, event }) {
-    const { messageID, body, senderID } = event;
+  async onReply({ api, event, reply }) {
+    const { messageID, body } = event;
 
-    if (pendingReports.has(messageID)) {
-      const originalSenderID = pendingReports.get(messageID);
-      pendingReports.delete(messageID); // إزالة التقرير بعد الرد عليه
+    if (reply.type === "reply" && reply.name === "تقرير") {
+      const originalSenderID = reply.author;
 
       try {
         await api.sendMessage({
-          body: `࿇ ══━━━✥◈✥━━━══ ࿇\n📝 | رد من المطور : \n\t\t${body}\n࿇ ══━━━✥◈✥━━━══ ࿇`,
+          body: `📝 | رد المطور: ${body}`,
           mentions: [{
-            tag: `@${await getUserName(originalSenderID)}`,
+            tag: `@${await getUserName(api, originalSenderID)}`,
             id: originalSenderID,
           }],
         }, originalSenderID);
@@ -74,7 +77,7 @@ export default {
 };
 
 // Helper function to get user name
-async function getUserName(userID) {
+async function getUserName(api, userID) {
   const userInfo = await api.getUserInfo(userID);
   return userInfo && userInfo[userID] ? userInfo[userID].name : `@${userID}`;
-  }
+}
