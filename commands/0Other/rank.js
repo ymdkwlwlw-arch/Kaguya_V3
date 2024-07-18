@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import axios from 'axios';
 
 const ManageApprovedGroupsCommand = {
   name: "موافقة",
@@ -14,6 +15,14 @@ const ManageApprovedGroupsCommand = {
     const action = args[0].toLowerCase();
     const threadID = args[1];
     const approvedThreadsFile = path.join(process.cwd(), 'approved.json');
+    const imageUrl = 'https://i.imgur.com/mRei7fC.jpeg';
+    const cacheDir = path.join(process.cwd(), 'cache');
+    const imagePath = path.join(cacheDir, 'approval_image.jpeg');
+
+    // Create cache directory if it doesn't exist
+    if (!fs.existsSync(cacheDir)) {
+      fs.mkdirSync(cacheDir);
+    }
 
     // Load existing approved thread data from the JSON file
     let approvedThreads = {};
@@ -38,11 +47,30 @@ const ManageApprovedGroupsCommand = {
         // Save updated approvedThreads object back to the JSON file
         fs.writeFileSync(approvedThreadsFile, JSON.stringify(approvedThreads, null, 2), 'utf8');
 
-        // Send a message indicating that the thread is approved
-        api.sendMessage(`المجموعة "${threadData.threadName}" (آيدي: ${threadID}) تمت الموافقة عليها وتخزينها.`, event.threadID);
+        // Download the image
+        const response = await axios({
+          url: imageUrl,
+          responseType: 'stream',
+        });
 
-        // Send approval message to the group
-        api.sendMessage("✿━━━━━━━━━━━━━━━━✿\n✅ |تمت الموافقة على المجموعة من طرف المطور \n═══════❍═══════\nأكتب *اوامر او *قائمة لترى قائمة الأوامر \n═══════❍═══════\nرابط حساب المطور : https://www.facebook.com/profile.php?id=100076269693499\n═══════❍═══════\nاكتب ضيفيني من اجل ان تنضم الى مجموعة البوت\nإذا كان هناك أي مشاكل يرجى التواصل معي\nنهاركم سعيد 🤙 !\n✿━━━━━━━━━━━━━━━━✿", threadID);
+        response.data.pipe(fs.createWriteStream(imagePath))
+          .on('finish', () => {
+            // Send a message indicating that the thread is approved
+            api.sendMessage({
+              body: ` ✅ | المجموعة "${threadData.threadName}" (آيدي: ${threadID}) تمت الموافقة عليها وتخزينها.`,
+              attachment: fs.createReadStream(imagePath),
+            }, event.threadID);
+
+            // Send approval message to the group
+            api.sendMessage({
+              body: "✿━━━━━━━━━━━━━━━━✿\n✅ |تمت الموافقة على المجموعة من طرف المطور \n═══════❍═══════\nأكتب *اوامر او *قائمة لترى قائمة الأوامر \n═══════❍═══════\nرابط حساب المطور : https://www.facebook.com/profile.php?id=100076269693499\n═══════❍═══════\nاكتب ضيفيني من اجل ان تنضم الى مجموعة البوت\nإذا كان هناك أي مشاكل يرجى التواصل معي\nنهاركم سعيد 🤙 !\n✿━━━━━━━━━━━━━━━━✿",
+              attachment: fs.createReadStream(imagePath),
+            }, threadID);
+          })
+          .on('error', (error) => {
+            console.error("Error downloading image:", error.message);
+            api.sendMessage("An error occurred while downloading the image.", event.threadID);
+          });
       } catch (error) {
         // If the thread does not exist, send an error message
         api.sendMessage(`خطأ: المجموعة مع آيدي ${threadID} غير موجود.`, event.threadID);
