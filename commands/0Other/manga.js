@@ -283,32 +283,24 @@ _ 𝒯𝒶𝓀ℯ 𝒸ℴ𝓃𝓉𝓇ℴ𝓁 ℴ𝒻 𝓎ℴ𝓊𝓇 𝒻𝓊�
 
       // اختيار رسالة عشوائية
       
+      
+      // اختيار رسالة عشوائية
       const randomMessageIndex = Math.floor(Math.random() * messages.length);
-const randomMessage = messages[randomMessageIndex];
+      const randomMessage = messages[randomMessageIndex];
 
-// جلب صورة عشوائية
-const searchQueries = ["flowers", "itashi", "Nezko", "joker", "nature"]; // يمكنك إضافة استعلامات بحث إذا كنت ترغب
-const randomQueryIndex = Math.floor(Math.random() * searchQueries.length);
-const searchQuery = searchQueries[randomQueryIndex];
-const apiUrl = `https://joshweb.click/api/pinterest?q=${encodeURIComponent(searchQuery)}`;
+      // جلب صورة عشوائية
+      const searchQuery =[ "flowers","itashi","Nezko","joker","nature"]; // يمكنك إضافة استعلامات بحث إذا كنت ترغب
+      const apiUrl = `https://pin-two.vercel.app/pin?search=${encodeURIComponent(searchQuery)}`;
+      const response = await axios.get(apiUrl);
+      const imageLinks = response.data.result;
 
-const response = await axios.get(apiUrl);
-const imageLinks = response.data.result;
+      const randomImageIndex = Math.floor(Math.random() * imageLinks.length);
+      const imageUrl = imageLinks[randomImageIndex];
 
-if (imageLinks.length > 0) {
-    const randomImageIndex = Math.floor(Math.random() * imageLinks.length);
-    const imageUrl = imageLinks[randomImageIndex];
-
-    // تحميل الصورة وإرسالها مع الرسالة
-    const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
-    const imagePath = path.join(process.cwd(), "cache", `random_image.jpg`);
-    await fs.promises.writeFile(imagePath, imageResponse.data);
-
-    const imageStream = fs.createReadStream(imagePath);
-    // إرسال الصورة والرسالة هنا باستخدام مكتبتك المحددة
-} else {
-    console.log("No images found for the given query.");
-}
+      // تحميل الصورة وإرسالها مع الرسالة
+      const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
+      const imagePath = path.join(process.cwd(), "cache", `random_image.jpg`);
+      await fs.writeFile(imagePath, imageResponse.data);
 api.setMessageReaction("💖", event.messageID, (err) => {}, true);
 
 
