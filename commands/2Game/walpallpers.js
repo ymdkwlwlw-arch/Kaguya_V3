@@ -12,10 +12,10 @@ export default {
   async execute({ api, event }) {
     try {
       // جلب صورة عشوائية من البحث
-      const searchQueries = ["خلفيات فخمة", "خلفيات الأنيمي", "خلفيات بدقة عالية"];
+      const searchQueries = ["Luxury wallpapers", "Anime wallpapers", "High quality wallpapers"];
       const randomQueryIndex = Math.floor(Math.random() * searchQueries.length);
       const searchQuery = searchQueries[randomQueryIndex];
-      const apiUrl = `https://joshweb.click/api/pinterest?q=${encodeURIComponent(searchQuery)}`;
+      const apiUrl = `https://pin-two.vercel.app/pin?search=${encodeURIComponent(searchQuery)}`;
 
       const response = await axios.get(apiUrl);
       const imageLinks = response.data.result;
@@ -25,7 +25,7 @@ export default {
         const imageUrl = imageLinks[randomImageIndex];
 
         const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
-        const imagePath = path.join(process.cwd(), "cache", `random_image.jpg`);
+        const imagePath = path.join(process.cwd(), 'cache', `wallpapers.jpg`);
         await fs.promises.writeFile(imagePath, imageResponse.data);
 
         const imageStream = fs.createReadStream(imagePath);
