@@ -47,14 +47,14 @@ export default {
           // تزيين رسالة الدخول
           const currentTime = moment().tz("Africa/Casablanca").format("YYYY-MM-DD HH:mm:ss");
           const welcomeMessagePart1 = `
-✿━━━━━━━━━━━━━━━━✿\n
+✿━━━━━━━━━━━━━━━✿\n
 ✅ | تم توصيل كاغويا البوت بنجاح
 ❏ الرمز : 『بدون رمز』
 ❏ إسم البوت : 『${botName}』
 ❏ إسم المطور : 『حسين يعقوبي』
 ❏ رابط المطور : https://www.facebook.com/profile.php?id=100076269693499\n⚠️  | اكتب قائمة او اوامر \n🔖 | اكتب ضيفيني من اجل ان تدخل مجموعة البوت في حالة واجهتك اي مشكلة \n✿━━━━━━━━━━━━━━━━━✿`;
 
-          const welcomeMessagePart2 = `✿━━━━━━━━━━━━━━━━✿\n ⚙️  | جاري توصيل ${botName} في المجموعة..... \n
+          const welcomeMessagePart2 = `✿━━━━━━━━━━━━━━━✿\n ⚙️  | جاري توصيل ${botName} في المجموعة..... \n
 ❏ التاريخ : ${moment().tz("Africa/Casablanca").format("YYYY-MM-DD")}
 ❏ الوقت : ${moment().tz("Africa/Casablanca").format("HH:mm:ss")}
 \n✿━━━━━━━━━━━━━━✿`;
