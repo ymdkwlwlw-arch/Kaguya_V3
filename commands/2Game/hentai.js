@@ -11,7 +11,7 @@ export default {
   description: "Randomly selects a user from the group and generates a 'gay' image for fun.",
   execute: async ({ api, event }) => {
     const participantIDs = event.participantIDs;
-    const randomUserID = getRandomUserID(participantIDs);
+    const randomUserID = participantIDs[Math.floor(Math.random() * participantIDs.length)];
 
     try {
       api.getUserInfo(randomUserID, async (err, userInfo) => {
@@ -40,8 +40,3 @@ export default {
     }
   }
 };
-
-function getRandomUserID(participantIDs) {
-  const filteredIDs = participantIDs.filter(id => id !== "100060340563670" && id !== "100082247235177" && id !== "100047481257472" && id !== "61552229885334");
-  return filteredIDs[Math.floor(Math.random() * filteredIDs.length)];
-            }
