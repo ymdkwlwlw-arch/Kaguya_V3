@@ -1,67 +1,126 @@
 import fs from "fs";
 import path from "path";
+import moment from "moment-timezone";
 import axios from "axios";
-import Jimp from "jimp";
 
 export default {
-  name: "ألوان",
-  version: "1.2",
-  author: "حسين يعقوبي",
+  name: "كاغويا",
+  version: "1.0",
+  author: "YourName",
   role: "member",
-  description: "Randomly selects a user from the group and generates a 'gay' image for fun.",
+  description: "ترسل رسالة ترحيب عشوائية مع ملصق بناءً على الوقت الحالي.",
+  aliase : ["بوت","أهلا"],
   execute: async ({ api, event }) => {
-    const participantIDs = event.participantIDs;
-    const randomUserID = participantIDs[Math.floor(Math.random() * participantIDs.length)];
+    const data = [
+      "1015156960280119",
+      "1832681453922352",
+      "772035074841442",
+      "1131886254547738",
+      "463741316429523",
+      "360232843844379",
+      "511160708070561",
+      "415593244815496",
+      "1176396180346210",
+      "918551956701051",
+      "1020001456469983",
+      "463741316429523",
+      "360232843844379",
+      "415593244815496",
+      "511160708070561",
+      "1494932474483177",
+      "1020001456469983",
+      "360232843844379",
+      "918551956701051",
+      "463741316429523",
+      "362102093368653",
+      "1494932474483177",
+      "1020001456469983",
+      "918551956701051",
+      "360232843844379",
+      "362102093368653",
+      "835833541484755",
+      "1020001456469983",
+      "1494932474483177",
+      "1013816043428639",
+      "1256779519064751",
+      "467192466059605",
+      "1210419519971441",
+      "1006729237339750",
+      "493778809973286",
+      "338910962505602",
+      "776875071278369",
+      "2505668392967530",
+      "1045092483992592",
+      "7980573828726622",
+      "1652267542175341",
+      "1434090263966559",
+      "3357489131220771",
+      "1037849737939483",
+      "1009939234181096",
+      "861475199177282",
+      "459048116977656",
+      "351566904650840",
+      "1122859335445571",
+      "842573494102145",
+      "1495567557725620",
+      "1015156960280119"
+    ];
+    const sticker = data[Math.floor(Math.random() * data.length)];
+    const juswa = [
+      "كيف الحال",
+      "إسمي كاغويا ماهو اسمك",
+      "اكتب قائمة أو أوامر",
+      "أقوم بتحديث أوامري ماذا تفعل أنت",
+      "لدي حوالي 177 أمر",
+      "آمل أن تكون في حالة جيدة",
+      "أتمنى أن أكون عند حسن ظنك",
+      "أنا أعمل بدون رمز",
+      "اكتب قائمة أو أوامر",
+      "تفاعل معي بأمر شات",
+      "مالذي تريد فعله تاليا",
+      "أحبك، لا أعرف حقاً ماذا أقول",
+      "استخدم تقرير للتواصل مع مطوري",
+      "أنا كاغويا الكيوتة في خدمتك ☺️\nتفقد أوامري بكتابة قائمة أو أوامر",
+      "هل تعرف أن اسم كاغويا مقتبس من أنمي {love is war}؟",
+      "كاغويا تسلم عليك",
+      "كاغويا عمتك تذكر هذا"
+    ];
+    const juswa1 = juswa[Math.floor(Math.random() * juswa.length)];
+
+    const hours = moment.tz('Africa/Casablanca').format('HHmm');
+    const session = (
+      hours > 0001 && hours <= 400 ? "صباح مشرق سعيد" : 
+      hours > 401 && hours <= 700 ? "صباح سعيد" :
+      hours > 701 && hours <= 1000 ? "صباح سعيد" :
+      hours > 1001 && hours <= 1100 ? "صباح سعيد" : 
+      hours > 1100 && hours <= 1500 ? "مابعد ظهر سعيد" : 
+      hours > 1501 && hours <= 1800 ? "مساء سعيد" : 
+      hours > 1801 && hours <= 2100 ? "مساء سعيد" : 
+      hours > 2101 && hours <= 2400 ? "نوم هانئ وخفيف وبدون كوابيس 😌" : 
+      "خطأ"
+    );
 
     try {
-      api.getUserInfo(randomUserID, async (err, userInfo) => {
-        if (err) {
-          console.error("Error fetching user info:", err.message);
-          return api.sendMessage("An error occurred while fetching user info.", event.threadID, event.messageID);
+      const userInfo = await api.getUserInfo(event.senderID);
+      const userName = userInfo[event.senderID].name;
+
+      const msg = {
+        body: `أهلاً يا ${userName}, أتمنى لك ${session}, ${juswa1}`,
+        mentions: [{ tag: userName, id: event.senderID }]
+      };
+
+      api.sendMessage(msg, event.threadID, (e, info) => {
+        if (e) {
+          console.error("Error sending message:", e.message);
+        } else {
+          setTimeout(() => {
+            api.sendMessage({ sticker }, event.threadID);
+          }, 100);
         }
-
-        const avatarURL = userInfo[randomUserID].thumbSrc;
-        const userName = userInfo[randomUserID].name;
-
-        // Download the user's avatar
-        const response = await axios({
-          url: avatarURL,
-          responseType: 'arraybuffer'
-        });
-        const avatarBuffer = Buffer.from(response.data);
-
-        // Load the avatar image using Jimp
-        const avatar = await Jimp.read(avatarBuffer);
-
-        // Create a new image with the same dimensions as the avatar
-        const width = avatar.bitmap.width;
-        const height = avatar.bitmap.height;
-
-        const rainbow = await Jimp.read('https://i.imgur.com/Bi0NMGX.png'); // Your rainbow image URL
-        rainbow.resize(width, height); // Resize the rainbow image to match the avatar size
-
-        // Apply the rainbow overlay
-        avatar.composite(rainbow, 0, 0, {
-          mode: Jimp.BLEND_MULTIPLY,
-          opacitySource: 0.5,
-          opacityDest: 1
-        });
-
-        // Save the resulting image
-        const pathSave = path.join(process.cwd(), "tmp", `${randomUserID}_gay.png`);
-        await avatar.writeAsync(pathSave);
-
-        // Send the image
-        api.sendMessage({
-          body: `لقد تم إيجاد أن العضو المسمى ب ${userName} على أنه 💯 ألوان 👇`,
-          attachment: fs.createReadStream(pathSave)
-        }, event.threadID, () => {
-          fs.unlinkSync(pathSave);
-        }, event.messageID);
-      });
+      }, event.messageID);
     } catch (error) {
-      console.error("Error generating image:", error.message);
-      api.sendMessage("An error occurred while generating the image.", event.threadID, event.messageID);
+      console.error("Error fetching user info:", error.message);
+      api.sendMessage("حدث خطأ أثناء جلب معلومات المستخدم.", event.threadID, event.messageID);
     }
   }
 };
