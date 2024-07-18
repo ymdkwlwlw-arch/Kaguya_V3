@@ -9,7 +9,7 @@ export default {
   author: "YourName",
   role: "member",
   description: "ترسل رسالة ترحيب عشوائية مع ملصق بناءً على الوقت الحالي.",
-  aliase : ["بوت","أهلا"],
+  aliases : ["بوت","أهلا"],
   execute: async ({ api, event }) => {
     const data = [
       "1015156960280119",
