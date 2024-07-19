@@ -40,14 +40,14 @@ export default {
       api.setMessageReaction('🌟', event.messageID, (err) => {}, true);
 
       // تنسيق رسالة المعلومات
-      const message = `࿇ ══━━━━✥◈✥━━━━══ ࿇
+      const message = `࿇ ══━━━✥◈✥━━━══ ࿇
       •——[معلومات حول المالك]——•
       ❏ الاسم: 『${ownerInfo.name}』
       ❏ الجنس: 『${ownerInfo.gender}』
       ❏ العمر: 『${ownerInfo.age}』
       ❏ الطول: 『${ownerInfo.height}』 سم
       ❏ رابط الفيسبوك: 『${ownerInfo.facebookLink}』
-      ❏ اللقب:『${ownerInfo.nick}』\n ࿇ ══━━━━✥◈✥━━━━══ ࿇`;
+      ❏ اللقب:『${ownerInfo.nick}』\n ࿇ ══━━━✥◈✥━━━══ ࿇`;
 
       // إرسال الرسالة والفيديو كمرفق
       await api.sendMessage({
