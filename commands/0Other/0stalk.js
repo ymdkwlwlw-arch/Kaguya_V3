@@ -1,29 +1,43 @@
+
 import jimp from 'jimp';
 import fs from 'fs';
 import path from 'path';
 
 async function getProfilePicture(userID) {
   const url = `https://graph.facebook.com/${userID}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
-  const img = await jimp.read(url);
-  const profilePath = `profile_${userID}.png`;
-  await img.writeAsync(profilePath);
-  return profilePath;
+  try {
+    const img = await jimp.read(url);
+    const profilePath = `profile_${userID}.png`;
+    await img.writeAsync(profilePath);
+    return profilePath;
+  } catch (error) {
+    console.error('Error fetching profile picture:', error);
+    throw error;
+  }
 }
 
 async function getMessageCounts(api, threadId) {
   try {
     const participants = await api.getThreadInfo(threadId, { participantIDs: true });
-    const messageCounts = {};
+    if (!participants || !participants.participantIDs) {
+      console.error('Error fetching participants:', participants);
+      return {};
+    }
 
+    const messageCounts = {};
     participants.participantIDs.forEach(participantId => {
       messageCounts[participantId] = 0;
     });
 
     const messages = await api.getThreadHistory(threadId, 10000); // زيادة الحد لزيادة عدد الرسائل المسترجعة
+    if (!messages || !Array.isArray(messages)) {
+      console.error('Error fetching messages:', messages);
+      return messageCounts;
+    }
+
     messages.forEach(message => {
-      const messageSender = message.senderID;
-      if (messageCounts[messageSender] !== undefined) {
-        messageCounts[messageSender]++;
+      if (message.senderID && messageCounts.hasOwnProperty(message.senderID)) {
+        messageCounts[message.senderID]++;
       }
     });
 
@@ -68,8 +82,8 @@ export default {
       // تصنيف المستخدم باستخدام عدد الرسائل
       const rank = getRank(userMessageCount);
 
-      const message = `╼╾────⊹⊱⊰⊹────╼╾\n\t\t
-•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${money}』 دولار\n❏🎖️ نقاطك : 『${userPoints}』 نقطة\n❏📩 عدد الرسائل : 『${userMessageCount}』\n❏صديق؟: 『${userIsFriend}』\n❏عيد ميلاد اليوم؟: 『${isBirthdayToday}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』\n╼╾────⊹⊱⊰⊹────╼╾`;
+      const message = `❛ ━━━━･❪ 🕊️ ❫ ･━━━━ ❜\n\t\t
+•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${money}』 دولار\n❏🎖️ نقاطك : 『${userPoints}』 نقطة\n❏📩 عدد الرسائل : 『${userMessageCount}』\n❏صديق؟: 『${userIsFriend}』\n❏عيد ميلاد اليوم؟: 『${isBirthdayToday}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』\n❛ ━━━━･❪ 🕊️ ❫ ･━━━━ ❜`;
 
       api.sendMessage({
         body: message,
