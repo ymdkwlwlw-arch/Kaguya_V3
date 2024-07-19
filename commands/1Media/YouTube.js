@@ -9,21 +9,30 @@ export default {
   role: "member",
   execute: async ({ args, api, event }) => {
     const songTitle = args.join(" ");
-    const yt = await Innertube.create({ cache: new UniversalCache(false), generate_session_locally: true });
+    const searchUrl = `https://markdevs69-1efde24ed4ea.herokuapp.com/search/youtube?q=${encodeURIComponent(songTitle)}`;
 
     try {
-      const search = await yt.music.search(songTitle, { type: 'video' });
+      // البحث عن الفيديو باستخدام الرابط الخارجي
+      const response = await axios.get(searchUrl);
+      const searchResults = response.data.results;
 
-      if (!search.results[0]) {
+      if (!searchResults || searchResults.length === 0) {
         api.sendMessage("⚠️ | لم يتم العثور على المقطع!", event.threadID, event.messageID);
         return;
       }
 
-      api.sendMessage(`🔍 | جاري البحث عن الفيديو : ${songTitle}\n ⏱️ |يرجى الانتظار......`, event.threadID, event.messageID);
+      // الحصول على أول نتيجة
+      const video = searchResults[0];
+      const videoId = video.id.videoId;
+      const videoTitle = video.snippet.title;
 
-      const info = await yt.getBasicInfo(search.results[0].id);
-      const url = info.streaming_data?.formats[0].decipher(yt.session.player);
-      const stream = await yt.download(search.results[0].id, {
+      api.sendMessage(`🔍 | جاري البحث عن الفيديو : ${videoTitle}\n ⏱️ |يرجى الانتظار......`, event.threadID, event.messageID);
+
+      // إعداد مكتبة Innertube
+      const yt = await Innertube.create({ cache: new UniversalCache(false), generate_session_locally: true });
+
+      // تحميل الفيديو
+      const stream = await yt.download(videoId, {
         type: 'video+audio', // audio, video or video+audio
         quality: 'best', // best, bestefficiency, 144p, 240p, 480p, 720p and so on.
         format: 'mp4' // media container format 
@@ -69,7 +78,7 @@ export default {
 
         const messageBody = `حجم الفيديو ⚙️: ${fileSizeInMB.toFixed(2)} ميجابايت\nسرعة التحميل 💹: ${downloadSpeedInMbps.toFixed(2)} ميغابايت في الثانية\nمدة التحميل ⏰: ${downloadTimeInSeconds.toFixed(2)} ثانية`;
 
-        const titleMessage = ` ✅ | تم تحميل الفيديو بنجاح\nعنوان الفيديو 📋 : ${info.basic_info['title']}\n`;
+        const titleMessage = ` ✅ | تم تحميل الفيديو بنجاح\nعنوان الفيديو 📋 : ${videoTitle}\n`;
         api.sendMessage({
           body: `${titleMessage}${messageBody}`,
           attachment: fs.createReadStream(`./temp/video.mp4`)
