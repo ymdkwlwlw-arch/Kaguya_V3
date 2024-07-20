@@ -7,6 +7,7 @@ export default {
   name: "يوتيب",
   author: "HUSSEIN YACOUBI",
   role: "member",
+   aliases:["يوتيوب"],
   description: "Searches for a video on YouTube and sends it if available.",
 
   execute: async ({ api, event, args }) => {
