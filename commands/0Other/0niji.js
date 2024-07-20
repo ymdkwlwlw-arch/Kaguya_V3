@@ -190,6 +190,7 @@ export default {
   name: "افلام",
   author: "Kaguya Project",
   role: "member",
+  aliases:["أفلام"],
   description: "يقترح عليك افلام عشوائية من اجل مشاهدتها",
   async execute({ api, event }) {
     try {
@@ -204,7 +205,7 @@ export default {
       api.setMessageReaction("📸", event.messageID, () => {}, true);
 
       const message = {
-        body: "✿━━━━━━━━━━━━━━━━━✿\n\t\t🎬 | إقتراحي لك \n✿━━━━━━━━━━━━━━━━━✿",
+        body: "✿━━━━━━━━━━━━━━━━✿\n\t\t🎬 | إقتراحي لك \n✿━━━━━━━━━━━━━━━━✿",
         attachment: fs.createReadStream(tempImagePath)
       };
 
