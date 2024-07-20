@@ -43,7 +43,7 @@ export default {
       // إرسال الصور إلى المستخدم
       await api.sendMessage(
         {
-          body: '✿━━━━━━━━━━━━━━━✿\n\t\t「 إليك التطقيم الخاص بك ✨ 」\n✿━━━━━━━━━━━━━━━✿',
+          body: '◆❯━━━━━▣✦▣━━━━━━❮◆\n\t「إليك التطقيم الخاص بك ✨」\n◆❯━━━━━▣✦▣━━━━━━❮◆',
           attachment: [
             fs.createReadStream(path1),
             fs.createReadStream(path2)
