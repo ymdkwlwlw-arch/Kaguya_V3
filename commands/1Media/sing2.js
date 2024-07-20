@@ -16,14 +16,14 @@ export default {
     const data = text.split(" ");
 
     if (data.length < 1) {
-      return api.sendMessage("╭┈ ❒ الاستخدام :\n╰┈➤ اكتب: music [عنوان الأغنية]", event.threadID, event.messageID);
+      return api.sendMessage("╭┈ ❒ الاستخدام :\n╰┈➤ اكتب: اغنية او غني [عنوان الأغنية]", event.threadID, event.messageID);
     }
 
     const song = data.join(" ");
     
     try {
       // إرسال رسالة انتظار
-      const waitingMessage = await api.sendMessage(`🔍 | جاري البحث عن كلمات الأغنية "${song}"، يرجى الانتظار...`, event.threadID);
+      const waitingMessage = await api.sendMessage(`🔍 | جاري البحث عن الأغنية "${song}"، يرجى الانتظار...`, event.threadID);
 
       // جلب كلمات الأغنية
       const lyricsResponse = await axios.get(`https://api.heckerman06.repl.co/api/other/lyrics2?song=${encodeURIComponent(song)}`);
