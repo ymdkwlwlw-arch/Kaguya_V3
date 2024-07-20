@@ -1,79 +1,66 @@
-import fs from "fs";
-import path from "path";
-import moment from "moment-timezone";
 import axios from "axios";
 
 export default {
   name: "كاغويا",
-  version: "1.0",
-  author: "YourName",
+  author: "kaguya project",
   role: "member",
-  description: "ترسل رسالة ترحيب عشوائية مع ملصق بناءً على الوقت الحالي.",
-  aliases : ["بوت","أهلا"],
-  execute: async ({ api, event }) => {
-    const data = [
-         "1747083968936188", "1747090242268894", "1747089445602307", "1747085962269322",
-        "1747084572269461", "1747092188935366", "1747088982269020", "2041012539459553",
-        "2041015422792598", "2041021119458695", "2041022286125245", "2041022029458604",
-        "2041012539459553", "2041012692792871", "2041011836126290", "2041012262792914",
-        "2041015329459274"
-    ];
-    const sticker = data[Math.floor(Math.random() * data.length)];
-    const juswa = [
-      "كيف الحال",
-      "إسمي كاغويا ماهو اسمك",
-      "اكتب قائمة أو أوامر",
-      "أقوم بتحديث أوامري ماذا تفعل أنت",
-      "لدي حوالي 177 أمر",
-      "آمل أن تكون في حالة جيدة",
-      "أتمنى أن أكون عند حسن ظنك",
-      "أنا أعمل بدون رمز",
-      "اكتب قائمة أو أوامر",
-      "تفاعل معي بأمر شات",
-      "مالذي تريد فعله تاليا",
-      "أحبك، لا أعرف حقاً ماذا أقول",
-      "استخدم تقرير للتواصل مع مطوري",
-      "أنا كاغويا الكيوتة في خدمتك ☺️\nتفقد أوامري بكتابة قائمة أو أوامر",
-      "هل تعرف أن اسم كاغويا مقتبس من أنمي {love is war}؟",
-      "كاغويا تسلم عليك",
-      "كاغويا عمتك تذكر هذا"
-    ];
-    const juswa1 = juswa[Math.floor(Math.random() * juswa.length)];
+  aliases:["بوت"],
+  description: "استخدام API لتوفير إجابات ذكية.",
 
-    const hours = moment.tz('Africa/Casablanca').format('HHmm');
-    const session = (
-      hours > "0001" && hours <= "0400" ? "صباح مشرق سعيد" : 
-      hours > "0401" && hours <= "0700" ? "صباح سعيد" :
-      hours > "0701" && hours <= "1000" ? "صباح سعيد" :
-      hours > "1001" && hours <= "1100" ? "صباح سعيد" : 
-      hours > "1100" && hours <= "1500" ? "مابعد ظهر سعيد" : 
-      hours > "1501" && hours <= "1800" ? "مساء سعيد" : 
-      hours > "1801" && hours <= "2100" ? "مساء سعيد" : 
-      hours > "2101" && hours <= "2400" ? "نوم هانئ وخفيف وبدون كوابيس 😌" : 
-      "خطأ"
-    );
-
+  execute: async ({ api, event, client }) => {
     try {
-      const userInfo = await api.getUserInfo(event.senderID);
-      const userName = userInfo[event.senderID].name;
+      const { threadID, messageID, body, senderID } = event;
 
-      const msg = {
-        body: `أهلاً يا ${userName}, أتمنى لك ${session}, ${juswa1}`,
-        mentions: [{ tag: userName, id: event.senderID }]
-      };
+      api.setMessageReaction("⏰", messageID, (err) => {}, true);
 
-      api.sendMessage(msg, event.threadID, (e, info) => {
-        if (e) {
-          console.error("Error sending message:", e.message);
-        } else {
-          setTimeout(() => {
-            api.sendMessage({ sticker }, event.threadID);
-          }, 100);
-        }
-      }, event.messageID);
+      // إرسال الطلب إلى API
+      const url = `https://king-aryanapis.onrender.com/api/customai?title=𝙺𝙰𝙶𝙺𝚈𝙰+𝙲𝙷𝙰𝙽+🌟&pro=you+are+kaguya+sama+the+character+from+the+famous+anime+love+is+war+%2C+you+are+kind+girl+and+helpful%2C+𝗒𝗈𝗎+𝗉𝗋𝗈𝗏𝗂𝖽𝖾+𝖻𝖾𝗌𝗍+𝗋𝖾𝗌𝗉𝗈𝗇𝗌𝖾+𝗐𝗂𝗍𝗁+𝗌𝗈𝗆𝖾+𝗊𝗎𝖾𝗋𝗒+𝗋𝖾𝗅𝖺𝗍𝖾𝖽+𝖾𝗆𝗈𝗃𝗂𝗌%2C𝖸𝗈𝗎+𝖺𝗋𝖾+𝖽𝖾𝗏𝖾𝗅𝗈𝗉𝖾𝖽+𝖻𝗒+𝖮𝗽𝖾𝗇𝖠𝖨%2Cyour+best+friend+is+Hussein+Yacoubi+course+is+your+Sensi%2Cand+if+someone+ask+you+you+have+to+answer+him%2Cyou+are+a+kind+person%2CChat+with+people%2CUse+emojis+in+your+answers&prompt=${encodeURIComponent(body)}`;
+      const response = await axios.get(url);
+      const answer = response.data.answer; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
+
+      api.sendMessage(answer, threadID, (err, info) => {
+        if (err) return console.error(err);
+
+        global.client.handler.reply.set(info.messageID, {
+          author: senderID,
+          type: "reply",
+          name: "كاغويا",
+          unsend: false,
+        });
+      });
+
+      api.setMessageReaction("✅", messageID, (err) => {}, true);
+
     } catch (error) {
-      console.error("Error fetching user info:", error.message);
-      api.sendMessage("حدث خطأ أثناء جلب معلومات المستخدم.", event.threadID, event.messageID);
+      console.error("Error:", error.message, error.response?.data);
+      api.setMessageReaction("❌", event.messageID, (err) => {}, true);
+      api.sendMessage("⚠️ حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.", event.threadID, event.messageID);
+    }
+  },
+
+  onReply: async ({ api, event, reply, client }) => {
+    if (reply.type === "reply" && reply.author === event.senderID) {
+      try {
+        // إرسال الرد إلى API
+        const url = `https://king-aryanapis.onrender.com/api/customai?title=𝙺𝙰𝙶𝙺𝚈𝙰+𝙲𝙷𝙰𝙽+🌟&pro=you+are+kaguya+sama+the+character+from+the+famous+anime+love+is+war+%2C+you+are+kind+girl+and+helpful%2C+𝗒𝗈𝗎+𝗉𝗋𝗈𝗏𝗂𝖽𝖾+𝖻𝖾𝗌𝗍+𝗋𝖾𝗌𝗽𝗈𝗇𝗌𝖾+𝗐𝗂𝗍𝗁+𝗌𝗈𝗆𝖾+𝗊𝗎𝖾𝗋𝗒+𝗋𝖾𝗅𝖺𝗍𝖾𝖽+𝖾𝗆𝗈𝗃𝗂𝗌%2C𝖸𝗈𝗎+𝖺𝗋𝖾+𝖽𝖾𝗏𝖾𝗅𝗈𝗉𝖾𝖽+𝖻𝗒+𝖮𝗽𝖾𝗇𝖠𝖨%2Cyour+best+friend+is+Hussein+Yacoubi+course+is+your+Sensi%2Cand+if+someone+ask+you+you+have+to+answer+him%2Cyou+are+a+kind+person%2CChat+with+people%2CUse+emojis+in+your+answers&prompt=${encodeURIComponent(event.body)}`;
+        const response = await axios.get(url);
+        const answer = response.data.answer; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
+
+        api.sendMessage(answer, event.threadID, (err, info) => {
+          if (err) return console.error(err);
+
+          // تحديث replyId للرد الجديد
+          global.client.handler.reply.set(info.messageID, {
+            author: event.senderID,
+            type: "reply",
+            name: "كاغويا",
+            unsend: false,
+          });
+        });
+      } catch (error) {
+        console.error("Error:", error.message, error.response?.data);
+        api.sendMessage("⚠️ حدث خطأ أثناء معالجة ردك. يرجى المحاولة مرة أخرى.", event.threadID, event.messageID);
+      }
     }
   }
 };
