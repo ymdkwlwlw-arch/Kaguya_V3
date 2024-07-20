@@ -1,126 +1,79 @@
-import axios from "axios";
-import fs from "fs";
-import path from "path";
-import tinyurl from "tinyurl";
-import yts from "yt-search";
-import ytdl from "ytdl-core";
+import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
+import ytdl from 'ytdl-core';
+import yts from 'yt-search'; // تأكد من أنك قمت بتثبيت مكتبة yts-api أو استخدم المكتبة المناسبة
 
 export default {
   name: "غني",
   author: "Kaguya Project",
   role: "member",
-  aliases:["أغنية","غني"],  
-  description: "يبحث عن مقطع موسيقى من اليوتيوب بناءً على رابط أو اسم أغنية",
-  execute: async ({ api, event, message, args }) => {
+  aliases:["اغنية"],
+  description: "Finds song lyrics and downloads the song.",
+  execute: async function ({ api, event, args }) {
+    const input = event.body;
+    const text = input.substring(12);
+    const data = text.split(" ");
+
+    if (data.length < 1) {
+      return api.sendMessage("╭┈ ❒ الاستخدام :\n╰┈➤ اكتب: music [عنوان الأغنية]", event.threadID, event.messageID);
+    }
+
+    const song = data.join(" ");
+    
     try {
-      const attachment = event.messageReply?.attachments[0];
-      if (event.type === "message_reply" && ["audio", "video"].includes(attachment?.type)) {
-        const attachmentUrl = attachment.url;
-        const shortUrl = await tinyurl.shorten(attachmentUrl) || args.join(' ');
+      // إرسال رسالة انتظار
+      const waitingMessage = await api.sendMessage(`🔍 | جاري البحث عن كلمات الأغنية "${song}"، يرجى الانتظار...`, event.threadID);
 
-        const response = await axios.get(`https://www.api.vyturex.com/songr?url=${shortUrl}`);
+      // جلب كلمات الأغنية
+      const lyricsResponse = await axios.get(`https://api.heckerman06.repl.co/api/other/lyrics2?song=${encodeURIComponent(song)}`);
+      const lyrics = lyricsResponse.data.lyrics || "لم يتم العثور على كلمات!";
+      const title = lyricsResponse.data.title || "غير متوفر!";
+      const artist = lyricsResponse.data.artist || "غير متوفر!";
 
-        if (response.data && response.data.title) {
-          const song = response.data.title;
-          const originalMessage = await message.reply(`جاري البحث عن "${song}"...`);
-          const searchResults = await yts(song);
-
-          if (!searchResults.videos.length) {
-            return kaguya.reply("❌ | لم يتم العثور على الأغنية.");
-          }
-
-          const video = searchResults.videos[0];
-          const videoUrl = video.url;
-          const fileName = `music.mp3`;
-          const filePath = path.join(process.cwd(), 'tmp', fileName);
-
-          const stream = ytdl(videoUrl, { filter: "audioonly" });
-          const file = fs.createWriteStream(filePath);
-
-          stream.pipe(file);
-
-          stream.on('response', () => {
-            console.info('[DOWNLOADER]', 'بدء التحميل الآن!');
-          });
-
-          stream.on('info', (info) => {
-            console.info('[DOWNLOADER]', `جاري تحميل ${info.videoDetails.title} بواسطة ${info.videoDetails.author.name}`);
-          });
-
-          stream.on('end', async () => {
-            console.info('[DOWNLOADER] تم التحميل');
-            if (fs.statSync(filePath).size > 26214400) { // 25MB
-              fs.unlinkSync(filePath);
-              return kaguya.reply('❌ | الملف أكبر من 25MB ولا يمكن إرساله.');
-            }
-
-            const replyMessage = {
-              body: `━━━━━◈✿◈━━━━━\n[📀] العنوان : ${video.title}\n🎤 | الفنان : ${video.author.name}\n━━━━━◈✿◈━━━━━`,
-              attachment: fs.createReadStream(filePath),
-            };
-
-            await api.unsendMessage(originalMessage.messageID);
-            await api.sendMessage(replyMessage, event.threadID, () => {
-              fs.unlinkSync(filePath);
-            });
-          });
-        } else {
-          return kaguya.reply("❌ | لم يتم العثور على معلومات الأغنية.");
-        }
-      } else {
-        const input = event.body;
-        const song = input.substring(12).trim();
-
-        if (!song) {
-          return kaguya.reply("⚠️ | يرجى إدخال اسم الأغنية.");
-        }
-
-        const originalMessage = await kaguya.reply(`جاري البحث عن أغنيتك "${song}"...`);
-        const searchResults = await yts(song);
-
-        if (!searchResults.videos.length) {
-          return kaguya.reply("❌ | طلب غير صالح.");
-        }
-
-        const video = searchResults.videos[0];
-        const videoUrl = video.url;
-        const fileName = `music.mp3`;
-        const filePath = path.join(process.cwd(), 'tmp', fileName);
-
-        const stream = ytdl(videoUrl, { filter: "audioonly" });
-        const file = fs.createWriteStream(filePath);
-
-        stream.pipe(file);
-
-        stream.on('response', () => {
-          console.info('[DOWNLOADER]', 'بدء التحميل الآن!');
-        });
-
-        stream.on('info', (info) => {
-          console.info('[DOWNLOADER]', ` ⏱️ | جاري تحميل ${info.videoDetails.title} بواسطة ${info.videoDetails.author.name}`);
-        });
-
-        stream.on('end', async () => {
-          console.info('[DOWNLOADER] تم التحميل');
-          if (fs.statSync(filePath).size > 26214400) { // 25MB
-            fs.unlinkSync(filePath);
-            return kaguya.reply('❌ | الملف أكبر من 25MB ولا يمكن إرساله.');
-          }
-
-          const replyMessage = {
-            body: `━━━━━◈✿◈━━━━━\n[📀]العنوان: ${video.title}\n🎤 | الفنان: ${video.author.name}\n━━━━━◈✿◈━━━━━`,
-            attachment: fs.createReadStream(filePath),
-          };
-
-          await api.unsendMessage(originalMessage.messageID);
-          await api.sendMessage(replyMessage, event.threadID, () => {
-            fs.unlinkSync(filePath);
-          });
-        });
+      // البحث عن الفيديو
+      const searchResults = await yts(song);
+      if (!searchResults.videos.length) {
+        await api.unsendMessage(waitingMessage.messageID);
+        return api.sendMessage("❌ | لم يتم العثور على الأغنية.", event.threadID, event.messageID);
       }
+
+      const video = searchResults.videos[0];
+      const videoUrl = video.url;
+
+      // تنزيل الأغنية
+      const stream = ytdl(videoUrl, { filter: "audioonly" });
+      const fileName = `${event.senderID}.mp3`;
+      const filePath = path.join(process.cwd(), 'cache', fileName);
+
+      // التأكد من وجود مجلد التخزين
+      if (!fs.existsSync(path.dirname(filePath))) {
+        fs.mkdirSync(path.dirname(filePath), { recursive: true });
+      }
+
+      stream.pipe(fs.createWriteStream(filePath)).on('finish', async () => {
+        await api.unsendMessage(waitingMessage.messageID);
+        console.info('[DOWNLOADER] Downloaded');
+
+        if (fs.statSync(filePath).size > 26214400) { // التحقق من حجم الملف
+          fs.unlinkSync(filePath);
+          return api.sendMessage('[ERR] الملف أكبر من 25MB ولا يمكن إرساله.', event.threadID);
+        }
+
+        const message = {
+          body: `❛ ━━━━･❪ 🕊️ ❫ ･━━━━ ❜\n🎵 إليك الأغنية، استمتع! 🥰\n\nالعنوان: ${title}\nالفنان: ${artist}\n\nكلمات الأغنية:\n${lyrics}\n❛ ━━━━･❪ 🕊️ ❫ ･━━━━ ❜`,
+          attachment: fs.createReadStream(filePath)
+        };
+
+        api.sendMessage(message, event.threadID, () => {
+          fs.unlinkSync(filePath); // حذف الملف بعد الإرسال
+        });
+      });
+
     } catch (error) {
       console.error('[ERROR]', error);
-      api.sendMessage("❌ | لم تتوفر الأغنية في الوقت الحالي. يرجى المحاولة لاحقاً.", event.threadID, event.messageID);
+      await api.unsendMessage(waitingMessage.messageID);
+      api.sendMessage('❌ | حدث خطأ أثناء معالجة الأمر.', event.threadID);
     }
   }
 };
