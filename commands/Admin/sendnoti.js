@@ -13,7 +13,7 @@ const evalCommand = {
     const noidung = args.join(" ");
     if (!noidung) return api.sendMessage(" ⚠️ |الرجاء إدخال محتوى الرسالة الذي تريد إرساله إلى جميع المجموعات!", event.threadID, event.messageID);
 
-    const imageUrl = 'https://i.imgur.com/czQkTM8.jpeg'; // رابط الصورة الذي تريد استخدامه
+    const imageUrl = 'https://i.imgur.com/qtmNcYW.jpeg'; // رابط الصورة الذي تريد استخدامه
     const cacheDir = path.join(process.cwd(), 'cache');
     const imagePath = path.join(cacheDir, 'notification_image.jpg');
 
