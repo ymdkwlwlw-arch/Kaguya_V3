@@ -1,178 +1,80 @@
-import fs from 'fs';
-import path from 'path';
+const numberslst = {};
 
-// الوظائف المساعدة
-function generateRandomNumber() {
-  let digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-  let number = "";
+export default {
+  name: "ارقام",
+  author: "kaguya project",
+  role: "عضو",
+  description: "لعبة تخمين رقم بين 1 و 20.",
 
-  for (let i = 0; i < 4; i++) {
-    const randomIndex = Math.floor(Math.random() * digits.length);
-    const digit = digits[randomIndex];
-    digits.splice(randomIndex, 1);
-    number += digit;
-  }
+  execute: async ({ api, event }) => {
+    if (!numberslst[event.threadID]) numberslst[event.threadID] = {};
+    const s = event.senderID;
+    numberslst[event.threadID].s = {
+      a: true,
+      b: getRandomNumber(1, 20),
+      d: 0
+    };
 
-  return number;
-}
-
-function isValidGuess(guess) {
-  return /^\d{4}$/.test(guess);
-}
-
-function checkGuess(secret, guess) {
-  let correct = 0;
-  let totalCorrect = 0;
-  const secretCounts = {};
-  const guessCounts = {};
-
-  for (let i = 0; i < secret.length; i++) {
-    const digit = secret[i];
-    secretCounts[digit] = (secretCounts[digit] || 0) + 1;
-  }
-
-  for (let i = 0; i < guess.length; i++) {
-    const digit = guess[i];
-    guessCounts[digit] = (guessCounts[digit] || 0) + 1;
-    if (secret[i] === digit) {
-      correct++;
-    }
-  }
-
-  for (const digit in guessCounts) {
-    if (secretCounts[digit]) {
-      totalCorrect += Math.min(secretCounts[digit], guessCounts[digit]);
-    }
-  }
-
-  return { correct, totalCorrect };
-}
-
-// الكلاس الرئيسي
-class Game {
-  name = "ارقام";
-  author = "YourName";
-  role = "member";
-  description = "لعبة التخمين بالأرقام";
-  handleReply = new Map(); // استخدام Map لتخزين الردود
-
-  async execute({ api, event, args }) {
-    const { threadID, messageID } = event;
-    const secretNumber = generateRandomNumber();
-    let maxAttempts = parseInt(args[0]);
-    if (isNaN(maxAttempts) || !maxAttempts) {
-      maxAttempts = 10;
-    }
-
-    api.sendMessage(`📜 | أهلا بك في لعبة التخمين! أدخل توقعاتك المكونة من 4 أرقام.\n🛡️ | لديك ${maxAttempts} فرص.`, threadID, (err, info) => {
-      if (err) {
-        console.error("Error sending message:", err);
-        return;
-      }
-
-      // إضافة تسجيل بيانات الرد
-      console.log("Setting reply data:", {
-        author: event.senderID,
-        secretNumber,
-        attempts: maxAttempts,
-        guesses: [],
-      });
-
-      this.handleReply.set(info.messageID, {
-        author: event.senderID,
-        secretNumber,
-        attempts: maxAttempts,
-        guesses: [],
-      });
-
-      if (!global.client.handler) {
-        global.client.handler = { reply: new Map() };
-      }
-
-      global.client.handler.reply.set(info.messageID, {
-        author: event.senderID,
-        type: "pick",
-        name: "ارقام",
-        unsend: true,
-      });
-
-      console.log("Reply set successfully with messageID:", info.messageID);
+    // إعداد المعلومات للرد
+    global.client.handler.reply.set(event.messageID, {
+      author: event.senderID,
+      type: "pick",
+      name: "ارقام",
+      unsend: false,
     });
-  }
 
-  async onReply({ api, event, reply }) {
-    if (reply.type !== 'pick') return;
+    api.sendMessage('حسنًا، احزر رقما بين 1 و 20.', event.threadID);
+  },
 
-    const { senderID, body, threadID, messageID } = event;
-    console.log("Received reply with messageID:", messageID);
-    
-    const replyData = this.handleReply.get(reply.messageID);
+  onReply: async ({ api, event, reply }) => {
+    const threadID = event.threadID;
+    if (!numberslst[threadID] || !numberslst[threadID].s || reply.type !== "pick") return;
 
-    if (!replyData) {
-      console.error("No reply data found for this message ID.");
-      return api.sendMessage("حدث خطأ أثناء معالجة الرد. يرجى المحاولة مرة أخرى لاحقًا.", threadID, messageID);
-    }
-
-    if (String(senderID) !== String(replyData.author)) {
-      console.log("Sender ID does not match the author of the reply data.");
+    const guess = parseInt(event.body);
+    if (isNaN(guess) || guess < 1 || guess > 20) {
+      api.sendMessage('الرجاء إدخال رقم صحيح بين 1 و 20.', threadID);
       return;
     }
 
-    const userGuess = body.trim();
-    if (!isValidGuess(userGuess)) {
-      return api.sendMessage("📜 | مسموح فقط إدخال 4 أرقام.", threadID, messageID);
+    let { a, b, d } = numberslst[threadID].s;
+
+    if (a && guess !== b) {
+      numberslst[threadID].s.d = d + 1;
+      if (guess > b) {
+        api.setMessageReaction("⬇️", event.messageID, (err) => {}, true);
+        api.sendMessage("إحزر أقل من الرقم!", threadID);
+      } else {
+        api.setMessageReaction("⬆️", event.messageID, (err) => {}, true);
+        api.sendMessage("إحزر أكثر من الرقم!", threadID);
+      }
+      return;
     }
 
-    const { secretNumber, attempts, guesses } = replyData;
-    const result = checkGuess(secretNumber, userGuess);
-    guesses.push(`[${result.correct}] ${userGuess} [${result.totalCorrect}]`);
-    const remainingAttempts = attempts - 1;
+    if (a && guess === b) {
+      let rewardAmount, message;
+      if (d < 10) {
+        rewardAmount = 400;
+        message = "عدد محاولاتك قليل جداً، أداء رائع!";
+      } else {
+        rewardAmount = 200;
+        message = "محاولاتك كانت كثيرة قليلاً!";
+      }
 
-    if (result.correct === 4 && result.totalCorrect === 4) {
-      api.sendMessage(`✅ | توقعت الرقم (${secretNumber}). لقد فزت!`, threadID);
-      this.handleReply.delete(reply.messageID);
-      global.client.handler.reply.delete(reply.messageID);
-      console.log("Game won. Reply data deleted.");
-    } else if (remainingAttempts > 0) {
-      const replyMessage = `${guesses.join('\n')}\n\n🛡️ | تبقى لك ${remainingAttempts} فرص.\n📜 | إجمالي عدد الفرص ${attempts} فرص`;
-
-      api.sendMessage(replyMessage, threadID, (err, info) => {
-        if (err) {
-          console.error("Error sending message:", err);
-          return;
-        }
-
-        // تحديث تسجيل بيانات الرد
-        console.log("Updating reply data:", {
-          author: senderID,
-          secretNumber,
-          attempts: remainingAttempts,
-          guesses,
-        });
-
-        this.handleReply.set(info.messageID, {
-          author: senderID,
-          secretNumber,
-          attempts: remainingAttempts,
-          guesses,
-        });
-
-        global.client.handler.reply.set(info.messageID, {
-          author: senderID,
-          type: "pick",
-          name: "ارقام",
-          unsend: true,
-        });
-
-        console.log("Reply updated successfully with new messageID:", info.messageID);
+      await Economy.increase(rewardAmount, event.senderID);
+      await Users.update(event.senderID, {
+        other: {
+          cooldowns: currentTime,
+        },
       });
-    } else {
-      api.sendMessage(`⚔️ | إنتهت اللعبة و الرقم الصحيح كان ${secretNumber}.`, threadID);
-      this.handleReply.delete(reply.messageID);
-      global.client.handler.reply.delete(reply.messageID);
-      console.log("Game over. Reply data deleted.");
+
+      api.setMessageReaction("🥳", event.messageID, (err) => {}, true);
+      api.sendMessage(`كفوا! الرقم الصحيح هو ${b}.\n- ربحت ${rewardAmount} لأن ${message}\n- ${d} محاولة.`, threadID);
+
+      numberslst[threadID].s = {};
     }
   }
-}
+};
 
-export default new Game();
+function getRandomNumber(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
