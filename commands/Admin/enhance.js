@@ -2,15 +2,16 @@ import axios from 'axios';
 import fs from 'fs-extra';
 import path from 'path';
 import tinyurl from 'tinyurl';
-import { join } from 'path';
 
 export default {
   name: "جودة",
   author: "Kaguya Project",
   role: "member",
   description: "يقوم بتحسين الصور باستخدام API خارجية.",
+  
   async execute({ message, event, api }) {
     api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
+    
     const { type, messageReply } = event;
     const { attachments, threadID, messageID } = messageReply || {};
 
@@ -23,12 +24,12 @@ export default {
       }
 
       try {
-        const shortenedUrl = await tinyurl.shorten(url);
-        const { data } = await axios.get(`https://joshweb.click/remini?q=${encodeURIComponent(shortenedUrl)}`, {
+        // استخدام الرابط الجديد لتحسين الصورة
+        const { data } = await axios.get(`https://king-aryanapis.onrender.com/api/4k?url=${encodeURIComponent(url)}`, {
           responseType: "json"
         });
 
-        const imageUrl = data.result;
+        const imageUrl = data.resultUrl;
         const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
 
         const cacheFolder = path.join(process.cwd(), "cache");
@@ -41,7 +42,8 @@ export default {
 
         api.setMessageReaction("✅", event.messageID, (err) => {}, true);
         
-        tinyurl.shorten(imageUrl, async function (shortUrl) {
+        // تقصير الرابط للصورة المعدلة
+        tinyurl.shorten(imageUrl, async (shortUrl) => {
           api.sendMessage({
             attachment: fs.createReadStream(imagePath),
             body: `✅ | تم رفع جودة الصورة بنجاح\n📎 | رابط الصورة: ${shortUrl}`
