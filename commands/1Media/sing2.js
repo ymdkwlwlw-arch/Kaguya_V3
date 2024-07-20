@@ -20,17 +20,21 @@ const shortenURL = async (url) => {
 };
 
 const execute = async ({ api, event, text }) => {
+    if (!text) {
+        return api.sendMessage("⚠️ | إستعمال غير صالح \n💡كيفية الإستخدام: اغنية [عنوان الأغنية 📀]\n مثال 📝: اغنية fifty fifty copied", event.threadID);
+    }
+
     api.setMessageReaction("🕢", event.messageID, () => {}, true);
 
     try {
         const args = text.trim().split(" ");
         let title = '';
         let videoId = '';
-        let shortUrl = '';
+        let videoUrl = '';
 
-        const extractShortUrl = async () => {
+        const extractVideoUrl = async () => {
             const attachment = event.messageReply.attachments[0];
-            if (attachment.type === "video" || attachment.type === "audio") {
+            if (attachment && (attachment.type === "video" || attachment.type === "audio")) {
                 return attachment.url;
             } else {
                 throw new Error("Invalid attachment type.");
@@ -38,17 +42,17 @@ const execute = async ({ api, event, text }) => {
         };
 
         if (event.messageReply && event.messageReply.attachments && event.messageReply.attachments.length > 0) {
-            shortUrl = await extractShortUrl();
-            const musicRecognitionResponse = await axios.get(`https://audio-recon-ahcw.onrender.com/kshitiz?url=${encodeURIComponent(shortUrl)}`);
+            videoUrl = await extractVideoUrl();
+            const musicRecognitionResponse = await axios.get(`https://audio-recon-ahcw.onrender.com/kshitiz?url=${encodeURIComponent(videoUrl)}`);
             title = musicRecognitionResponse.data.title;
             const searchResponse = await axios.get(`https://youtube-kshitiz-gamma.vercel.app/yt?search=${encodeURIComponent(title)}`);
             if (searchResponse.data.length > 0) {
                 videoId = searchResponse.data[0].videoId;
             }
 
-            shortUrl = await shortenURL(shortUrl);
+            videoUrl = await shortenURL(videoUrl);
         } else if (args.length === 0) {
-            api.sendMessage("⚠️ | إستعمال غير صالح \n💡كيفية الإستخدام: اغنية [عنوان الأغنية 📀]\n مثال 📝: اغنية fifty fifty copied", event.threadID);
+            api.sendMessage(" ⚠️ | إستعمال غير صالح \n💡كيفية الإستخدام: اغنية [عنوان الأغنية 📀]\n مثال 📝: اغنية fifty fifty copied", event.threadID);
             return;
         } else {
             title = args.join(" ");
@@ -59,24 +63,24 @@ const execute = async ({ api, event, text }) => {
 
             const videoUrlResponse = await axios.get(`https://yt-kshitiz.vercel.app/download?id=${encodeURIComponent(videoId)}&apikey=${getRandomApiKey()}`);
             if (videoUrlResponse.data.length > 0) {
-                shortUrl = await shortenURL(videoUrlResponse.data[0]);
+                videoUrl = await shortenURL(videoUrlResponse.data[0]);
             }
         }
 
         if (!videoId) {
-            api.sendMessage("⚠️ | لم يتم ايجاد أغنية بالنسبة لإسن الأغنية المغطاه .", event.threadID);
+            api.sendMessage("⚠️ | No video found for the given query.", event.threadID);
             return;
         }
 
         const downloadResponse = await axios.get(`https://yt-kshitiz.vercel.app/download?id=${encodeURIComponent(videoId)}&apikey=${getRandomApiKey()}`);
-        const videoUrl = downloadResponse.data[0];
+        videoUrl = downloadResponse.data[0];
 
         if (!videoUrl) {
             api.sendMessage("⚠️ | Failed to retrieve download link for the video.", event.threadID);
             return;
         }
 
-        const filePath = path.join(process.cwd(), "cache", `${videoId}.mp3`);
+        const filePath = path.join(process.cwd(), "cache", `${videoId}.mp4`); // Changed to .mp4 for video
         const writer = fs.createWriteStream(filePath);
         const response = await axios({
             url: videoUrl,
@@ -88,7 +92,7 @@ const execute = async ({ api, event, text }) => {
 
         writer.on('finish', () => {
             const videoStream = fs.createReadStream(filePath);
-            const messageBody = `━━━━━◈✿◈━━━━━\n🎤 | تشغيل الآن : ${title}\n━━━━━◈✿◈━━━━━`;
+            const messageBody = `━━━━━◈✿◈━━━━━\n🎬 | Now playing: ${title}\n━━━━━◈✿◈━━━━━`;
             api.sendMessage({ body: messageBody, attachment: videoStream }, event.threadID, () => {
                 api.setMessageReaction("✅", event.messageID, () => {}, true);
             });
@@ -96,11 +100,11 @@ const execute = async ({ api, event, text }) => {
 
         writer.on('error', (error) => {
             console.error("Error:", error);
-            api.sendMessage("❌ | حدث خطأ أثناء تنزيل الاوديو .", event.threadID);
+            api.sendMessage("❌ | Error downloading the video.", event.threadID);
         });
     } catch (error) {
         console.error("Error:", error);
-        api.sendMessage("❌ | حدث خطأ .", event.threadID);
+        api.sendMessage("❌ | An error occurred.", event.threadID);
     }
 };
 
@@ -108,7 +112,7 @@ export default {
     name: "غني",
     author: "khizits",
     role: "member",
-aliases:["اغنية","أغنية"],
-    description: "قم بالبحث عن اغاني او رد على مقطع او أغنية من أجل الحصول على اغتيتك.",
+    description: " بالبحث عن اغاني او رد على مقطع او أغنية من أجل الحصول على اغتيتك.",
+    aliases:["اغنية","أغنية"],
     execute,
 };
