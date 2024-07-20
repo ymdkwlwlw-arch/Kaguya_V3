@@ -3,43 +3,43 @@ import path from "path";
 import fs from "fs";
 
 export default {
-    name: "أمازون",
-    author: "Samir",
+    name: "تطبيقات",
+    author: "Hussein Yacoubi",
     role: "member",
-    description: "يجلب معلومات حول منتج من أمازون ويترجمها إلى اللغة العربية.",
+    description: "يجلب معلومات حول تطبيق من متجر جوجل بلاي ويترجمها إلى اللغة العربية.",
     async execute({ api, event, args }) {
 
-api.setMessageReaction("🔍", event.messageID, (err) => {}, true);
-      
+        api.setMessageReaction("🔍", event.messageID, (err) => {}, true);
+
         try {
             const searchTerm = args.join(" ");
             if (!searchTerm) {
                 return api.sendMessage("يرجى تحديد مصطلح البحث.", event.threadID);
             }
 
-            const apiUrl = `https://apis-samir.onrender.com/amazon/search?search=${encodeURIComponent(searchTerm)}`;
+            const apiUrl = `https://joshweb.click/api/playstore?search=${encodeURIComponent(searchTerm)}`;
             const response = await axios.get(apiUrl);
 
-            if (response.data && response.data.length > 0) {
-                const productInfo = response.data[0];
-                const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ar&dt=t&q=${encodeURIComponent(productInfo.title)}`);
-                const translatedTitle = translationResponse?.data?.[0]?.[0]?.[0];
+            if (response.data && response.data.result.length > 0) {
+                const appInfo = response.data.result[0];
+                const translatedTitle = appInfo.name; // Use the name directly as it's in the desired language
 
-              const message = `📝 | اسم المنتج: ${translatedTitle}\n💲 | السعر: ${productInfo.price}\n🌟 | التقييم: ${productInfo.rating}`;
+                let message = `━━━━━━◈✿◈━━━━━━\n📝 | اسم التطبيق: ${translatedTitle}\n`;
+                message += `🏢 | الشركة المطورة: ${appInfo.developer}\n`;
+                message += `⭐ | التقييم: ${appInfo.rate2}\n`;
 
-              if (productInfo.link && productInfo.link !== "undefined") {
-                  message += `\n📎 | رابط المنتج على الموقع : ${productInfo.link}`;
-              }
+                if (appInfo.link && appInfo.link !== "undefined") {
+                    message += `\n📎 | رابط التطبيق على المتجر: ${appInfo.link}\n━━━━━━◈✿◈━━━━━━`;
+                }
 
-              api.sendMessage(message, event.threadID);
+                api.sendMessage(message, event.threadID);
 
                 // Download image and send it as attachment
-                const imagePath = path.join(process.cwd(), 'cache', 'amazon_product.jpg');
-                const imageResponse = await axios.get(productInfo.image_url, { responseType: 'stream' });
+                const imagePath = path.join(process.cwd(), 'cache', 'playstore_app.jpg');
+                const imageResponse = await axios.get(appInfo.image, { responseType: 'stream' });
                 imageResponse.data.pipe(fs.createWriteStream(imagePath));
 
-
-              api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+                api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
                 setTimeout(() => {
                     api.sendMessage({
@@ -50,8 +50,8 @@ api.setMessageReaction("🔍", event.messageID, (err) => {}, true);
                 api.sendMessage("لم يتم العثور على نتائج للبحث.", event.threadID);
             }
         } catch (error) {
-            console.error("Error fetching Amazon product info:", error);
-            api.sendMessage("حدث خطأ أثناء جلب معلومات المنتج من أمازون.", event.threadID);
+            console.error("Error fetching Play Store app info:", error);
+            api.sendMessage("حدث خطأ أثناء جلب معلومات التطبيق من متجر جوجل بلاي.", event.threadID);
         }
     }
 };
