@@ -4,23 +4,22 @@ export default {
   name: "ذكاء",
   author: "kaguya project",
   role: "member",
-  description: "استخدام ChatGPT للرد على الاستفسارات.",
+  description: "استخدام Bing للرد على الاستفسارات.",
 
   execute: async ({ api, event, client }) => {
     try {
-      api.sendMessage("", event.threadID, event.messageID);
-
       const { threadID, messageID, body, senderID } = event;
 
       api.setMessageReaction("⏰", messageID, (err) => {}, true);
 
-      const response = await axios.get(`https://joshweb.click/new/gpt-4_adv?prompt=${encodeURIComponent(body)}`);
-      const answer = response.data.result.reply; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
+      // إرسال الطلب إلى API Bing
+      const response = await axios.get(`https://joshweb.click/bing?prompt=${encodeURIComponent(body)}`);
+      const answer = response.data.bing; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
 
       api.sendMessage(answer, threadID, (err, info) => {
         if (err) return console.error(err);
 
-        client.handler.reply.set(info.messageID, {
+        global.client.handler.reply.set(info.messageID, {
           author: senderID,
           type: "reply",
           name: "ذكاء",
@@ -40,13 +39,15 @@ export default {
   onReply: async ({ api, event, reply, client }) => {
     if (reply.type === "reply" && reply.author === event.senderID) {
       try {
-        const response = await axios.get(`https://joshweb.click/new/gpt-4_adv?prompt=${encodeURIComponent(event.body)}`);
-        const answer = response.data.result.reply; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
+        // إرسال الرد إلى API Bing
+        const response = await axios.get(`https://joshweb.click/bing?prompt=${encodeURIComponent(event.body)}`);
+        const answer = response.data.bing; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
+
         api.sendMessage(answer, event.threadID, (err, info) => {
           if (err) return console.error(err);
 
           // تحديث replyId للرد الجديد
-          client.handler.reply.set(info.messageID, {
+          global.client.handler.reply.set(info.messageID, {
             author: event.senderID,
             type: "reply",
             name: "ذكاء",
