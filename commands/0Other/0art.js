@@ -17,7 +17,7 @@ export default {
       }
 
       try {
-        const imgurResponse = await axios.get(`https://samirxpikachu.onrender.com/telegraph?url=${encodeURIComponent(imageLink)}&senderId=${event.senderID}`);
+        const imgurResponse = await axios.get(`https://www.samirxpikachu.run.place/telegraph?url=${encodeURIComponent(imageLink)}&senderId=${event.senderID}`);
 
         if (!imgurResponse.data.success) {
           const errorMessage = imgurResponse.data.error;
