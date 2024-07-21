@@ -1,65 +1,69 @@
-import axios from "axios";
-import fs from "fs";
-import path from "path";
+import fs from 'fs';
+import path from 'path';
+import axios from 'axios';
+import jimp from 'jimp';
+
+const getAvatar = async (userId, avatarPath) => {
+    const avatarUrl = `https://graph.facebook.com/${userId}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
+    const { data } = await axios.get(avatarUrl, { responseType: 'arraybuffer' });
+    fs.writeFileSync(avatarPath, Buffer.from(data, 'binary'));
+};
+
+const generateImage = async (userOneId, userTwoId) => {
+    const avatarDirOne = path.join(process.cwd(), 'cache', 'avatarOne.png');
+    const avatarDirTwo = path.join(process.cwd(), 'cache', 'avatarTwo.png');
+    const imagePath = path.join(process.cwd(), 'cache', 'output.png');
+
+    await getAvatar(userOneId, avatarDirOne);
+    await getAvatar(userTwoId, avatarDirTwo);
+
+    const batgiamImg = await jimp.read('https://i.imgur.com/dsrmtlg.jpg');
+    const circleOne = await jimp.read(await createCircleImage(avatarDirOne));
+    const circleTwo = await jimp.read(await createCircleImage(avatarDirTwo));
+
+    batgiamImg.resize(1080, 1320)
+              .composite(circleOne.resize(150, 150), 80, 190)
+              .composite(circleTwo.resize(150, 150), 260, 80);
+    await batgiamImg.writeAsync(imagePath);
+
+    fs.unlinkSync(avatarDirOne);
+    fs.unlinkSync(avatarDirTwo);
+
+    return imagePath;
+};
+
+const createCircleImage = async (imagePath) => {
+    const imageJimp = await jimp.read(imagePath);
+    imageJimp.circle();
+    return await imageJimp.getBufferAsync('image/png');
+};
 
 export default {
-  name: "ارسمي2",
-  author: "kaguya project",
-  role: "admin",
-  description: "Generate images based on a prompt using an external service.",
+    name: "صفع",
+    author: "Kaguya Project",
+    role: "member",
+    description: "Generates an image based on user mentions or replies.",
+    execute: async function ({ api, event, args }) {
+        const mentions = Object.keys(event.mentions);
+        const repliedUserId = event?.messageReply?.senderID;
+        const targetUserId = mentions.length > 0 ? mentions[0] : (repliedUserId || event.senderID);
 
-  execute: async ({ api, commandName, event, args }) => {
-    try {
-      api.setMessageReaction("✅", event.messageID, () => {}, true);
+        if (!targetUserId) {
+            return api.sendMessage("⚠️ | الرجاء عمل منشن أو الرد على رسالة.", event.threadID, event.messageID);
+        }
 
-      // Function to translate Arabic text to English
-      const translateToEnglish = async (text) => {
+        const userOneId = event.senderID;
+        const userTwoId = targetUserId;
+
         try {
-          const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(text)}`);
-          return translationResponse?.data?.[0]?.[0]?.[0];
+            const imagePath = await generateImage(userOneId, userTwoId);
+            api.sendMessage({
+                body: "",
+                attachment: fs.createReadStream(imagePath)
+            }, event.threadID, () => fs.unlinkSync(imagePath), event.messageID);
         } catch (error) {
-          console.error("Translation Error:", error);
-          return text; // Return original text in case of translation failure
+            console.error(error);
+            api.sendMessage("🚧 | حدث خطأ أثناء معالجة طلبك.", event.threadID, event.messageID);
         }
-      };
-
-      // Extract prompt and ratio from arguments
-      let prompt = args.join(' ');
-      let ratio = '1:1';
-
-      if (args.length > 0 && args.includes('-')) {
-        const parts = args.join(' ').split('-').map(part => part.trim());
-        if (parts.length === 2) {
-          prompt = parts[0];
-          ratio = parts[1];
-        }
-      }
-
-      // Translate prompt from Arabic to English
-      const englishPrompt = await translateToEnglish(prompt);
-
-      // Fetch image URLs based on the translated prompt and ratio
-      const response = await axios.get(`https://imagine-kshitiz-9vpt.onrender.com/kshitiz?prompt=${encodeURIComponent(englishPrompt)}&ratio=${encodeURIComponent(ratio)}`);
-      const imageUrls = response.data.imageUrls;
-
-      // Download and send images
-      const imgData = [];
-      const numberOfImages = 4;
-
-      for (let i = 0; i < Math.min(numberOfImages, imageUrls.length); i++) {
-        const imageUrl = imageUrls[i];
-        const imgResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-        const imgPath = path.join(process.cwd(), 'cache', `${i + 1}.jpg`);
-        await fs.promises.writeFile(imgPath, imgResponse.data);
-        imgData.push(fs.createReadStream(imgPath));
-      }
-
-      // Send the images as attachments
-      await api.sendMessage({ body: '╼╾─────⊹⊱⊰⊹─────╼╾\n𝔤𝔢𝔫𝔢𝔯𝔞𝔱𝔢𝔡 𝔰𝔲𝔠𝔠𝔢𝔰𝔰𝔣𝔲𝔩𝔩𝔶 ✅\n╼╾─────⊹⊱⊰⊹─────╼╾', attachment: imgData }, event.threadID, event.messageID);
-
-    } catch (error) {
-      console.error("Error:", error);
-      api.sendMessage("An error occurred while processing your request.", event.threadID, event.messageID);
     }
-  }
 };
