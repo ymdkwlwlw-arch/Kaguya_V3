@@ -21,7 +21,7 @@ const generateImage = async (userOneId, userTwoId) => {
     const circleOne = await jimp.read(await createCircleImage(avatarDirOne));
     const circleTwo = await jimp.read(await createCircleImage(avatarDirTwo));
 
-    batgiamImg.resize(1080, 1320)
+    
               .composite(circleOne.resize(150, 150), 80, 190)
               .composite(circleTwo.resize(150, 150), 260, 80);
     await batgiamImg.writeAsync(imagePath);
