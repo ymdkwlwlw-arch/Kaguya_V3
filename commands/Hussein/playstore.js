@@ -25,7 +25,7 @@ export default {
 
     try {
       // استدعاء API للحصول على صورة الحيوان الأليف
-      const response = await axios.get(`https://samirxpikachu.onrender.com/pet?url=https://api-turtle.vercel.app/api/facebook/pfp?uid=${id}`, { responseType: 'stream' });
+      const response = await axios.get(`https://www.samirxpikachu.run.place/pet?url=https://api-turtle.vercel.app/api/facebook/pfp?uid=${id}`, { responseType: 'stream' });
 
       const tempFilePath = path.join(process.cwd(), 'temp.png');
       const writer = fs.createWriteStream(tempFilePath);
