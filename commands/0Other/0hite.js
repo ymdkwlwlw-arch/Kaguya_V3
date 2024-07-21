@@ -13,7 +13,7 @@ const generateImage = async (userOneId, userTwoId) => {
     avTwo.circle();
     
     const imagePath = path.join(process.cwd(), 'cache', 'ball.png');
-    const img = await jimp.read('https://i.ibb.co/6Jz7yvX/image.jpg');
+    const img = await jimp.read('https://i.imgur.com/TGq05CR.jpeg');
     
     img.resize(1080, 1320)
        .composite(avOne.resize(170, 170), 200, 320)
