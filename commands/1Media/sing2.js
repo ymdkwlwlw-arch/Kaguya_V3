@@ -18,15 +18,16 @@ const searchMusicOnSpotify = async (query) => {
     }
 };
 
-const downloadMusic = async (downloadUrl) => {
-    const downloadApiUrl = `https://spdl-v1.onrender.com/download?q=${encodeURIComponent(downloadUrl)}`;
-    try {
-        const downloadLinkResponse = await axios.get(downloadApiUrl);
-        const downloadLink = downloadLinkResponse.data;
-        const filePath = path.join(process.cwd(), 'cache', `${Date.now()}.mp3`);
-        const writeStream = fs.createWriteStream(filePath);
+const downloadMusic = async (previewUrl) => {
+    if (!previewUrl) {
+        throw new Error('No preview URL available for this track.');
+    }
 
-        const audioResponse = await axios.get(downloadLink, { responseType: 'stream' });
+    const filePath = path.join(process.cwd(), 'cache', `${Date.now()}.mp3`);
+    const writeStream = fs.createWriteStream(filePath);
+
+    try {
+        const audioResponse = await axios.get(previewUrl, { responseType: 'stream' });
         audioResponse.data.pipe(writeStream);
 
         return new Promise((resolve, reject) => {
@@ -42,12 +43,12 @@ export default {
     name: "اغنية",
     author: "Kaguya Project",
     role: "member",
-    aliases:["غني","أغنية"],
+    aliases: ["غني", "أغنية"],
     description: "يبحث عن الموسيقى على Spotify ويسمح للمستخدمين بتنزيلها.",
     execute: async function ({ api, event, args }) {
         const listensearch = args.join(" ");
         if (!listensearch) {
-            return api.sendMessage("حدث خطأ", event.threadID, event.messageID);
+            return api.sendMessage("❓ | حدث خطأ، يرجى إدخال اسم الأغنية.", event.threadID, event.messageID);
         }
 
         try {
@@ -55,73 +56,29 @@ export default {
             const tracks = await searchMusicOnSpotify(listensearch);
 
             if (tracks.length > 0) {
-                const topTracks = tracks.slice(0, 10);
-                let message = "🎶 𝗦𝗽𝗼𝘁𝗶𝗳𝘆\n\n━━━━━━━━━━━━━\n🎶 | إليك توب 10 أغاني على سبوتيفاي\n\n";
+                const topTrack = tracks[0]; // نأخذ أول نتيجة فقط
 
-                topTracks.forEach((track, index) => {
-                    message += `🆔 المعرف : ${index + 1}\n`;
-                    message += `📝 العنوان : ${track.name}\n`;
-                    message += `📅 تاريخ الرفع : ${track.release_date}\n`;
-                    message += `⏱️ المدة : ${formatDuration(track.duration_ms)}\n`;
-                    message += `📀 الالبوم : ${track.album}\n`;
-                    message += `🎧 الرابط الظاهر : ${track.preview_url}\n`;
-                    message += `⚙️ عنوان URL : ${track.external_url}\n`;
-                    message += "━━━━━━━━━━━━━\n";
-                });
-                message += "\nقم بالرد برقم الأغنية التي تريد تنزيلها.";
+                if (!topTrack.preview_url) {
+                    return api.sendMessage('❓ | لا يوجد رابط تحميل متاح للأغنية المطلوبة.', event.threadID);
+                }
 
-                api.sendMessage(message, event.threadID, (err, info) => {
-                    if (err) {
-                        console.error(err);
-                        return api.sendMessage("❓ | عذرًا، لم أتمكن من العثور على الموسيقى المطلوبة على Spotify.", event.threadID);
-                    }
+                const filePath = await downloadMusic(topTrack.preview_url);
 
-                    global.client.handler.reply.set(info.messageID, {
-                        author: event.senderID,
-                        type: "reply",
-                        name: "اغنية",
-                        unsend: false
-                    });
-                });
+                if (fs.statSync(filePath).size > 26214400) {
+                    fs.unlinkSync(filePath);
+                    return api.sendMessage('⚠️ | تعذر إرسال الملف لأن حجمه أكبر من 25 ميغابايت.', event.threadID);
+                }
+
+                api.sendMessage({
+                    body: `🎶 𝗦𝗽𝗼𝘁𝗶𝗳𝘆\n\n━━━━━━━━━━━━━\nتفضل اغنيتك ${topTrack.name} من سبوتيفاي.\n\nEnjoy listening!\n\n📝 العنوان : ${topTrack.name}\n👑 الفنان : ${topTrack.artists.join(', ')}\n📅 تاريخ الرفع : ${topTrack.release_date}\n⏱️ | المدة : ${formatDuration(topTrack.duration_ms)}\n📀 | الالبوم : ${topTrack.album}\n🎧 | الرابط الظاهر : ${topTrack.preview_url}\nرابط تحميل الأغنية : ${topTrack.external_url}`,
+                    attachment: fs.createReadStream(filePath)
+                }, event.threadID, () => fs.unlinkSync(filePath), event.messageID);
             } else {
                 api.sendMessage("❓ | عذرًا، لم أتمكن من العثور على الموسيقى المطلوبة على Spotify.", event.threadID);
             }
         } catch (error) {
             console.error(error);
             api.sendMessage("🚧 | حدث خطأ أثناء معالجة طلبك.", event.threadID);
-        }
-    },
-
-    onReply: async function ({ api, event, reply }) {
-        if (reply.type === "reply") {
-            if (event.senderID !== global.client.handler.reply.get(reply.messageID)?.author) {
-                return;
-            }
-
-            try {
-                const tracks = global.client.handler.reply.get(reply.messageID)?.tracks;
-                if (isNaN(reply.body) || reply.body < 1 || reply.body > tracks.length) {
-                    throw new Error("Invalid selection. Please reply with a number corresponding to the track.");
-                }
-
-                const selectedTrack = tracks[reply.body - 1];
-                const filePath = await downloadMusic(selectedTrack.external_url);
-
-                if (fs.statSync(filePath).size > 26214400) {
-                    fs.unlinkSync(filePath);
-                    return api.sendMessage('⚠️ |تعذر إرسال الملف لأن حجمه أكبر من 25 ميغابايت.', event.threadID);
-                }
-
-                api.unsendMessage(reply.messageID);
-                api.sendMessage({ 
-                    body: `🎶 𝗦𝗽𝗼𝘁𝗶𝗳𝘆\n\n━━━━━━━━━━━━━\nتفضل اغنيتك ${selectedTrack.name} من سبوتيفاي.\n\nEnjoy listening!\n\n📝 العنوان : ${selectedTrack.name}\n👑 الفنان : ${selectedTrack.artists.join(', ')}\n📅 تاريخ الرفع : ${selectedTrack.release_date}\n⏱️ | المدة : ${formatDuration(selectedTrack.duration_ms)}\n📀 | الالبوم : ${selectedTrack.album}\n🎧 |رابط الظاهر : ${selectedTrack.preview_url}\nتنزيل الأغنية : ${selectedTrack.external_url}`,
-                    attachment: fs.createReadStream(filePath)
-                }, event.threadID, () => fs.unlinkSync(filePath), event.messageID);
-
-            } catch (error) {
-                console.error(error);
-                api.sendMessage(`🚧 | حدث خطأ أثناء معالجة طلبك: ${error.message}`, event.threadID);
-            }
         }
     }
 };
