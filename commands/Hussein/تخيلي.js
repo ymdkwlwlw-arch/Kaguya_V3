@@ -3,12 +3,14 @@ import path from 'path';
 import axios from 'axios';
 import jimp from 'jimp';
 
+// Function to fetch and save user avatar
 const getAvatar = async (userId, avatarPath) => {
     const avatarUrl = `https://graph.facebook.com/${userId}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
     const { data } = await axios.get(avatarUrl, { responseType: 'arraybuffer' });
     fs.writeFileSync(avatarPath, Buffer.from(data, 'binary'));
 };
 
+// Function to generate composite image
 const generateImage = async (userOneId, userTwoId) => {
     const avatarDirOne = path.join(process.cwd(), 'cache', 'avatarOne.png');
     const avatarDirTwo = path.join(process.cwd(), 'cache', 'avatarTwo.png');
@@ -21,9 +23,10 @@ const generateImage = async (userOneId, userTwoId) => {
     const circleOne = await jimp.read(await createCircleImage(avatarDirOne));
     const circleTwo = await jimp.read(await createCircleImage(avatarDirTwo));
 
+    batgiamImg
+        .composite(circleOne.resize(150, 150), 80, 190)
+        .composite(circleTwo.resize(150, 150), 260, 80);
     
-              .composite(circleOne.resize(150, 150), 80, 190)
-              .composite(circleTwo.resize(150, 150), 260, 80);
     await batgiamImg.writeAsync(imagePath);
 
     fs.unlinkSync(avatarDirOne);
@@ -32,6 +35,7 @@ const generateImage = async (userOneId, userTwoId) => {
     return imagePath;
 };
 
+// Function to create a circular image
 const createCircleImage = async (imagePath) => {
     const imageJimp = await jimp.read(imagePath);
     imageJimp.circle();
