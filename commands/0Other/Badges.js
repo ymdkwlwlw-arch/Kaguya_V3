@@ -1,6 +1,6 @@
-import fs from "fs";
-import axios from "axios";
-import path from "path";
+import fs from 'fs';
+import axios from 'axios';
+import path from 'path';
 import { Readable } from 'stream';
 
 const userDataFile = path.join(process.cwd(), 'pontsData.json');
@@ -49,10 +49,10 @@ export default {
                 { music_name: "ناروتو", music_url: "https://files.catbox.moe/e4t0ot.mp3" },
                 { music_name: "ساكورا", music_url: "https://files.catbox.moe/s82saf.mp3" },
                 { music_name: "القناص", music_url: "https://files.catbox.moe/8gcssd.mp3" },
-                { music_name: "دورايون", music_url: "https://files.catbox.moe/zurj27.mp3" },
+                { music_name: "دورايمون", music_url: "https://files.catbox.moe/zurj27.mp3" },
                 { music_name: "السراب", music_url: "https://files.catbox.moe/6ymdq4.mp3" },
                 { music_name: "سيف النار", music_url: "https://files.catbox.moe/j3knwp.mp3" },
-                { music_name: "درين لاند", music_url: "https://files.catbox.moe/bxt0su.mp3" }
+                { music_name: "غرين لاند", music_url: "https://files.catbox.moe/bxt0su.mp3" }
             ];
 
             const randomMusic = musics[Math.floor(Math.random() * musics.length)];
@@ -64,7 +64,7 @@ export default {
             writeStream.on("finish", async () => {
                 // Send the message with the attachment as a stream
                 const readableStream = fs.createReadStream(tempAudioPath);
-                const message = `●❯───────────────❮●\n 🎵   |إستمتع بالإستماع للشارة 🥰\n 🧿 | وإحزر إسم الشارة تعودة لأي مسلسل ؟\n●❯───────────────❮●`;
+                const message = `●❯───────────────❮●\n 🎵   | إستمتع بالإستماع للشارة 🥰\n 🧿 | وإحزر إسم الشارة تعود إلى أي مسلسل ؟\n●❯───────────────❮●`;
                 api.sendMessage({ body: message, attachment: readableStream }, event.threadID, async (error, info) => {
                     if (!error) {
                         try {
@@ -86,7 +86,7 @@ export default {
             });
         } catch (error) {
             console.error("Error executing the game:", error);
-            api.sendMessage(`An error occurred while executing the game. Please try again.`, event.threadID);
+            api.sendMessage(`حدث خطأ أثناء تنفيذ اللعبة. حاول مرة أخرى.`, event.threadID);
         }
     },
     onReply: async function ({ api, event, reply, Economy }) {
@@ -96,16 +96,17 @@ export default {
 
             if (userGuess === correctMusicName) {
                 try {
-                    // Handle winning action here, like increasing points
-
-                        const pointsData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
-                        const userPoints = pointsData[event.senderID] || { name: userName, points: 0 }; // تحقق من وجود بيانات المستخدم، وإذا لم يكن موجودًا، قم بإنشاء بيانات جديدة
-                        userPoints.points += 50; // زيادة عدد النقاط
-                        pointsData[event.senderID] = userPoints; // تحديث بيانات المستخدم في الكائن
-                        fs.writeFileSync(userDataFile, JSON.stringify(pointsData, null, 2));
-
+                    const pointsData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
                     const userInfo = await api.getUserInfo(event.senderID);
                     const userName = userInfo ? userInfo[event.senderID].name : 'الفائز';
+
+                    if (!pointsData[event.senderID]) {
+                        pointsData[event.senderID] = { name: userName, points: 0 };
+                    }
+
+                    pointsData[event.senderID].points += 50; // Increase points
+                    fs.writeFileSync(userDataFile, JSON.stringify(pointsData, null, 2));
+
                     api.sendMessage(`✅ | تهانينا يا ${userName}! لقد حزرت اسم الشارة بشكل صحيح وحصلت على 50 نقطة.`, event.threadID);
                     api.unsendMessage(reply.messageID);
                     api.setMessageReaction("✅", event.messageID, (err) => {}, true);
@@ -113,7 +114,7 @@ export default {
                     console.error("Error handling winning action:", e);
                 }
             } else {
-                api.sendMessage(`❌ | آسف، هذا ليس اسم الشارة الصحيح.`, event.threadID);
+                api.sendMessage(`❌ | آسف، هذا ليس اسم الشارة الصحيح. حاول مرة أخرى.`, event.threadID);
                 api.setMessageReaction("❌", event.messageID, (err) => {}, true);
             }
         }
