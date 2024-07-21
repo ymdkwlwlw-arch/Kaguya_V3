@@ -444,7 +444,7 @@ export default {
                     console.error("Error handling winning action:", e);
                 }
             } else {
-                api.sendMessage(`❌ | آسف، لقد تخمين الشخصية بشكل خاطئ. حاول مرة أخرى.`, event.threadID);
+                api.sendMessage(`❌ | آسفة 🥺 يا ${userPoints.name} ، لكنك أخطأت في معرفة إسم الشخصية . حاول مرة أخرى.`, event.threadID);
 
                 api.setMessageReaction("❌", event.messageID, (err) => {}, true);
             }
