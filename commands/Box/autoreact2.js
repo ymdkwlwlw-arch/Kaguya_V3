@@ -16,7 +16,7 @@ async function imageSearch({ api, event, args }) {
     }
 
     try {
-        const response = await axios.get(`https://samirxpikachu.onrender.com/glens?url=${encodeURIComponent(imageUrl)}`);
+        const response = await axios.get(`https://www.samirxpikachu.run.place/glens?url=${encodeURIComponent(imageUrl)}`);
         const results = response.data.slice(0, 6);
 
         if (results.length > 0) {
