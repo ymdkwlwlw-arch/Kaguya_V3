@@ -18,7 +18,7 @@ export default {
         }
 
         try {
-            api.sendMessage(`🔍 Searching for music: ${searchTerm}`, chatId, event.messageID);
+            api.sendMessage(`🔍 | جاري البحث عن الاغنية المطلوبة : ${searchTerm}\n ⏱️ | يرجى الانتظار....`, chatId, event.messageID);
 
             const searchResults = await yts(searchTerm);
             if (!searchResults.videos.length) {
