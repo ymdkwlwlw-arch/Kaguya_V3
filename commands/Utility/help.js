@@ -61,10 +61,10 @@ allCommandsMsg += `إجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـ
       const commandsToDisplay = commandList.slice(startIndex, endIndex);
       commandsToDisplay.forEach((command, index) => {
         const commandNumber = startIndex + index + 1;
-        msg += `❍───────────────❍\n\t\t\t\t\tالأمر رقم :  [${commandNumber}]\n\t\t\t\t\tالإسم : 『${command.name}』\n❍───────────────❍\n`;
+        msg += `━━━━━━━◈✿◈━━━━━━━\n\t\t\t\t\tالأمر رقم :  [${commandNumber}]\n\t\t\t\t\tالإسم : 『${command.name}』\n━━━━━━━◈✿◈━━━━━━━\n`;
       });
 
-      msg += "✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎\nقم بكتابة *أوامر 'رقم الصفحة' من أجل رؤية باقي الصفحات \nأو قم بكتابة *اوامر الكل من أجل رؤية جميع الأوامر\n✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎";
+      msg += "✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎\nقم بكتابة أوامر 'رقم الصفحة' من أجل رؤية باقي الصفحات \nأو قم بكتابة اوامر الكل من أجل رؤية جميع الأوامر\n✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎";
 
       const randomImageUrl = this.randomImageUrls[Math.floor(Math.random() * this.randomImageUrls.length)];
       const tempImagePath = path.join(this.tempFolder, `random_image_${Date.now()}.jpeg`);
