@@ -45,7 +45,7 @@ export default {
                         client.handler.reply.set(info.messageID, {
                             author: event.senderID,
                             type: "reply",
-                            name: "سورة",
+                            name: "سور",
                             correctName: randomCharacter.name, // Add the correct name
                             unsend: true
                         });
