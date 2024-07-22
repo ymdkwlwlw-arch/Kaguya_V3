@@ -1,15 +1,26 @@
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
-import { shortenURL, getRandomApiKey } from './utils'; // Adjust the import based on your actual utility functions
+
+// Dummy implementations of utility functions for demonstration
+// Replace these with your actual implementations if needed
+const shortenURL = async (url) => {
+  // Placeholder for URL shortening logic
+  return url;
+};
+
+const getRandomApiKey = () => {
+  // Placeholder for API key logic
+  return 'your-api-key'; // Replace with actual API key retrieval logic
+};
 
 export default {
-  name: "اغينة",
+  name: "اغنية",
   author: "Your Name", // Replace with your name or bot's author
-  role: "member", 
-  aliases:["غني","أغنية"],
+  role: "member",
   cooldowns: 30, // Adjust cooldown if necessary
-  description: "ايحث عن اغنيتك.المفضلة ",
+  aliases:["غني","سمعيني"],
+  description: "Downloads a video from YouTube and sends it as an MP3 file.",
   execute: async ({ api, event, args }) => {
     let videoId;
     let shortUrl;
@@ -17,7 +28,7 @@ export default {
 
     try {
       if (args.length === 0) {
-        api.sendMessage("Please provide a video name or reply to a video or audio attachment.", event.threadID, event.messageID);
+        api.sendMessage(" ⚠️ | أدخل اسم الاغنية او رد على مرفق ", event.threadID, event.messageID);
         return;
       }
 
@@ -25,7 +36,7 @@ export default {
       if (searchResponse.data.length > 0) {
         videoId = searchResponse.data[0].videoId;
       } else {
-        api.sendMessage(" ⚠️ | قم بإدخال إسم الاغتية من اجل البحث عنها", event.threadID, event.messageID);
+        api.sendMessage("No video found for the given query.", event.threadID, event.messageID);
         return;
       }
 
@@ -58,7 +69,7 @@ export default {
 
       writer.on('finish', () => {
         const videoStream = fs.createReadStream(filePath);
-        api.sendMessage({ body: `${title}`, attachment: videoStream }, event.threadID, () => {
+        api.sendMessage({ body :`${title}`, attachment: videoStream }, event.threadID, () => {
           fs.unlinkSync(filePath);
         }, event.messageID);
         api.setMessageReaction("✅", event.messageID, () => {}, true);
