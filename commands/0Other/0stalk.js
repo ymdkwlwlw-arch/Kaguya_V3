@@ -1,4 +1,3 @@
-
 import jimp from 'jimp';
 import fs from 'fs';
 import path from 'path';
@@ -40,6 +39,8 @@ async function getMessageCounts(api, threadId) {
         messageCounts[message.senderID]++;
       }
     });
+
+    console.log('Message Counts:', messageCounts); // سجل تصحيح
 
     return messageCounts;
   } catch (err) {
