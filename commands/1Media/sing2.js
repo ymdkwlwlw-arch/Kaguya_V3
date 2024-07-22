@@ -40,10 +40,9 @@ const downloadMusic = async (previewUrl) => {
 };
 
 export default {
-    name: "اغنية",
+    name: "سبوتيفاي",
     author: "Kaguya Project",
     role: "member",
-    aliases: ["غني", "أغنية"],
     description: "يبحث عن الموسيقى على Spotify ويسمح للمستخدمين بتنزيلها.",
     execute: async function ({ api, event, args }) {
         const listensearch = args.join(" ");
