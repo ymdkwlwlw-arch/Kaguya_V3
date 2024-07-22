@@ -10,11 +10,11 @@ async function generateDescriptionFromPrompt(promptText) {
         const keywords = translatedText.split(' ');
 
         // إعادة بناء النص باللغة العربية
-        const descriptionResponse = await axios.get(`https://apis-samir.onrender.com/prompt?text=${encodeURIComponent(translatedText)}`);
+        const descriptionResponse = await axios.get(`https://api.vyturex.com/prompt?p=${encodeURIComponent(translatedText)}`);
         const descriptionData = descriptionResponse.data;
 
         return {
-            prompt: descriptionData.prompt,
+            prompt: descriptionData.response,
             keywords: keywords
         };
     } catch (error) {
@@ -31,13 +31,13 @@ export default {
     execute: async ({ api, event, args }) => {
         const promptText = args.join(" ");
         if (!promptText) {
-            api.sendMessage("⚠️ | المرجو  ادخال كلمة ك برومبت.", event.threadID, event.messageID);
+            api.sendMessage("⚠️ | المرجو إدخال كلمة كبرومبت.", event.threadID, event.messageID);
             return;
         }
 
         const description = await generateDescriptionFromPrompt(promptText);
         if (description) {
-            const message = `الوصف 📝 : \n${description.prompt}`;
+            const message = `${description.prompt}`;
             api.sendMessage(message, event.threadID, event.messageID);
         } else {
             api.sendMessage("حدث خطأ أثناء جلب الوصف.", event.threadID, event.messageID);
