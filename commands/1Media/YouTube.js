@@ -1,62 +1,76 @@
+import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
-import ytdl from 'ytdl-core';
-import yts from 'yt-search';
+import { shortenURL, getRandomApiKey } from './utils'; // Adjust the import based on your actual utility functions
 
 export default {
-    name: "موسيقى",
-    author: "Kaguya Project",
-    role: "member",
-    description: "Searches for a song on YouTube and sends the audio file.",
-    execute: async function ({ api, event, args }) {
-        const chatId = event.threadID;
-        const input = args.join(" ");
-        const searchTerm = input.substring(input.indexOf(" ") + 1);
+  name: "اغينة",
+  author: "Your Name", // Replace with your name or bot's author
+  role: "member", 
+  aliases:["غني","أغنية"],
+  cooldowns: 30, // Adjust cooldown if necessary
+  description: "ايحث عن اغنيتك.المفضلة ",
+  execute: async ({ api, event, args }) => {
+    let videoId;
+    let shortUrl;
+    const title = args.join(" ");
 
-        if (!searchTerm) {
-            return api.sendMessage(`Please provide a search query. Usage: ${global.config.prefix}music [title]`, chatId, event.messageID);
-        }
+    try {
+      if (args.length === 0) {
+        api.sendMessage("Please provide a video name or reply to a video or audio attachment.", event.threadID, event.messageID);
+        return;
+      }
 
-        try {
-            api.sendMessage(`🔍 | جاري البحث عن الاغنية المطلوبة : ${searchTerm}\n ⏱️ | يرجى الانتظار....`, chatId, event.messageID);
+      const searchResponse = await axios.get(`https://youtube-kshitiz-gamma.vercel.app/yt?search=${encodeURIComponent(title)}`);
+      if (searchResponse.data.length > 0) {
+        videoId = searchResponse.data[0].videoId;
+      } else {
+        api.sendMessage(" ⚠️ | قم بإدخال إسم الاغتية من اجل البحث عنها", event.threadID, event.messageID);
+        return;
+      }
 
-            const searchResults = await yts(searchTerm);
-            if (!searchResults.videos.length) {
-                return api.sendMessage("No music found for your query.", chatId, event.messageID);
-            }
+      const videoUrlResponse = await axios.get(`https://yt-kshitiz.vercel.app/download?id=${encodeURIComponent(videoId)}&apikey=${getRandomApiKey()}`);
+      shortUrl = await shortenURL(videoUrlResponse.data[0]);
 
-            const music = searchResults.videos[0];
-            const musicUrl = music.url;
+      if (!videoUrlResponse.data.length > 0) {
+        api.sendMessage("Failed to retrieve download link for the video.", event.threadID, event.messageID);
+        return;
+      }
 
-            const stream = ytdl(musicUrl, { filter: "audioonly" });
+      const downloadResponse = await axios.get(`https://yt-kshitiz.vercel.app/download?id=${encodeURIComponent(videoId)}&apikey=${getRandomApiKey()}`);
+      const videoUrl = downloadResponse.data[0];
 
-            stream.on('info', (info) => {
-                console.info('[DOWNLOADER]', `Downloading music: ${info.videoDetails.title}`);
-            });
+      if (!videoUrl) {
+        api.sendMessage("Failed to retrieve download link for the video.", event.threadID, event.messageID);
+        return;
+      }
 
-            const fileName = `${music.title}.mp3`;
-            const filePath = path.join(process.cwd(), 'cache', fileName);
+      const filePath = path.join(process.cwd(), "cache", `${videoId}.mp3`);
+      const writer = fs.createWriteStream(filePath);
 
-            stream.pipe(fs.createWriteStream(filePath));
+      const response = await axios({
+        url: videoUrl,
+        method: 'GET',
+        responseType: 'stream'
+      });
 
-            stream.on('end', () => {
-                console.info('[DOWNLOADER] Downloaded');
+      response.data.pipe(writer);
 
-                const stats = fs.statSync(filePath);
-                if (stats.size > 26214400) { // Check if file is larger than 25MB
-                    fs.unlinkSync(filePath);
-                    return api.sendMessage('❌ The file could not be sent because it is larger than 25MB.', chatId, event.messageID);
-                }
+      writer.on('finish', () => {
+        const videoStream = fs.createReadStream(filePath);
+        api.sendMessage({ body: `${title}`, attachment: videoStream }, event.threadID, () => {
+          fs.unlinkSync(filePath);
+        }, event.messageID);
+        api.setMessageReaction("✅", event.messageID, () => {}, true);
+      });
 
-                api.sendMessage({ 
-                    body: `࿇ ══━━━✥◈✥━━━══ ࿇\n${music.title}\n࿇ ══━━━✥◈✥━━━══ ࿇`, 
-                    attachment: fs.createReadStream(filePath)
-                }, chatId, () => fs.unlinkSync(filePath), event.messageID);
-            });
-
-        } catch (error) {
-            console.error('[ERROR]', error);
-            api.sendMessage('An error occurred while processing the command.', chatId, event.messageID);
-        }
+      writer.on('error', (error) => {
+        console.error("Error:", error);
+        api.sendMessage("Error downloading the video.", event.threadID, event.messageID);
+      });
+    } catch (error) {
+      console.error("Error:", error);
+      api.sendMessage("An error occurred.", event.threadID, event.messageID);
     }
+  }
 };
