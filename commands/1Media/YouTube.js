@@ -1,87 +1,90 @@
-import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+import axios from 'axios';
 
-// Dummy implementations of utility functions for demonstration
-// Replace these with your actual implementations if needed
-const shortenURL = async (url) => {
-  // Placeholder for URL shortening logic
-  return url;
-};
+async function audio({ api, event, args }) {
+    api.setMessageReaction("🕢", event.messageID, (err) => {}, true);
+    try {
+        let title = '';
+        let shortUrl = '';
+        let videoId = '';
 
-const getRandomApiKey = () => {
-  // Placeholder for API key logic
-  return 'your-api-key'; // Replace with actual API key retrieval logic
-};
+        const extractShortUrl = async () => {
+            const attachment = event.messageReply.attachments[0];
+            if (attachment.type === "audio") {
+                return attachment.url;
+            } else {
+                throw new Error("Invalid attachment type. Must be audio.");
+            }
+        };
+
+        if (event.messageReply && event.messageReply.attachments && event.messageReply.attachments.length > 0) {
+            shortUrl = await extractShortUrl();
+            const musicRecognitionResponse = await axios.get(`https://audio-recon-ahcw.onrender.com/kshitiz?url=${encodeURIComponent(shortUrl)}`);
+            title = musicRecognitionResponse.data.title;
+            const searchResponse = await axios.get(`https://youtube-kshitiz.vercel.app/youtube?search=${encodeURIComponent(title)}&type=music`);
+            if (searchResponse.data.length > 0) {
+                videoId = searchResponse.data[0].videoId;
+            }
+        } else if (args.length === 0) {
+            api.sendMessage("❕ | قم بإدخال اسم الأغنية أو الرد على مرفق صوتي", event.threadID);
+            return;
+        } else {
+            title = args.join(" ");
+            const searchResponse = await axios.get(`https://youtube-kshitiz.vercel.app/youtube?search=${encodeURIComponent(title)}&type=music`);
+            if (searchResponse.data.length > 0) {
+                videoId = searchResponse.data[0].videoId;
+            }
+        }
+
+        if (!videoId) {
+            api.sendMessage("[❕] | لم يتم العثور على الأغنية", event.threadID);
+            return;
+        }
+
+        const downloadResponse = await axios.get(`https://youtube-kshitiz.vercel.app/download?id=${encodeURIComponent(videoId)}`);
+        const audioUrl = downloadResponse.data[0];
+
+        if (!audioUrl) {
+            api.sendMessage("Failed to retrieve download link for the audio.", event.threadID);
+            return;
+        }
+
+        const audioPath = path.join(process.cwd(), 'temp', `${videoId}.mp3`);
+        const writer = fs.createWriteStream(audioPath);
+        const response = await axios({
+            url: audioUrl,
+            method: 'GET',
+            responseType: 'stream'
+        });
+
+        response.data.pipe(writer);
+
+        writer.on('finish', () => {
+            const audioStream = fs.createReadStream(audioPath);
+            api.sendMessage({ body: `🎵 | تشغيل الآن: ${title}`, attachment: audioStream }, event.threadID, () => {
+                fs.unlinkSync(audioPath); // Remove the temporary file
+                api.setMessageReaction("✅", event.messageID, () => {}, true);
+            });
+        });
+
+        writer.on('error', (error) => {
+            console.error("Error:", error);
+            api.sendMessage("❌ | حدث خطأ أثناء تنزيل الأغنية.", event.threadID);
+        });
+    } catch (error) {
+        console.error("Error:", error);
+        api.sendMessage("حدث خطأ أثناء تنفيذ الأمر.", event.threadID);
+    }
+}
 
 export default {
-  name: "اغنية",
-  author: "Your Name", // Replace with your name or bot's author
-  role: "member",
-  cooldowns: 30, // Adjust cooldown if necessary
-  aliases:["غني","سمعيني"],
-  description: "Downloads a video from YouTube and sends it as an MP3 file.",
-  execute: async ({ api, event, args }) => {
-    let videoId;
-    let shortUrl;
-    const title = args.join(" ");
-
-    try {
-      if (args.length === 0) {
-        api.sendMessage(" ⚠️ | أدخل اسم الاغنية او رد على مرفق ", event.threadID, event.messageID);
-        return;
-      }
-
-      const searchResponse = await axios.get(`https://youtube-kshitiz-gamma.vercel.app/yt?search=${encodeURIComponent(title)}`);
-      if (searchResponse.data.length > 0) {
-        videoId = searchResponse.data[0].videoId;
-      } else {
-        api.sendMessage("No video found for the given query.", event.threadID, event.messageID);
-        return;
-      }
-
-      const videoUrlResponse = await axios.get(`https://yt-kshitiz.vercel.app/download?id=${encodeURIComponent(videoId)}&apikey=${getRandomApiKey()}`);
-      shortUrl = await shortenURL(videoUrlResponse.data[0]);
-
-      if (!videoUrlResponse.data.length > 0) {
-        api.sendMessage("Failed to retrieve download link for the video.", event.threadID, event.messageID);
-        return;
-      }
-
-      const downloadResponse = await axios.get(`https://yt-kshitiz.vercel.app/download?id=${encodeURIComponent(videoId)}&apikey=${getRandomApiKey()}`);
-      const videoUrl = downloadResponse.data[0];
-
-      if (!videoUrl) {
-        api.sendMessage("Failed to retrieve download link for the video.", event.threadID, event.messageID);
-        return;
-      }
-
-      const filePath = path.join(process.cwd(), "cache", `${videoId}.mp3`);
-      const writer = fs.createWriteStream(filePath);
-
-      const response = await axios({
-        url: videoUrl,
-        method: 'GET',
-        responseType: 'stream'
-      });
-
-      response.data.pipe(writer);
-
-      writer.on('finish', () => {
-        const videoStream = fs.createReadStream(filePath);
-        api.sendMessage({ body :`${title}`, attachment: videoStream }, event.threadID, () => {
-          fs.unlinkSync(filePath);
-        }, event.messageID);
-        api.setMessageReaction("✅", event.messageID, () => {}, true);
-      });
-
-      writer.on('error', (error) => {
-        console.error("Error:", error);
-        api.sendMessage("Error downloading the video.", event.threadID, event.messageID);
-      });
-    } catch (error) {
-      console.error("Error:", error);
-      api.sendMessage("An error occurred.", event.threadID, event.messageID);
-    }
-  }
+    name: "اغنية",
+    version: "1.0",
+    author: "Kshitiz",
+    countDown: 10,
+    role: "member",
+    aliases:["غني","سمعيني"],
+    description: "تشغيل أغنية من YouTube",
+    execute: audio
 };
