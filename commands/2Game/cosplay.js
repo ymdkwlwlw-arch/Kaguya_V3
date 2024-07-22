@@ -39,6 +39,7 @@ export default {
   name: "أزياء",
   author: "Kaguya Project",
   role: "member",
+  aliases:["كوسبلاي"],
   description: "يقوم بعرض صورة عشوائية لشخصية أنمي",
   async execute({ api, event }) {
     try {
@@ -53,7 +54,7 @@ export default {
       api.setMessageReaction("💐", event.messageID, () => {}, true);
 
       const message = {
-        body: "✿━━━━━━━━━━━━━━━━━✿\n🌺 | تفضل إليك صورة الأزياء \n✿━━━━━━━━━━━━━━━━━✿",
+        body: "◆❯━━━━━▣✦▣━━━━━━❮◆\n🌺 | تفضل إليك صورة الأزياء \n◆❯━━━━━▣✦▣━━━━━━❮◆",
         attachment: fs.createReadStream(tempImagePath)
       };
 
