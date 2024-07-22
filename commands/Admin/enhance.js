@@ -7,7 +7,7 @@ export default {
   name: "جودة",
   author: "Kaguya Project",
   role: "member",
-  aliases:["تحسين"],
+  aliases: ["تحسين"],
   description: "رفع و تحسين جودة الصور",
   async execute({ api, event }) {
     api.setMessageReaction("📷", event.messageID, (err) => {}, true);
@@ -35,9 +35,9 @@ export default {
       // Shorten the photo URL using TinyURL
       const shortenedUrl = await tinyurl.shorten(photoUrl);
 
-      // Fetch the upscaled image using the upscale API
-      const response = await axios.get(`https://www.api.vyturex.com/upscale?imageUrl=${shortenedUrl}`);
-      const processedImageUrl = response.data.resultUrl;
+      // Fetch the upscaled image using the new API
+      const response = await axios.get(`https://joshweb.click/remini?q=${shortenedUrl}`);
+      const processedImageUrl = response.data.result;
 
       // Fetch the processed image
       const enhancedImageResponse = await axios.get(processedImageUrl, { responseType: "arraybuffer" });
