@@ -1,56 +1,60 @@
 import axios from 'axios';
-import fs from 'fs-extra';
-import path from 'path';
 import tinyurl from 'tinyurl';
-import { join } from 'path';
+import fs from 'fs';
+import path from 'path';
 
 export default {
   name: "جودة",
   author: "Kaguya Project",
   role: "member",
-  description: "يقوم بتحسين الصور باستخدام API خارجية.",
-  async execute({ message, event, api }) {
-    api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
-    const { type, messageReply } = event;
-    const { attachments, threadID, messageID } = messageReply || {};
+  aliases:["تحسين"],
+  description: "رفع و تحسين جودة الصور",
+  async execute({ api, event }) {
+    const args = event.body.split(/\s+/).slice(1); // Use slice to skip the first element
+    const { threadID, messageID, messageReply } = event;
+    const tempImagePath = path.join(process.cwd(), 'tmp', 'enhanced_image.jpg');
 
-    if (type === "message_reply" && attachments) {
-      const [attachment] = attachments;
-      const { url, type: attachmentType } = attachment || {};
+    // Check if there's a message reply and if it has attachments
+    if (!messageReply || !messageReply.attachments || !(messageReply.attachments[0] || args[0])) {
+      return api.sendMessage("┐⁠(⁠￣⁠ヘ⁠￣⁠)⁠┌ | Must reply to an image or provide an image URL.", threadID, messageID);
+    }
 
-      if (!attachment || !["photo", "sticker"].includes(attachmentType)) {
-        return api.sendMessage("❌ | الرد يجب أن يكون على صورة.", threadID, messageID);
-      }
+    // Determine the photo URL from the reply or command arguments
+    const photoUrl = messageReply.attachments[0] ? messageReply.attachments[0].url : args.join(" ");
 
-      try {
-        const shortenedUrl = await tinyurl.shorten(url);
-        const { data } = await axios.get(`https://for-devs.onrender.com/api/upscale?imageurl=${encodeURIComponent(shortenedUrl)}&apikey=api1`, {
-          responseType: "json"
-        });
+    // Check if a valid photo URL is present
+    if (!photoUrl) {
+      return api.sendMessage("┐⁠(⁠￣⁠ヘ⁠￣⁠)⁠┌ | Must reply to an image or provide an image URL.", threadID, messageID);
+    }
 
-        const imageUrl = data.result_url;
-        const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
+    // Notify user to wait
+    await api.sendMessage("⊂⁠(⁠・⁠﹏⁠・⁠⊂⁠) | Please wait...", threadID, messageID);
 
-        const cacheFolder = path.join(process.cwd(), "cache");
-        if (!fs.existsSync(cacheFolder)) {
-          fs.mkdirSync(cacheFolder, { recursive: true });
-        }
+    try {
+      // Shorten the photo URL using TinyURL
+      const shortenedUrl = await tinyurl.shorten(photoUrl);
 
-        const imagePath = path.join(cacheFolder, "remi_image.png");
-        fs.writeFileSync(imagePath, imageResponse.data);
+      // Fetch the upscaled image using the upscale API
+      const response = await axios.get(`https://www.api.vyturex.com/upscale?imageUrl=${shortenedUrl}`);
+      const processedImageUrl = response.data.resultUrl;
 
+      // Fetch the processed image
+      const enhancedImageResponse = await axios.get(processedImageUrl, { responseType: "arraybuffer" });
 
-        api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+      // Save the processed image to a temporary file
+      fs.writeFileSync(tempImagePath, enhancedImageResponse.data);
 
-        api.sendMessage({ attachment: fs.createReadStream(imagePath) }, threadID, () => {
-          fs.unlinkSync(imagePath);
-        }, messageID);
-      } catch (error) {
-        console.error(error);
-        api.sendMessage("❌ | حدث خطأ أثناء تحسين الصورة.", threadID, messageID);
-      }
-    } else {
-      api.sendMessage("❌ | يرجى الرد على صورة.", threadID, messageID);
+      // Send the enhanced image as a reply
+      await api.sendMessage({
+        body: "<⁠(⁠￣⁠︶⁠￣⁠)⁠> | Image Enhanced.",
+        attachment: fs.createReadStream(tempImagePath)
+      }, threadID, () => {
+        // Delete the temporary image file after sending
+        fs.unlinkSync(tempImagePath);
+      }, messageID);
+    } catch (error) {
+      // Handle errors gracefully
+      api.sendMessage(`(⁠┌⁠・⁠。⁠・⁠)⁠┌ | Api Dead...: ${error.message}`, threadID, messageID);
     }
   }
 };
