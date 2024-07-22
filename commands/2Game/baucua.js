@@ -80,10 +80,10 @@ export default {
   author: "Kaguya Project",
   role: "member",
   description: "يقوم بعرض صورة عشوائية لشخصية أنمي",
-  aliase: ["انمي"],
+  aliases: ["انمي"],
   async execute({ api, event }) {
     try {
-      api.setMessageReaction("⏱️", event.messageID, () => {}, true);
+      api.setMessageReaction("", event.messageID, () => {}, true);
 
       const randomIndex = Math.floor(Math.random() * animeImageLinks.length);
       const imageUrl = animeImageLinks[randomIndex];
@@ -93,10 +93,10 @@ export default {
 
       fs.writeFileSync(tempImagePath, Buffer.from(imageResponse.data));
 
-      api.setMessageReaction("💟", event.messageID, () => {}, true);
+      api.setMessageReaction("💥", event.messageID, () => {}, true);
 
       const message = {
-        body: "✿━━━━━━━━━━━━━━━━━✿\n💟 | تفضل إليك صورة الأنمي\n✿━━━━━━━━━━━━━━━━━✿",
+        body: "✿━━━━━━━━━━━━━━━━✿\n🌟 | تفضل إليك صورة الأنمي الخاصة بك\n✿━━━━━━━━━━━━━━━━✿",
         attachment: fs.createReadStream(tempImagePath)
       };
 
