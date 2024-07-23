@@ -6,14 +6,21 @@ export default {
   role: "member",
   aliases: ["trans", "إرسال"],
   execute: async ({ api, event, Users, Threads, Economy }) => {
-    // استخراج البيانات من الرسالة
+    let targetUID;
     const args = event.body.split(' ');
-    const coins = parseInt(args[1], 10);
-    const targetUID = args[2];
+
+    // التحقق مما إذا كان هناك رد على رسالة
+    if (event.messageReply) {
+      targetUID = event.messageReply.senderID; // الحصول على معرف المرسل للرسالة التي يتم الرد عليها
+    } else {
+      targetUID = args[1]; // الحصول على معرف المستخدم من الرسالة نفسها
+    }
+
+    const coins = parseInt(args[0], 10); // افتراض أن الكمية هي العنصر الأول
 
     // التحقق من صحة المدخلات
     if (isNaN(coins) || coins <= 0 || !targetUID) {
-      return api.sendMessage("⚠️ | يرحى ادخالها بالتنسيق التالي \nتحويل كمية المال المعرف مثال : تحويل 1000 1000648477485", event.threadID, event.messageID);
+      return api.sendMessage("⚠️ | يرحى ادخالها بالتنسيق التالي \nتحويل <الكمية> <معرف المستخدم>\nأو الرد على رسالة المستخدم لتحديده.", event.threadID, event.messageID);
     }
 
     try {
