@@ -1,6 +1,6 @@
 import axios from 'axios';
-const APIKEY = "V-GoatMart-Beta-xv4-Ibs8j-90-az7-V";
-const serverURL = "https://goatmart-apis.onrender.com";
+const APIKEY = `V-GoatMart-Beta-xv4-Ibs8j-90-az7-V`;
+const serverURL = `https://goatmart-apis.onrender.com`;
 export default {
   name: 'المتجر',
   author: 'Your Name',
