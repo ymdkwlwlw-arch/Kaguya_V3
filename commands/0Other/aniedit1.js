@@ -1,52 +1,67 @@
 import axios from 'axios';
 
-const command = {
-  name: "وصف",
-  author: "Kaguya Project",
-  role: "member",
-  description: "يقوم بمعالجة الفيديو باستخدام API خارجية ويرد بالنص المعالج.",
+export default {
+  name: 'صفي',
+  author: 'HUSSEIN',
+  role: 'member',
+  description: 'يتعرف على الصورة ويحللها بناءً على النص المرفق.',
+  execute: async ({ api, event, args }) => {
+    const prompt = args.join(" ");
 
-  async execute({  args, api, event }) {
-    api.setMessageReaction("✨", event.messageID, (err) => {}, true);
+    if (!prompt) {
+      return api.sendMessage('يرجى إدخال النص المطلوب تحليل الصورة بناءً عليه.', event.threadID, event.messageID);
+    }
+
+    if (event.type !== "message_reply" || !event.messageReply.attachments[0] || event.messageReply.attachments[0].type !== "photo") {
+      return api.sendMessage('يرجى الرد على صورة بهذا الأمر.', event.threadID, event.messageID);
+    }
+
+    const url = encodeURIComponent(event.messageReply.attachments[0].url);
+    api.sendTypingIndicator(event.threadID);
+
+    let waitingMessageID;
+
     try {
-      if (!event.messageReply || !event.messageReply.attachments || !event.messageReply.attachments[0]) {
-        return kaguya.reply("يرجى الرد على فيديو.");
-      }
+      // إرسال رسالة الانتظار
+      const waitingMessage = await api.sendMessage('━━━━━━━━━━━━━━━━━━\nجاري تحليل الصورة، يرجى الانتظار...\n━━━━━━━━━━━━━━━━━━', event.threadID);
+      waitingMessageID = waitingMessage.messageID;
 
-      const prompt = args.join(" ");
-      const repliedVideoUrl = event.messageReply.attachments[0].url;
+      // تنفيذ عملية التحليل
+      const response = await axios.get(`https://joshweb.click/gemini?prompt=${encodeURIComponent(prompt)}&url=${url}`);
+      const description = response.data.gemini;
+       api.setMessageReaction("✨", event.messageID, (err) => {}, true);
+      // إرسال النتيجة النهائية
+      await api.sendMessage(`━━━━━━━━━━━━━━━━━━\n${description}\n━━━━━━━━━━━━━━━━━━`, event.threadID, event.messageID);
 
-      const firstApiUrl = `https://vex-kshitiz.onrender.com/kshitiz?video=${encodeURIComponent(repliedVideoUrl)}`;
-      const response1 = await axios.get(firstApiUrl);
-      if (!response1.data || !response1.data.videoUrl) {
-        throw new Error("فشل في استرجاع رابط الفيديو المعالج من API الأولى.");
-      }
-      const processedVideoUrl = response1.data.videoUrl;
+      // حذف رسالة الانتظار بعد إرسال النتيجة النهائية
+      await api.unsendMessage(waitingMessageID);
 
-      const secondApiUrl = `https://gemini-video.onrender.com/kshitiz?prompt=${encodeURIComponent(prompt)}&url=${encodeURIComponent(processedVideoUrl)}`;
-      const response2 = await axios.get(secondApiUrl);
-      if (!response2.data || !response2.data.answer) {
-        throw new Error("فشل في استرجاع النص المعالج من API الثانية.");
-      }
-      const answerText = response2.data.answer;
-
-      kaguya.reply(answerText);
     } catch (error) {
-      console.error("Error:", error);
-      kaguya.reply("حدث خطأ أثناء معالجة الفيديو. يرجى المحاولة مرة أخرى.");
+      console.error(error);
+      await api.sendMessage('❌ | حدث خطأ أثناء معالجة طلبك.', event.threadID, event.messageID);
+
+      // حذف رسالة الانتظار في حالة حدوث خطأ
+      if (waitingMessageID) {
+        await api.unsendMessage(waitingMessageID);
+      }
     }
   },
-
-  // دالة للحصول على الوصف باللغة العربية
-  async getArabicDescription(text) {
-    try {
-      const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ar&dt=t&q=${encodeURIComponent(text)}`);
-      return translationResponse?.data?.[0]?.[0]?.[0];
-    } catch (error) {
-      console.error("Error in translation:", error);
-      return text;
+  onReply: async ({ api, event, reply, client }) => {
+    if (reply.type === "reply" && reply.author === event.senderID) {
+      try {
+        global.client.handler.reply.set(reply.messageID, {
+          author: event.senderID,
+          type: "reply",
+          name: "صفي",
+          unsend: false,
+        });
+      } catch (err) {
+        console.error(err);
+        api.sendMessage('❌ | حدث خطأ أثناء إعداد الرد.', event.threadID, event.messageID);
+      }
     }
-  }
+  },
+  onReaction: async ({ api, event, reaction, Users, Threads, Economy }) => {
+    // يمكنك إضافة معالجة للتفاعلات هنا إذا لزم الأمر
+  },
 };
-
-export default command;
