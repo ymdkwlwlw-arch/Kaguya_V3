@@ -2,18 +2,18 @@ import axios from 'axios';
 
 export default {
   name: 'صفي',
-  author: 'HUSSEIN',
+  author: 'Your Name',
   role: 'member',
   description: 'يتعرف على الصورة ويحللها بناءً على النص المرفق.',
   execute: async ({ api, event, args }) => {
     const prompt = args.join(" ");
 
     if (!prompt) {
-      return api.sendMessage('يرجى إدخال النص المطلوب تحليل الصورة بناءً عليه.', event.threadID, event.messageID);
+      return api.sendMessage(' ⚠️ | يرجى إدخال النص المطلوب تحليل الصورة بناءً عليه.', event.threadID, event.messageID);
     }
 
     if (event.type !== "message_reply" || !event.messageReply.attachments[0] || event.messageReply.attachments[0].type !== "photo") {
-      return api.sendMessage('يرجى الرد على صورة بهذا الأمر.', event.threadID, event.messageID);
+      return api.sendMessage('⚠️ | يرجى الرد على صورة بهذا الأمر.', event.threadID, event.messageID);
     }
 
     const url = encodeURIComponent(event.messageReply.attachments[0].url);
@@ -23,14 +23,18 @@ export default {
 
     try {
       // إرسال رسالة الانتظار
-      const waitingMessage = await api.sendMessage('━━━━━━━━━━━━━━━━━━\nجاري تحليل الصورة، يرجى الانتظار...\n━━━━━━━━━━━━━━━━━━', event.threadID);
+      api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
+  
+      const waitingMessage = await api.sendMessage('', event.threadID);
       waitingMessageID = waitingMessage.messageID;
 
       // تنفيذ عملية التحليل
       const response = await axios.get(`https://joshweb.click/gemini?prompt=${encodeURIComponent(prompt)}&url=${url}`);
       const description = response.data.gemini;
-       api.setMessageReaction("✨", event.messageID, (err) => {}, true);
+
       // إرسال النتيجة النهائية
+      api.setMessageReaction("✨", event.messageID, (err) => {}, true);
+  
       await api.sendMessage(`━━━━━━━━━━━━━━━━━━\n${description}\n━━━━━━━━━━━━━━━━━━`, event.threadID, event.messageID);
 
       // حذف رسالة الانتظار بعد إرسال النتيجة النهائية
