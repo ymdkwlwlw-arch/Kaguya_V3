@@ -43,9 +43,12 @@ export default {
         const imagePath = path.join(cacheFolder, "remi_image.png");
         fs.writeFileSync(imagePath, imageResponse.data);
 
-        // إرسال الصورة المحسنة
+        // إرسال الصورة المحسنة مع نص
         api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-        api.sendMessage({ attachment: fs.createReadStream(imagePath) }, threadID, () => {
+        api.sendMessage({
+          body: "━━━━━━━◈✿◈━━━━━━━\n✅ | تمـٰ ࢪفــ͡ـعـ๋͜‏ـۂ اݪجـوُدِة بـنجـاح\n━━━━━━━◈✿◈━━━━━━━",
+          attachment: fs.createReadStream(imagePath)
+        }, threadID, () => {
           fs.unlinkSync(imagePath);
         }, messageID);
       } catch (error) {
