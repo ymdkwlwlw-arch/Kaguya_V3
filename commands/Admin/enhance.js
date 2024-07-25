@@ -2,7 +2,6 @@ import axios from 'axios';
 import fs from 'fs-extra';
 import path from 'path';
 import tinyurl from 'tinyurl';
-import { join } from 'path';
 
 export default {
   name: "جودة",
@@ -23,14 +22,19 @@ export default {
       }
 
       try {
+        // اختصار الرابط باستخدام tinyurl
         const shortenedUrl = await tinyurl.shorten(url);
-        const { data } = await axios.get(`https://for-devs.onrender.com/api/upscale?imageurl=${encodeURIComponent(shortenedUrl)}&apikey=api1`, {
+
+        // طلب تحسين الصورة من الـ API
+        const { data } = await axios.get(`https://king-aryanapis.onrender.com/api/4k?url=${encodeURIComponent(shortenedUrl)}`, {
           responseType: "json"
         });
 
-        const imageUrl = data.result_url;
+        // الحصول على رابط الصورة المحسنة
+        const imageUrl = data.resultUrl;
         const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
 
+        // إعداد مجلد الكاش وحفظ الصورة
         const cacheFolder = path.join(process.cwd(), "cache");
         if (!fs.existsSync(cacheFolder)) {
           fs.mkdirSync(cacheFolder, { recursive: true });
@@ -39,9 +43,8 @@ export default {
         const imagePath = path.join(cacheFolder, "remi_image.png");
         fs.writeFileSync(imagePath, imageResponse.data);
 
-
+        // إرسال الصورة المحسنة
         api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-
         api.sendMessage({ attachment: fs.createReadStream(imagePath) }, threadID, () => {
           fs.unlinkSync(imagePath);
         }, messageID);
