@@ -1,63 +1,68 @@
-import axios from "axios";
+import axios from 'axios';
 
 export default {
-  name: "ذكاء",
-  author: "kaguya project",
-  role: "member",
-  description: "استخدام Bing للرد على الاستفسارات.",
+  name: 'ذكاء',
+  author: 'Your Name',
+  role: 'member',
+  description: 'يتعرف على الصورة ويحللها بناءً على النص المرفق أو يجيب على الأسئلة.',
+  execute: async ({ api, event, args }) => {
+    const prompt = args.join(" ");
 
-  execute: async ({ api, event, client }) => {
-    try {
-      const { threadID, messageID, body, senderID } = event;
+    // معالجة الصور
+    if (event.type === "message_reply" && event.messageReply.attachments[0] && event.messageReply.attachments[0].type === "photo") {
+      if (!prompt) {
+        return api.sendMessage('⚠️ | يرجى إدخال النص المطلوب تحليل الصورة بناءً عليه.', event.threadID, event.messageID);
+      }
 
-      api.setMessageReaction("⏰", messageID, (err) => {}, true);
+      const url = encodeURIComponent(event.messageReply.attachments[0].url);
+      api.sendTypingIndicator(event.threadID);
 
-      // إرسال الطلب إلى API Bing
-      const response = await axios.get(`https://joshweb.click/bing?prompt=${encodeURIComponent(body)}`);
-      const answer = response.data.bing; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
+      try {
+        await api.sendMessage('ذكاء 🔖\n━━━━━━━━━━━━━━━━━━\nجاري تحليل الصورة، يرجى الانتظار...\n━━━━━━━━━━━━━━━━━━', event.threadID);
 
-      api.sendMessage(answer, threadID, (err, info) => {
-        if (err) return console.error(err);
+        const response = await axios.get(`https://joshweb.click/gemini?prompt=${encodeURIComponent(prompt)}&url=${url}`);
+        const description = response.data.gemini;
 
-        global.client.handler.reply.set(info.messageID, {
-          author: senderID,
+        return api.sendMessage(`ذكاء 🔖\n━━━━━━━━━━━━━━━━━━\n${description}\n━━━━━━━━━━━━━━━━━━`, event.threadID, event.messageID);
+      } catch (error) {
+        console.error(error);
+        return api.sendMessage('❌ | حدث خطأ أثناء معالجة طلبك.', event.threadID, event.messageID);
+      }
+
+    } else {
+      // معالجة الأسئلة والنصوص
+      if (!prompt) {
+        return api.sendMessage('❗ | يرجى إدخال السؤال للإجابة عليه.', event.threadID, event.messageID);
+      }
+
+      try {
+        // استدعاء API للإجابة على الأسئلة
+        const response = await axios.get(`https://joshweb.click/gpt4?prompt=${encodeURIComponent(prompt)}&uid=${event.senderID}`);
+        const answer = response.data.answer;
+
+        return api.sendMessage(`💬 | إجابة: ${answer}`, event.threadID, event.messageID);
+      } catch (error) {
+        console.error(error);
+        return api.sendMessage('❌ | حدث خطأ أثناء معالجة سؤالك.', event.threadID, event.messageID);
+      }
+    }
+  },
+  onReply: async ({ api, event, reply, client }) => {
+    if (reply.type === "reply" && reply.author === event.senderID) {
+      try {
+        global.client.handler.reply.set(reply.messageID, {
+          author: event.senderID,
           type: "reply",
           name: "ذكاء",
           unsend: false,
         });
-      });
-
-      api.setMessageReaction("✅", messageID, (err) => {}, true);
-
-    } catch (error) {
-      console.error("Error:", error.message, error.response?.data);
-      api.setMessageReaction("❌", event.messageID, (err) => {}, true);
-      api.sendMessage("⚠️ حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.", event.threadID, event.messageID);
-    }
-  },
-
-  onReply: async ({ api, event, reply, client }) => {
-    if (reply.type === "reply" && reply.author === event.senderID) {
-      try {
-        // إرسال الرد إلى API Bing
-        const response = await axios.get(`https://joshweb.click/bing?prompt=${encodeURIComponent(event.body)}`);
-        const answer = response.data.bing; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
-
-        api.sendMessage(answer, event.threadID, (err, info) => {
-          if (err) return console.error(err);
-
-          // تحديث replyId للرد الجديد
-          global.client.handler.reply.set(info.messageID, {
-            author: event.senderID,
-            type: "reply",
-            name: "ذكاء",
-            unsend: false,
-          });
-        });
-      } catch (error) {
-        console.error("Error:", error.message, error.response?.data);
-        api.sendMessage("⚠️ حدث خطأ أثناء معالجة ردك. يرجى المحاولة مرة أخرى.", event.threadID, event.messageID);
+      } catch (err) {
+        console.error(err);
+        api.sendMessage('❌ | حدث خطأ أثناء إعداد الرد.', event.threadID, event.messageID);
       }
     }
-  }
+  },
+  onReaction: async ({ api, event, reaction, Users, Threads, Economy }) => {
+    // يمكنك إضافة معالجة للتفاعلات هنا إذا لزم الأمر
+  },
 };
