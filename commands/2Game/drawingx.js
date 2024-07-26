@@ -18,7 +18,7 @@ export default {
       const prompt = translationResponse?.data?.[0]?.[0]?.[0] || text;
 
       // الحصول على رابط الصورة من API
-      const apiUrl = `https://samirxpikachu.onrender.com/mageDef?prompt=${encodeURIComponent(prompt)}`;
+      const apiUrl = `https://www.samirxpikachu.run.place/mageDef?prompt=${encodeURIComponent(prompt)}`;
       const response = await axios.get(apiUrl, { responseType: 'stream' });
 
       const downloadDirectory = process.cwd();
