@@ -1,5 +1,5 @@
 import axios from "axios";
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 import request from "request";
 
@@ -13,7 +13,7 @@ export default {
   cooldown: 60, // cooldown بالثواني
 
   async execute({ api, event }) {
-    const { threadID, messageID, type, messageReply } = event; // تم التصحيح هنا
+    const { threadID, messageID, type, messageReply } = event;
 
     api.setMessageReaction("⚙️", event.messageID, (err) => {}, true);
 
@@ -22,45 +22,54 @@ export default {
       return;
     }
 
-    if (messageReply.attachments.length !== 1 || messageReply.attachments[0].type !== 'photo') {
-      api.sendMessage('[❌] صورة غير صالحة ، المرجو الرد على صورة واحدة وواضحة المرة المقبلة.', threadID, messageID);
+    if (!messageReply || !messageReply.attachments || messageReply.attachments.length !== 1 || messageReply.attachments[0].type !== 'photo') {
+      api.sendMessage('[❌] صورة غير صالحة، يرجى الرد على صورة واحدة وواضحة.', threadID, messageID);
       return;
     }
 
     const url = messageReply.attachments[0].url;
-    const inputPath = path.join(currentDir, 'cache', `removebg.png`);
+    const inputPath = path.join(currentDir, 'cache', 'removebg.png');
 
-    request(url)
-      .pipe(fs.createWriteStream(inputPath))
-      .on('finish', () => {
-        const apiUrl = `https://for-devs.onrender.com/api/rbg?imageUrl=${encodeURIComponent(url)}&apikey=api1`;
-
-        axios({
-          method: 'get',
-          url: apiUrl,
-          responseType: 'arraybuffer',
-        })
-          .then((res) => {
-            if (res.status !== 200) {
-              console.error('Error:', res.status, res.statusText);
-              return;
-            }
-
-            fs.writeFileSync(inputPath, res.data);
-
-            api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-
-            const message = {
-              body: ' ✅ | تم بنجاح إزالة الخلفية.',
-              attachment: fs.createReadStream(inputPath),
-            };
-
-            api.sendMessage(message, threadID, messageID);
-          })
-          .catch((error) => {
-            api.sendMessage('[❌] فشل الطلب \n\n' + error, threadID, messageID);
-            console.error('Request failed:', error);
-          });
+    try {
+      // Download the image
+      await new Promise((resolve, reject) => {
+        request(url)
+          .pipe(fs.createWriteStream(inputPath))
+          .on('finish', resolve)
+          .on('error', reject);
       });
+
+      const apiUrl = `https://www.samirxpikachu.run.place/rbg?url=${encodeURIComponent(url)}`;
+
+      // Call the API to remove the background
+      const response = await axios({
+        method: 'get',
+        url: apiUrl,
+        responseType: 'arraybuffer',
+      });
+
+      if (response.status !== 200) {
+        console.error('Error:', response.status, response.statusText);
+        api.sendMessage('[❌] فشل في إزالة الخلفية. حاول مجدداً لاحقاً.', threadID, messageID);
+        return;
+      }
+
+      // Save the result image
+      await fs.writeFile(inputPath, response.data);
+
+      // Send the result
+      api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+
+      const message = {
+        body: '✅ | تم بنجاح إزالة الخلفية.',
+        attachment: fs.createReadStream(inputPath),
+      };
+
+      api.sendMessage(message, threadID, messageID);
+
+    } catch (error) {
+      api.sendMessage('[❌] فشل الطلب \n\n' + error.message, threadID, messageID);
+      console.error('Request failed:', error);
+    }
   },
 };
