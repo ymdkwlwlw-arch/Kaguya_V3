@@ -5,31 +5,24 @@ export default {
   author: 'Your Name',
   role: 'member',
   description: 'يتعرف على الصورة ويحللها بناءً على النص المرفق.',
-  execute: async ({ api, event, args }) => {
-    const prompt = args.join(" ");
-
-    if (!prompt) {
-      return api.sendMessage(' ⚠️ | يرجى إدخال النص المطلوب تحليل الصورة بناءً عليه.', event.threadID, event.messageID);
-    }
-
+  execute: async ({ api, event }) => {
     if (event.type !== "message_reply" || !event.messageReply.attachments[0] || event.messageReply.attachments[0].type !== "photo") {
       return api.sendMessage('⚠️ | يرجى الرد على صورة بهذا الأمر.', event.threadID, event.messageID);
     }
 
     const url = encodeURIComponent(event.messageReply.attachments[0].url);
+
     api.sendTypingIndicator(event.threadID);
 
     let waitingMessageID;
 
     try {
       // إرسال رسالة الانتظار
-      api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
-  
-      const waitingMessage = await api.sendMessage('', event.threadID);
+      const waitingMessage = await api.sendMessage('⏳ | جاري تحليل الصورة، يرجى الانتظار...', event.threadID);
       waitingMessageID = waitingMessage.messageID;
 
       // تنفيذ عملية التحليل
-      const response = await axios.get(`https://joshweb.click/gemini?prompt=${encodeURIComponent(prompt)}&url=${url}`);
+      const response = await axios.get(`https://joshweb.click/gemini?url=${url}`);
       const description = response.data.gemini;
 
       // إرسال النتيجة النهائية
@@ -50,7 +43,7 @@ export default {
       }
     }
   },
-  onReply: async ({ api, event, reply, client }) => {
+  onReply: async ({ api, event, reply }) => {
     if (reply.type === "reply" && reply.author === event.senderID) {
       try {
         global.client.handler.reply.set(reply.messageID, {
