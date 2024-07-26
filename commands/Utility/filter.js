@@ -1,5 +1,5 @@
 import axios from 'axios';
-import fs from 'fs'; // استخدام fs.promises لتحسين الكود
+import fs from 'fs/promises'; // استخدام fs.promises لتحسين الكود
 import path from 'path';
 
 export default {
@@ -27,6 +27,7 @@ export default {
         method: 'GET',
         responseType: 'stream'
       });
+
       await new Promise((resolve, reject) => {
         const writer = fs.createWriteStream(profilePicPath);
         profilePicResponse.data.pipe(writer);
@@ -37,7 +38,7 @@ export default {
       // Generate cover photo
       const apiUrl = `https://joshweb.click/canvas/avatar?id=${encodeURIComponent(id)}&bgname=${encodeURIComponent(bgname)}&signature=${encodeURIComponent(signature)}&color=${encodeURIComponent(color)}`;
 
-      api.sendMessage("📸 | جاري تهيئة الأڤتار الخاص بك يرجى الانتظار...", event.threadID, event.messageID);
+      await api.sendMessage("📸 | جاري تهيئة الأڤتار الخاص بك يرجى الانتظار...", event.threadID, event.messageID);
 
       const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
       const coverPhotoPath = path.join(process.cwd(), "fbCover.jpg");
@@ -46,9 +47,13 @@ export default {
 
       // Send cover photo
       await api.sendMessage({
-        body: "✅ | تم توليد الأڤتار الخاص بك بنجاح:",
+        body: "◆❯━━━━━▣✦▣━━━━━━❮◆\n✅ | تم توليد الأڤتار الخاص بك بنجاح\n◆❯━━━━━▣✦▣━━━━━━❮◆",
         attachment: fs.createReadStream(coverPhotoPath)
-      }, event.threadID);
+      }, event.threadID, (error) => {
+        if (error) {
+          console.error('Error sending message:', error);
+        }
+      });
 
       // Clean up temporary files
       await fs.unlink(profilePicPath);
@@ -56,7 +61,7 @@ export default {
 
     } catch (error) {
       console.error('Error:', error);
-      api.sendMessage("❌ An error occurred while processing the request.", event.threadID, event.messageID);
+      await api.sendMessage("❌ An error occurred while processing the request.", event.threadID, event.messageID);
     }
   },
   onReply: async ({ api, event, reply, client }) => {
