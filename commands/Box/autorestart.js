@@ -27,7 +27,7 @@ const leaveGroupCommand = async ({ api, event, args }) => {
       }
 
       api.sendMessage(
-        msg + 'رد بـ "خروج" رقم المجموعة لمغادرة هذا الموضوع !!',
+        msg + 'رد بـ رقم المجموعة لمغادرة هذا المجموعة !!',
         event.threadID,
         (e, info) => {
           global.client.handler.reply.set(info.messageID, {
