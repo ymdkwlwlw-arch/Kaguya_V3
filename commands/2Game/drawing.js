@@ -65,7 +65,7 @@ const userMoney = (await Economy.getBalance(event.senderID)).data;
 
         await api.sendMessage({
           attachment: imgData,
-          body: `࿇ ══━━━✥◈✥━━━══ ࿇\n✅ | تفضل نتيجة الوصف الخاصة بك \nتم التنفيذ من طرف: ${userName}\n⏰ | ❏ الوقت: ${timeString}\n📅 | ❏ التاريخ: ${dateString}\n⏳ | ❏ وقت التنفيذ: ${executionTime} ثانية\n📝 | ❏الوصف: ${prompt}\n࿇ ══━━━✥◈✥━━━══ ࿇`
+          body: `࿇ ══━━✥◈✥━━══ ࿇\n✅ | تفضل نتيجة الوصف الخاصة بك \nتم التنفيذ من طرف: ${userName}\n⏰ | ❏ الوقت: ${timeString}\n📅 | ❏ التاريخ: ${dateString}\n⏳ | ❏ وقت التنفيذ: ${executionTime} ثانية\n📝 | ❏الوصف: ${prompt}\n࿇ ══━━✥◈✥━━══ ࿇`
         }, event.threadID, event.messageID);
       }); 
 
