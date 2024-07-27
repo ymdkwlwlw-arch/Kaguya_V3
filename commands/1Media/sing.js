@@ -8,15 +8,15 @@ export default {
   cooldowns: 30,
   description: "البحث عن الصور في بينتيرست باستخدام الكلمة الرئيسية المحددة وعرض عدد معين من النتائج.",
   role: "member",
-  aliases: ["بنتريست", "بحث_صور"],
+  aliases: ["بانتريس"],
   execute: async ({ api, event, args }) => {
 
-api.setMessageReaction("🔎", event.messageID, (err) => {}, true);
-    
+    api.setMessageReaction("🔎", event.messageID, (err) => {}, true);
+
     try {
       const keySearch = args.join(" ");
       if (!keySearch.includes("-")) {
-        return api.sendMessage('💎 |الرجاء إدخال النص بالشكل الصحيح، مثال: بنتريست ناروتو - 10 (تعتمد على عدد الصور التي تريد ظهورها في النتيجة)', event.threadID, event.messageID);
+        return api.sendMessage('💎 | الرجاء إدخال النص بالشكل الصحيح، مثال: بنتريست ناروتو - 10 (تعتمد على عدد الصور التي تريد ظهورها في النتيجة)', event.threadID, event.messageID);
       }
 
       const keySearchs = keySearch.substr(0, keySearch.indexOf('-'));
@@ -25,36 +25,39 @@ api.setMessageReaction("🔎", event.messageID, (err) => {}, true);
       // ترجمة الاستعلام من العربية إلى الإنجليزية
       const translatedQuery = await translateToEnglish(keySearchs);
 
-      const res = await axios.get(`https://kaizenji-pinterest-search-api.vercel.app/api?search=${encodeURIComponent(translatedQuery)}`);
-      const data = res.data.data;
+      // البحث عن الصور
+      const apiUrl = `https://nash-api-end.onrender.com/pinterest?search=${encodeURIComponent(translatedQuery)}`;
+      const res = await axios.get(apiUrl);
+      const images = res.data.data; // تحديث هنا لاستخدام البيانات الجديدة
+      const imgData = [];
 
-      var num = 0;
-      var imgData = [];
+      for (let i = 0; i < Math.min(parseInt(numberSearch), images.length); i++) {
+        const imgPath = path.join(process.cwd(), 'cache', `${i + 1}.jpg`);
+        const imgResponse = await axios.get(images[i], { responseType: 'arraybuffer' });
+        await fs.outputFile(imgPath, imgResponse.data);
 
-      for (var i = 0; i < parseInt(numberSearch); i++) {
-        let path = process.cwd() + `/cache/${num+=1}.jpg`;
-        let getDown = (await axios.get(`${data[i]}`, { responseType: 'arraybuffer' })).data;
-        fs.writeFileSync(path, Buffer.from(getDown, 'utf-8'));
-        imgData.push(fs.createReadStream(process.cwd() + `/cache/${num}.jpg`));
+        imgData.push(fs.createReadStream(imgPath));
       }
 
       const timestamp = moment.tz("Africa/Casablanca");
       const dateString = timestamp.format("YYYY-MM-DD");
       const timeString = timestamp.format("HH:mm:ss");
 
-api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+      api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-      api.sendMessage({
+      await api.sendMessage({
         attachment: imgData,
         body: `✿━━━━━━━━━━━━━━━━━✿\n✅ | تم التحميل بنجاح \nعدد الصور 💹 : ${numberSearch} \nالمراد البحث عنه  : ${keySearchs}\n📆 | التاريخ : ${dateString}\n⏰ | الوقت : ${timeString}\n✿━━━━━━━━━━━━━━━━━✿`
       }, event.threadID, event.messageID);
 
-      for (let ii = 1; ii < parseInt(numberSearch); ii++) {
-        fs.unlinkSync(process.cwd() + `/cache/${ii}.jpg`);
+      // حذف الملفات المؤقتة
+      for (let i = 1; i <= Math.min(parseInt(numberSearch), images.length); i++) {
+        fs.unlinkSync(path.join(process.cwd(), 'cache', `${i}.jpg`));
       }
     } catch (error) {
       console.error(error);
       api.sendMessage("حدث خطأ أثناء معالجة طلبك. الرجاء المحاولة مرة أخرى في وقت لاحق.", event.threadID, event.messageID);
+      api.setMessageReaction("❌", event.messageID, (err) => {}, true);
     }
   }
 };
