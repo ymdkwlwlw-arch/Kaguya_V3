@@ -1,69 +1,45 @@
-import axios from "axios";
-import path from "path";
-import fs from "fs-extra";
+import axios from 'axios';
+import fs from 'fs-extra';
+import path from 'path';
 
 export default {
-  name: "زوجة",
-  author: "kaguya project",
-  role: "member",
-  description: "Fetches and sends a waifu image.",
-  
-  execute: async function ({ api, event, args }) {
-    const name = args.join(" ");
-    const downloadDirectory = process.cwd();
-    
-    async function downloadImage(url, filePath) {
-      const response = await axios({
-        url,
-        method: 'GET',
-        responseType: 'stream'
-      });
+  name: 'زوجة',
+  author: 'Hussein',
+  role: 'member',
+  description: 'الحصول على صورة عشوائية لشخصية أنمي',
+  async execute({ api, event }) {
+    const cacheFolderPath = path.join(process.cwd(), 'cache');
+    const imagePath = path.join(cacheFolderPath, 'waifu_image.png');
 
-      const fileStream = fs.createWriteStream(filePath);
-      response.data.pipe(fileStream);
-
-      return new Promise((resolve, reject) => {
-        fileStream.on('finish', () => resolve(filePath));
-        fileStream.on('error', reject);
-      });
+    if (!fs.existsSync(cacheFolderPath)) {
+      fs.mkdirSync(cacheFolderPath);
     }
 
-    if (!name) {
-      try {
-        let res = await axios.get('https://smfahim.onrender.com/waifu');
-        let img = res.data.url;
+    const tid = event.threadID;
+    const mid = event.messageID;
 
-        const filePath = path.join(downloadDirectory, 'cache', `${Date.now()}.jpg`);
-        await downloadImage(img, filePath);
-        api.setMessageReaction("😘", event.messageID, (err) => {}, true);
+    try {
+      const response = await axios.get('https://nash-api-end.onrender.com/waifu?search=waifu');
 
-        const form = {
-          body: `࿇ ══━━━━✥◈✥━━━━══ ࿇\n   「 𝔀𝓪𝓲𝓯𝓾 」   \n࿇ ══━━━━✥◈✥━━━━══ ࿇`,
-          attachment: fs.createReadStream(filePath)
-        };
+      if (response.data && response.data.images && response.data.images.length > 0) {
+        const imageUrl = response.data.images[0].url;
 
-        api.sendMessage(form, event.threadID, () => fs.unlinkSync(filePath), event.messageID);
-      } catch (e) {
-        api.sendMessage('Not Found', event.threadID, event.messageID);
+        // Download the image as an arraybuffer
+        const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+        const imageBuffer = Buffer.from(imageResponse.data, 'binary');
+
+        // Save the image to the specified path
+        await fs.outputFile(imagePath, imageBuffer);
+
+        api.setMessageReaction('😘', event.messageID, (err) => {}, true);
+
+        // Send the image in a message
+        api.sendMessage({ attachment: fs.createReadStream(imagePath) }, tid, () => fs.unlinkSync(imagePath), mid);
+      } else {
+        return api.sendMessage('❌ | فشل في جلب صورة عشوائية لشخصية أنمي. يرجى المحاولة مرة أخرى.', tid, mid);
       }
-    } else {
-      try {
-        let res = await axios.get(`https://smfahim.onrender.com/waifu/${name}`);
-        let img1 = res.data.url;
-
-        const filePath = path.join(downloadDirectory, 'cache', `${Date.now()}.jpg`);
-        await downloadImage(img1, filePath);
-        api.setMessageReaction("😘", event.messageID, (err) => {}, true);
-
-        const form = {
-          body: `◆❯━━━━━▣✦▣━━━━━━❮◆\n   「 𝔀𝓪𝓲𝓯𝓾 」   \n◆❯━━━━━▣✦▣━━━━━━❮◆`,
-          attachment: fs.createReadStream(filePath)
-        };
-
-        api.sendMessage(form, event.threadID, () => fs.unlinkSync(filePath), event.messageID);
-      } catch (e) {
-        api.sendMessage('No waifu category: waifu, neko, shinobu, megumin, bully, cuddle, cry, kiss, lick, hug, awoo, pat, smug, bonk, yeet, blush, smile, wave, highfive, handhold, nom, bite, glomp, slap, kill, kick, happy, wink, poke, dance, cringe', event.threadID, event.messageID);
-      }
+    } catch (e) {
+      return api.sendMessage(`❌ | حدث خطأ أثناء جلب الصورة: ${e.message}`, tid, mid);
     }
   }
 };
