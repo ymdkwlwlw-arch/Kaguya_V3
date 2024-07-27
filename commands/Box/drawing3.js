@@ -15,26 +15,26 @@ export default {
       }
 
       api.setMessageReaction('⏱️', event.messageID, (err) => {}, true);
+      
+      // ترجمة النص
       const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(args.join(' '))}`);
       const translatedText = translationResponse.data[0][0][0];
 
-      const keySearch = translatedText;
-      const numberSearch = 9; // تحديد عدد الصور ليكون 10 تلقائيًا
-
-      const apiUrl = `https://jonellccprojectapis10.adaptable.app/api/pin?title=${encodeURIComponent(keySearch)}&count=${numberSearch}`;
-
+      // البحث عن الصور
+      const apiUrl = `https://nash-api-end.onrender.com/pinterest?search=${encodeURIComponent(translatedText)}`;
       const res = await axios.get(apiUrl);
-      const data = res.data.data;
+      const images = res.data.data; // تحديث هنا لاستخدام البيانات الجديدة
       const imgData = [];
 
-      for (let i = 0; i < Math.min(numberSearch, data.length); i++) {
-        const imgResponse = await axios.get(data[i], { responseType: 'arraybuffer' });
+      for (let i = 0; i < Math.min(9, images.length); i++) {
+        const imgResponse = await axios.get(images[i], { responseType: 'arraybuffer' });
         const imgPath = path.join(process.cwd(), 'cache', `${i + 1}.jpg`);
         await fs.outputFile(imgPath, imgResponse.data);
 
         imgData.push(fs.createReadStream(imgPath));
       }
-         api.setMessageReaction('✅', event.messageID, (err) => {}, true);
+
+      api.setMessageReaction('✅', event.messageID, (err) => {}, true);
       await api.sendMessage({
         attachment: imgData,
       }, event.threadID, event.messageID);
