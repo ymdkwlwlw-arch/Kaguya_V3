@@ -78,7 +78,7 @@ export default {
       // إرسال الصورة
       api.setMessageReaction("💞", event.messageID, () => {}, true);
       const message = {
-        body: `✿━━━━━━━━━━━━━━━━━✿\nصور هيناتا 💮 \n عدد الصور: ${animeImageLinks.length}\nتم الخصم منك 1000 دولار`,
+        body: `✿━━━━━━━━━━━━━━✿\nصور هيناتا 💮 \n عدد الصور: ${animeImageLinks.length}\nتم الخصم منك 100 دولار\n✿━━━━━━━━━━━━━━✿`,
         attachment: fs.createReadStream(tempImagePath),
       };
       api.sendMessage(message, event.threadID, () => {
