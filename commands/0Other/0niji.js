@@ -205,7 +205,7 @@ export default {
       api.setMessageReaction("📸", event.messageID, () => {}, true);
 
       const message = {
-        body: "✿━━━━━━━━━━━━━━━━✿\n\t\t🎬 | إقتراحي لك \n✿━━━━━━━━━━━━━━━━✿",
+        body: "✿━━━━━━━━━━━━━━━✿\n\t\t🎬 | إقتراحي لك \n✿━━━━━━━━━━━━━━━✿",
         attachment: fs.createReadStream(tempImagePath)
       };
 
