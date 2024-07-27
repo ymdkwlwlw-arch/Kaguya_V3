@@ -11543,7 +11543,7 @@ const userMoney = (await Economy.getBalance(event.senderID)).data;
       api.setMessageReaction("🌟", event.messageID, () => {}, true);
 
       const message = {
-        body: "✿━━━━━━━━━━━━━━━━━✿\n\t💫 | تفضل إليك صورة عشوائية لفتاة \n✿━━━━━━━━━━━━━━━━━✿",
+        body: "✿━━━━━━━━━━━━━━━━✿\n\t💫 | تفضل إليك صورة عشوائية لفتاة \n 💵 | تم خصم مئك 100 دولار \n✿━━━━━━━━━━━━━━━━✿",
         attachment: fs.createReadStream(tempImagePath)
       };
 
