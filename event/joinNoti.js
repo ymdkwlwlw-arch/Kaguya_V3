@@ -53,8 +53,8 @@ async function execute({ api, event, Users, Threads }) {
         const profileName = userInfo[participant.userFbId]?.name || "Unknown";
         participantNames.push(`『${profileName}』`);
       }
-      const welcomeMessage = `✿━━━━━━━━━━━━━━━✿\n❏ أعضاء جدد إنضموا إلى المجموعة 🎉:\n${participantNames.join("\n")}\n❏ ترتيبك 🔢 : 『${membersCount}』\n❏ إسم المجموعة 🧭 : 『${threadName}』\n❏ 📅 | تاريخ الإنضمام : ${moment().tz("Africa/Casablanca").format("YYYY-MM-DD")}
-❏ ⏰ | وقت الإنضمام : ${moment().tz("Africa/Casablanca").format("HH:mm:ss")}\n🔖 | لا تسئ اللفظ وإن ضاق بك الرد\n✿━━━━━━━━━━━━━━━✿`;
+      const welcomeMessage = `✿━━━━━━━━━━━━━━✿\n❏ أعضاء جدد إنضموا إلى المجموعة 🎉:\n${participantNames.join("\n")}\n❏ ترتيبك 🔢 : 『${membersCount}』\n❏ إسم المجموعة 🧭 : 『${threadName}』\n❏ 📅 | تاريخ الإنضمام : ${moment().tz("Africa/Casablanca").format("YYYY-MM-DD")}
+❏ ⏰ | وقت الإنضمام : ${moment().tz("Africa/Casablanca").format("HH:mm:ss")}\n🔖 | لا تسئ اللفظ وإن ضاق بك الرد\n✿━━━━━━━━━━━━━━✿`;
       await sendWelcomeOrFarewellMessage(api, event.threadID, welcomeMessage, "cache12/hello.gif");
       break;
     }
