@@ -15,13 +15,13 @@ export default {
       }
 
       api.setMessageReaction('⏱️', event.messageID, (err) => {}, true);
-      
+
       // ترجمة النص
       const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(args.join(' '))}`);
       const translatedText = translationResponse.data[0][0][0];
 
       // البحث عن الصور
-      const apiUrl = `https://nash-api-end.onrender.com/pinterest?search=${encodeURIComponent(translatedText)}`;
+      const apiUrl = `https://api.kenliejugarap.com/pinterestbymarjhun/?search=${encodeURIComponent(translatedText)}`;
       const res = await axios.get(apiUrl);
       const images = res.data.data; // تحديث هنا لاستخدام البيانات الجديدة
       const imgData = [];
@@ -47,4 +47,4 @@ export default {
       api.setMessageReaction('❌', event.messageID, (err) => {}, true);
     }
   },
-};
+}
