@@ -62,7 +62,7 @@ const userMoney = (await Economy.getBalance(event.senderID)).data;
       // الخصم من الرصيد
       await Economy.decrease(cost, event.senderID);
     
-    let message = "✿━━━━━━━━━━━━━━━━━✿\nقم بالرد برقم الشخصية من اجل الحصول على eyecatcher الخاصة بها:\n✿━━━━━━━━━━━━━━━━━✿";
+    let message = "✿━━━━━━━━━━━━━━━━✿\nقم بالرد برقم الشخصية من اجل الحصول على eyecatcher الخاصة بها:\n✿━━━━━━━━━━━━━━━━✿";
     for (const [key, value] of Object.entries(videoLinks)) {
         message += `┣${key} ☛ ━━⦿〘${value.name}〙\n`;
     }
@@ -96,7 +96,7 @@ async function sendVideoClip({ api, event, reply }) {
         api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
         await api.sendMessage({
-            body: `࿇ ══━━━━✥◈✥━━━━══ ࿇\nإليك ال eyecatcher الخاصة بشخصية ${name}\n࿇ ══━━━━✥◈✥━━━━══ ࿇`,
+            body: `࿇ ══━━━✥◈✥━━━══ ࿇\nإليك ال eyecatcher الخاصة بشخصية ${name}\n࿇ ══━━━✥◈✥━━━══ ࿇`,
             attachment: fs.createReadStream(tempVideoPath),
         }, event.threadID);
 
