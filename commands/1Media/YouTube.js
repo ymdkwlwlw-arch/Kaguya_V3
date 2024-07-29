@@ -79,12 +79,12 @@ async function audio({ api, event, args }) {
 }
 
 export default {
-    name: "اغنية",
+    name: "غني",
     version: "1.0",
     author: "Kshitiz",
     countDown: 10,
     role: "member",
-    aliases:["غني","سمعيني"],
+    aliases:["أغنية"],
     description: "تشغيل أغنية من YouTube",
     execute: audio
 };
