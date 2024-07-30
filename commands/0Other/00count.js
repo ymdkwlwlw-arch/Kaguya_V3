@@ -1,53 +1,68 @@
 import axios from 'axios';
-import fs from 'fs-extra';
+import fs from 'fs';
 import path from 'path';
 import request from 'request';
 
 export default {
   name: "شوتي",
-  author: "kaguya project",
+  author: "ArYAN",
   role: "member",
-  description: "تحميل فيديوهات من TikTok باستخدام شوتي API.",
-  async execute({ message, args, api, event }) {
-    api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
+  description: "Fetches and sends a Shoti video based on the provided API.",
+
+  execute: async ({ api, event }) => {
+    const videoPath = path.join(process.cwd(), 'cache', 'shoti.mp4');
+    const apiUrl = 'https://c-v1.onrender.com/shoti?apikey=$c-v1-7bejgsue6@iygv';
+
+    // Send initial message to indicate fetching
+    const sentMessage = await api.sendMessage(" ⏱️ | جاري الحصول على مقطع شوتي يرحى الانتظار....", event.threadID, event.messageID);
+
     try {
-      const apiUrl = "https://shoti-srv1.onrender.com/api/v1/get";
+      // Fetch data from the API
+      const response = await axios.get(apiUrl);
+      const { data } = response;
 
-      const { data } = await axios.post(apiUrl, {
-        apikey: "$shoti-1ho3b41uiohngdbrgk8",
-      });
+      if (data && data.code === 200 && data.data) {
+        const { url: videoURL, cover: coverURL, title, duration, user } = data.data;
+        const { username: userName, nickname: userNickname, userID } = user;
 
-      const { url: videoUrl, user: { username, nickname } } = data.data;
+        const file = fs.createWriteStream(videoPath);
+        const rqs = request(encodeURI(videoURL));
 
+        rqs.pipe(file);
 
-      const cacheFolderPath = path.join(process.cwd(), "/cache");
+        file.on('finish', () => {
+          api.unsendMessage(sentMessage.messageID); // Remove the initial message
 
-      if (!fs.existsSync(cacheFolderPath)) {
-        fs.mkdirSync(cacheFolderPath);
+          const messageToSend = {
+            body: `🎀 𝗦𝗵𝗼𝘁𝗶\n❍───────────────❍\n📝 | العنوان : ${title}\n👑 | إسم المستخدم : ${userName}\n🎯 | اللقب : ${userNickname}\n⏳ | المدة : ${duration}\n🆔 | معرف المستخدم : ${userID}\n❍───────────────❍`,
+            attachment: fs.createReadStream(videoPath)
+          };
+
+          api.sendMessage(messageToSend, event.threadID, (err) => {
+            if (err) {
+              console.error(err);
+              api.sendMessage("An error occurred while sending the video.", event.threadID, event.messageID);
+            }
+
+            fs.unlink(videoPath, (err) => {
+              if (err) console.error("Error deleting video file:", err);
+            });
+          });
+
+          // Indicate successful completion
+          api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+        });
+
+        file.on('error', (err) => {
+          console.error("Error downloading video:", err);
+          api.sendMessage("An error occurred while downloading the video.", event.threadID, event.messageID);
+        });
+      } else {
+        api.sendMessage("Failed to fetch the video. Invalid response from the API.", event.threadID, event.messageID);
       }
-
-      const videoPath = path.join(cacheFolderPath, 'shoti.mp4');
-      const videoStream = fs.createWriteStream(videoPath);
-
-      await new Promise((resolve, reject) => {
-        const rqs = request(encodeURI(videoUrl));
-        rqs.pipe(videoStream);
-        rqs.on('end', resolve);
-        rqs.on('error', reject);
-      });
-
-      const msg1 = {
-        body: `✅ | تم تحميل مقطع شوتي بنجاح \n 👥 اسم المستخدم : ${username} \n👤 اللقب : ${nickname}`,
-        attachment: fs.createReadStream(videoPath)
-      };
-
-      api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-      api.sendMessage(msg1, event.threadID, event.messageID);
-
     } catch (error) {
-      console.error(error);
-      api.setMessageReaction("❌", event.messageID, (err) => {}, true);
-      api.sendMessage(`❌ | An error occurred: ${error.message}`, event.threadID, event.messageID);
+      console.error("Error fetching video from API:", error);
+      api.sendMessage("An error occurred while fetching the video.", event.threadID, event.messageID);
     }
   }
 };
