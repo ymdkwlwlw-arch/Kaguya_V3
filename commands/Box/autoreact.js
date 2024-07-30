@@ -12,9 +12,9 @@ export default {
 
       api.setMessageReaction("⏰", messageID, (err) => {}, true);
 
-      // إرسال الطلب إلى API Bing
-      const response = await axios.get(`https://joshweb.click/bing?prompt=${encodeURIComponent(body)}`);
-      const answer = response.data.bing; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
+      // إرسال الطلب إلى API
+      const response = await axios.get(`https://king-aryanapis.onrender.com/api/gpt?prompt=${encodeURIComponent(body)}`);
+      const answer = response.data.answer; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
 
       api.sendMessage(answer, threadID, (err, info) => {
         if (err) return console.error(err);
@@ -39,9 +39,9 @@ export default {
   onReply: async ({ api, event, reply, client }) => {
     if (reply.type === "reply" && reply.author === event.senderID) {
       try {
-        // إرسال الرد إلى API Bing
-        const response = await axios.get(`https://joshweb.click/bing?prompt=${encodeURIComponent(event.body)}`);
-        const answer = response.data.bing; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
+        // إرسال الرد إلى API
+        const response = await axios.get(`https://king-aryanapis.onrender.com/api/gpt?prompt=${encodeURIComponent(event.body)}`);
+        const answer = response.data.answer; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
 
         api.sendMessage(answer, event.threadID, (err, info) => {
           if (err) return console.error(err);
@@ -61,4 +61,3 @@ export default {
     }
   }
 };
-                             
