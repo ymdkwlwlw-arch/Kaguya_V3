@@ -6,7 +6,7 @@ export default {
   name: "تحميل",
   author: "kaguya project",
   role: "member",
-  description: "تنزيل مقاطع الفيديو من تيك توك بناءً على الوصف.",
+  description: "تنزيل مقاطع الفيديو من تيك توك أو يوتيوب بناءً على الوصف.",
 
   execute: async ({ api, event, args, Economy }) => {
     api.setMessageReaction("⬇️", event.messageID, (err) => {}, true);
@@ -14,7 +14,7 @@ export default {
     const userMoney = (await Economy.getBalance(event.senderID)).data;
     const cost = 500;
     if (userMoney < cost) {
-      return api.sendMessage(`⚠️ | لا يوجد لديك رصيد كافٍ. يجب عليك الحصول على ${cost} دولار أولاً من اجل تنزيل مقطع واحد يمكنك تنزيل مقاطع من تيك توك ، فيسبوك ، بنتريست ، يوتيوب ، انستغرام`, event.threadID);
+      return api.sendMessage(`⚠️ | لا يوجد لديك رصيد كافٍ. يجب عليك الحصول على ${cost} دولار أولاً من أجل تنزيل مقطع واحد. يمكنك تنزيل مقاطع من تيك توك، فيسبوك، بنتريست، يوتيوب، انستغرام.`, event.threadID);
     }
 
     // الخصم من الرصيد
@@ -41,16 +41,31 @@ export default {
         event.threadID
       );
 
-      const response = await axios.get(`https://joshweb.click/anydl?url=${encodeURIComponent(description)}`);
-      const videoData = response.data;
+      // تحديد نوع الرابط (يوتيوب أو تيك توك)
+      const isYouTube = description.includes("youtube.com") || description.includes("youtu.be");
+      const isTikTok = description.includes("tiktok.com");
 
-      if (!videoData.status || !videoData.result) {
+      const apiUrl = isYouTube
+        ? `https://king-aryanapis.onrender.com/api/ytdl?url=${encodeURIComponent(description)}`
+        : isTikTok
+        ? `https://king-aryanapis.onrender.com/api/ttdl?url=${encodeURIComponent(description)}`
+        : null;
+
+      if (!apiUrl) {
+        api.sendMessage("⚠️ | الرابط غير مدعوم. يرجى تقديم رابط يوتيوب أو تيك توك.", event.threadID);
+        return;
+      }
+
+      const response = await axios.get(apiUrl);
+      const videoData = response.data.result;
+
+      if (!videoData || !videoData.video) {
         api.sendMessage("⚠️ | لم أتمكن من العثور على فيديو بناءً على الوصف المقدم. يرجى المحاولة مرة أخرى.", event.threadID);
         return;
       }
 
-      const videoUrl = videoData.result;
-      const filePath = `${process.cwd()}/cache/tikdl.mp4`;
+      const videoUrl = videoData.video;
+      const filePath = `${process.cwd()}/cache/video.mp4`;
 
       // تأكد من أن الرابط صالح بالتحقق من استجابة HTTP
       request.head(videoUrl, (err, res) => {
@@ -65,7 +80,7 @@ export default {
           api.unsendMessage(sentMessage.messageID); // حذف الرسالة التي تم التفاعل معها ب "⬇️"
           api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-          const messageBody = `╼╾─────⊹⊱⊰⊹─────╼╾\n✅ |تـم تـحـمـيـل الـفـيـديـو\n╼╾─────⊹⊱⊰⊹─────╼╾`;
+          const messageBody = `╼╾─────⊹⊱⊰⊹─────╼╾\n✅ | تم تحميل الفيديو\n╼╾─────⊹⊱⊰⊹─────╼╾`;
 
           api.sendMessage(
             {
@@ -82,5 +97,4 @@ export default {
       api.sendMessage("⚠️ | حدث خطأ أثناء تنزيل الفيديو. يرجى المحاولة مرة أخرى.", event.threadID);
     }
   },
-  }
-                       
+};
