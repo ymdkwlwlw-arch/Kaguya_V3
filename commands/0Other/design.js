@@ -9,7 +9,7 @@ export default {
   cooldowns: 50,
   description: "قائمة الأوامر",
   role: "member",
-  aliases: ["menu", "2"],
+  aliases: ["menu"],
   execute: async ({ api, event, Users, Threads, Economy }) => {
 
     api.setMessageReaction("📜", event.messageID, () => {}, true);
