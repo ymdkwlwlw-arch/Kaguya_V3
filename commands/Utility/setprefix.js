@@ -5,7 +5,7 @@ export default {
   cooldowns: 60,
   description: "Lấy UID của người dùng",
   role: "member",
-  aliases: ["prefix","Prefix"],
+  aliases: ["prefix","Prefix","البادئة"],
   execute: async ({ event, Threads, args }) => {
     if (!event.isGroup) {
       return kaguya.reply(" ⚠️ |لا يمكن استخدام هذا الأمر إلا في مجموعات!");
