@@ -1,113 +1,86 @@
-import fs, { createWriteStream } from "fs";
-import axios from "axios"
-import { Innertube, UniversalCache } from "youtubei.js";
+import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
 
-async function execute({ api, event }) {
-  const data = event.body.trim().split(" ");
-  const isLyricsIncluded = data.includes('كلمات');
-  const songTitle = isLyricsIncluded ? data.slice(2).join(" ") : data.slice(1).join(" ");
-
-  if (songTitle.length === 0) {
-    api.sendMessage(`⚠️ | إستعمال غير صالح \n💡كيفية الإستخدام: أغنية [عنوان الأغنية 📀]\n مثال 📝: اغنية fifty fifty copied`, event.threadID);
-    return;
-  }
-
-  const yt = await Innertube.create({ cache: new UniversalCache(false), generate_session_locally: true });
-  const search = await yt.music.search(songTitle, { type: 'video' });
-
-  if (search.results[0] === undefined) {
-    api.sendMessage("⚠️ | لم يتم إيجاد الأغنية", event.threadID, event.messageID);
-    return;
-  }
-
-  api.sendMessage(`🔍 |جاري البحث عن أغنية : ${songTitle}\n ⏱️ | المرحو الإنتظار`, event.threadID, event.messageID);
-
-  // Get the info and stream the audio
-  const info = await yt.getBasicInfo(search.results[0].id);
-  const url = info.streaming_data?.formats[0].decipher(yt.session.player);
-  const stream = await yt.download(search.results[0].id, {
-    type: 'audio', // audio, video or video+audio
-    quality: 'best', // best, bestefficiency, 144p, 240p, 480p, 720p and so on.
-    format: 'mp4' // media container format 
-  });
-
-  // Write the stream to a file and calculate the download speed and time
-  const file = createWriteStream(`${process.cwd()}/temp/music.mp3`);
-
-  async function writeToStream(stream) {
-    const startTime = Date.now();
-    let bytesDownloaded = 0;
-
-    for await (const chunk of stream) {
-      await new Promise((resolve, reject) => {
-        file.write(chunk, (error) => {
-          if (error) {
-            reject(error);
-          } else {
-            bytesDownloaded += chunk.length;
-            resolve();
-          }
-        });
-      });
-    }
-
-    const endTime = Date.now();
-    const downloadTimeInSeconds = (endTime - startTime) / 1000;
-    const downloadSpeedInMbps = (bytesDownloaded / downloadTimeInSeconds) / (1024 * 1024);
-
-    return new Promise((resolve, reject) => {
-      file.end((error) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve({ downloadTimeInSeconds, downloadSpeedInMbps });
-        }
-      });
-    });
-  }
-
-  async function getLyrics(title) {
-    return axios.get(`https://sampleapi-mraikero-01.vercel.app/get/lyrics?title=${title}`)
-      .then(response => response.data.result)
-      .catch(error => {
-        console.error(error);
-        return null;
-      });
-  }
-
-  async function main() {
-    const { downloadTimeInSeconds, downloadSpeedInMbps } = await writeToStream(stream);
-    const fileSizeInMB = file.bytesWritten / (1024 * 1024);
-
-    const messageBody = `🎵 | تم تحميل الأغنية بنجاح ✅!\n\nحجم الملف : ${fileSizeInMB.toFixed(2)} ميغابايت \nسرعة التحميل : ${downloadSpeedInMbps.toFixed(2)} ميغابت في الثانية\nمدة التحميل : ${downloadTimeInSeconds.toFixed(2)} ثانية`;
-
-    if (isLyricsIncluded) {
-      const lyricsData = await getLyrics(songTitle);
-      if (lyricsData) {
-        const lyricsMessage = `عنوان الأغنية 📃 : "${lyricsData.s_title}"\n من طرف  : ${lyricsData.s_artist}:\n\n${lyricsData.s_lyrics}`;
-
-        api.sendMessage({
-          body: `${lyricsMessage}`,
-          attachment: fs.createReadStream(`${process.cwd()}/temp/music.mp3`)
-        }, event.threadID);
-        return;
-      }
-    }
-
-    const titleMessage = isLyricsIncluded ? '' : `عنوان الأغنية 📃: ${info.basic_info['title']}\n\n`;
-    api.sendMessage({
-      body: `${titleMessage}${messageBody}`,
-      attachment: fs.createReadStream(`${process.cwd()}/temp/music.mp3`)
-    }, event.threadID, event.messageID);
-  }
-
-  main();
+const cacheDir = path.join(process.cwd(), 'cache');
+if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir);
 }
 
-export default { 
-  name: "اغنية", 
-  author: "حسين يعقوبي", 
-  role: "member", 
-  description: "تشغيل الأغاني وعرض كلماتها إذا توفرت.", 
-  execute: execute 
+export default {
+  name: "اغنية",
+  author: "ArYAN",
+  role: "member",
+  description: "Searches for a song and sends the first result directly without user selection.",
+
+  execute: async ({ api, event, args }) => {
+    if (args.length === 0) {
+      return api.sendMessage("⚠️ | إستعمال غير صالح \n💡كيفية الإستخدام: أغنية [عنوان الأغنية 📀]\n مثال : اغنية fifty fifty copied", event.threadID, event.messageID);
+    }
+
+    const searchQuery = encodeURIComponent(args.join(" "));
+    const apiUrl = `https://c-v1.onrender.com/yt/s?query=${searchQuery}`;
+
+    try {
+      api.sendMessage("🎵 | جاري البحث عن اغنيتك...", event.threadID, event.messageID);
+
+      const response = await axios.get(apiUrl);
+      const tracks = response.data;
+
+      if (tracks.length > 0) {
+        const firstTrack = tracks[0];
+        const videoUrl = firstTrack.videoUrl;
+        const downloadApiUrl = `https://c-v1.onrender.com/yt/d?url=${encodeURIComponent(videoUrl)}`;
+        
+        api.sendMessage("⏳ | جاري التحميل ، يرجى الإنتظار...", event.threadID, async (err, info) => {
+          if (err) {
+            console.error('Error sending download message:', err);
+            return api.sendMessage("🚧 | An error occurred while processing your request. Please try again later.", event.threadID);
+          }
+
+          try {
+            const downloadLinkResponse = await axios.get(downloadApiUrl);
+            const downloadLink = downloadLinkResponse.data.result.audio;
+
+            if (!downloadLink) {
+              throw new Error("Failed to get the download link.");
+            }
+
+            const filePath = path.join(cacheDir, `${Date.now()}.mp3`);
+            const writer = fs.createWriteStream(filePath);
+
+            const response = await axios({
+              url: downloadLink,
+              method: 'GET',
+              responseType: 'stream'
+            });
+
+            response.data.pipe(writer);
+
+            writer.on('finish', () => {
+              api.setMessageReaction("✅", info.messageID);
+
+              api.sendMessage({
+                body: `🎶 𝗬𝗼𝘂𝗧𝘂𝗯𝗲\n❍───────────────❍\n ✅ | تفضل اغنيتك ${firstTrack.title}.\n\n📒 | العنوان : ${firstTrack.title}\n📅 | تاريخ النشر : ${new Date(firstTrack.publishDate).toLocaleDateString()}\n👀 | عدد المشاهدات : ${firstTrack.viewCount}\n👍 | عدد الايكات: ${firstTrack.likeCount}\nإستمتع !...🥰\n❍───────────────❍`,
+                attachment: fs.createReadStream(filePath),
+              }, event.threadID, () => fs.unlinkSync(filePath));
+            });
+
+            writer.on('error', (err) => {
+              console.error('Error saving the file:', err);
+              api.sendMessage("🚧 | An error occurred while processing your request.", event.threadID);
+            });
+          } catch (error) {
+            console.error('Error during download:', error.message);
+            api.sendMessage(`🚧 | An error occurred while processing your request: ${error.message}`, event.threadID);
+          }
+        });
+      } else {
+        api.sendMessage("❓ | Sorry, couldn't find the requested music.", event.threadID);
+      }
+    } catch (error) {
+      console.error('Error during search:', error.message);
+      api.sendMessage("🚧 | An error occurred while processing your request. Please try again later.", event.threadID);
+    }
+  }
 };
