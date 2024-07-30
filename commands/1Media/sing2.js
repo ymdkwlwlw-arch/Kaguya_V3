@@ -10,8 +10,8 @@ if (!fs.existsSync(cacheDir)) {
 export default {
     name: 'اغنية',
     author: 'kaguya project',
-    role: "member",
-    aliases:["سمعيني"،"موسيقى"],
+    role: 'member',
+    aliases: ['سمعيني', 'موسيقى'],
     description: 'البحث عن أغاني على يوتيوب وتحميلها.',
     
     execute: async function ({ api, event, args }) {
@@ -19,7 +19,7 @@ export default {
             return api.sendMessage("❗ | يرجى إدخال اسم الأغنية للبحث عنها.", event.threadID, event.messageID);
         }
 
-        const searchQuery = encodeURIComponent(args.join(" "));
+        const searchQuery = encodeURIComponent(args.join(' '));
         const apiUrl = `https://c-v1.onrender.com/yt/s?query=${searchQuery}`;
 
         try {
@@ -29,17 +29,17 @@ export default {
 
             if (tracks.length > 0) {
                 const topTracks = tracks.slice(0, 6);
-                let message = "🎶 𝗬𝗼𝘂𝗧𝘂𝗯𝗲\n❍─────────────❍\n\n🎶 | إليك أفضل 6 نتائج على يوتيوب\n\n";
+                let message = "🎶 𝗬𝗼𝘂𝗧𝘂𝗕𝗲\n❍─────────────❍\n\n🎶 | إليك أفضل 6 نتائج على يوتيوب\n\n";
 
-                for (const track of topTracks) {
-                    message += `🆔 الرقم: ${topTracks.indexOf(track) + 1}\n`;
+                topTracks.forEach((track, index) => {
+                    message += `🆔 الرقم: ${index + 1}\n`;
                     message += `📝 العنوان: ${track.title}\n`;
                     message += `📅 تاريخ الرفع: ${new Date(track.publishDate).toLocaleDateString()}\n`;
                     message += `👤 القناة: ${track.channelTitle}\n`;
                     message += `👁 عدد المشاهدات: ${track.viewCount}\n`;
                     message += `👍 اللايكات: ${track.likeCount}\n`;
                     message += "❍─────────────❍\n";
-                }
+                });
 
                 message += "\nرد برقم الأغنية التي تريد تحميلها.";
 
@@ -53,8 +53,8 @@ export default {
                     
                     global.client.handler.reply.set(info.messageID, {
                         author: event.senderID,
-                        type: "pick",
-                        name: "اغنية",
+                        type: 'pick',
+                        name: 'اغنية',
                         tracks: topTracks,
                         unsend: true,
                     });
@@ -69,7 +69,7 @@ export default {
     },
 
     onReply: async function ({ api, event, reply, args }) {
-        const replyIndex = parseInt(args[0]);
+        const replyIndex = parseInt(args[0], 10);
         const { author, tracks } = reply;
 
         if (event.senderID !== author) return;
@@ -111,7 +111,7 @@ export default {
                     writer.on('finish', () => {
                         api.setMessageReaction("✅", info.messageID);
                         api.sendMessage({
-                            body: `࿇ ══━━✥◈✥━━══ ࿇\n ✅ | تم تحميل الأغنية بنجاح \n 🎧 | استمتع بأغنيتك: ${selectedTrack.title}.\n📒 | العنوان: ${selectedTrack.title}\n📅 | تاريخ النشر: ${new Date(selectedTrack.publishDate).toLocaleDateString()}\n👀 | عدد المشاهدات: ${selectedTrack.viewCount}\n👍 | عدد اللايكات: ${selectedTrack.likeCount}\n࿇ ══━━✥◈✥━━══ ࿇`,
+                            body: `࿇ ══━━━✥◈✥━━━══ ࿇\n ✅ | تم تحميل الأغنية بنجاح \n 🎧 | استمتع بأغنيتك: ${selectedTrack.title}.\n📒 | العنوان: ${selectedTrack.title}\n📅 | تاريخ النشر: ${new Date(selectedTrack.publishDate).toLocaleDateString()}\n👀 | عدد المشاهدات: ${selectedTrack.viewCount}\n👍 | عدد اللايكات: ${selectedTrack.likeCount}\n࿇ ══━━━✥◈✥━━━══ ࿇`,
                             attachment: fs.createReadStream(filePath),
                         }, event.threadID, () => fs.unlinkSync(filePath));
                     });
