@@ -1,89 +1,113 @@
-import fs from 'fs';
-import axios from 'axios';
-import path from 'path';
+import fs, { createWriteStream } from "fs";
+import axios from "axios"
+import { Innertube, UniversalCache } from "youtubei.js";
 
-const cacheDir = path.join(process.cwd(), 'cache');
-if (!fs.existsSync(cacheDir)) {
-    fs.mkdirSync(cacheDir);
+async function execute({ api, event }) {
+  const data = event.body.trim().split(" ");
+  const isLyricsIncluded = data.includes('كلمات');
+  const songTitle = isLyricsIncluded ? data.slice(2).join(" ") : data.slice(1).join(" ");
+
+  if (songTitle.length === 0) {
+    api.sendMessage(`⚠️ | إستعمال غير صالح \n💡كيفية الإستخدام: أغنية [عنوان الأغنية 📀]\n مثال 📝: اغنية fifty fifty copied`, event.threadID);
+    return;
+  }
+
+  const yt = await Innertube.create({ cache: new UniversalCache(false), generate_session_locally: true });
+  const search = await yt.music.search(songTitle, { type: 'video' });
+
+  if (search.results[0] === undefined) {
+    api.sendMessage("⚠️ | لم يتم إيجاد الأغنية", event.threadID, event.messageID);
+    return;
+  }
+
+  api.sendMessage(`🔍 |جاري البحث عن أغنية : ${songTitle}\n ⏱️ | المرحو الإنتظار`, event.threadID, event.messageID);
+
+  // Get the info and stream the audio
+  const info = await yt.getBasicInfo(search.results[0].id);
+  const url = info.streaming_data?.formats[0].decipher(yt.session.player);
+  const stream = await yt.download(search.results[0].id, {
+    type: 'audio', // audio, video or video+audio
+    quality: 'best', // best, bestefficiency, 144p, 240p, 480p, 720p and so on.
+    format: 'mp4' // media container format 
+  });
+
+  // Write the stream to a file and calculate the download speed and time
+  const file = createWriteStream(`${process.cwd()}/temp/music.mp3`);
+
+  async function writeToStream(stream) {
+    const startTime = Date.now();
+    let bytesDownloaded = 0;
+
+    for await (const chunk of stream) {
+      await new Promise((resolve, reject) => {
+        file.write(chunk, (error) => {
+          if (error) {
+            reject(error);
+          } else {
+            bytesDownloaded += chunk.length;
+            resolve();
+          }
+        });
+      });
+    }
+
+    const endTime = Date.now();
+    const downloadTimeInSeconds = (endTime - startTime) / 1000;
+    const downloadSpeedInMbps = (bytesDownloaded / downloadTimeInSeconds) / (1024 * 1024);
+
+    return new Promise((resolve, reject) => {
+      file.end((error) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve({ downloadTimeInSeconds, downloadSpeedInMbps });
+        }
+      });
+    });
+  }
+
+  async function getLyrics(title) {
+    return axios.get(`https://sampleapi-mraikero-01.vercel.app/get/lyrics?title=${title}`)
+      .then(response => response.data.result)
+      .catch(error => {
+        console.error(error);
+        return null;
+      });
+  }
+
+  async function main() {
+    const { downloadTimeInSeconds, downloadSpeedInMbps } = await writeToStream(stream);
+    const fileSizeInMB = file.bytesWritten / (1024 * 1024);
+
+    const messageBody = `🎵 | تم تحميل الأغنية بنجاح ✅!\n\nحجم الملف : ${fileSizeInMB.toFixed(2)} ميغابايت \nسرعة التحميل : ${downloadSpeedInMbps.toFixed(2)} ميغابت في الثانية\nمدة التحميل : ${downloadTimeInSeconds.toFixed(2)} ثانية`;
+
+    if (isLyricsIncluded) {
+      const lyricsData = await getLyrics(songTitle);
+      if (lyricsData) {
+        const lyricsMessage = `عنوان الأغنية 📃 : "${lyricsData.s_title}"\n من طرف  : ${lyricsData.s_artist}:\n\n${lyricsData.s_lyrics}`;
+
+        api.sendMessage({
+          body: `${lyricsMessage}`,
+          attachment: fs.createReadStream(`${process.cwd()}/temp/music.mp3`)
+        }, event.threadID);
+        return;
+      }
+    }
+
+    const titleMessage = isLyricsIncluded ? '' : `عنوان الأغنية 📃: ${info.basic_info['title']}\n\n`;
+    api.sendMessage({
+      body: `${titleMessage}${messageBody}`,
+      attachment: fs.createReadStream(`${process.cwd()}/temp/music.mp3`)
+    }, event.threadID, event.messageID);
+  }
+
+  main();
 }
 
-export default {
-    name: 'اغنية',
-    author: 'kaguya project',
-    role: 'member',
-    aliases: ['سمعيني', 'موسيقى'],
-    description: 'البحث عن أغاني على يوتيوب وتحميلها.',
-    
-    execute: async function ({ api, event, args }) {
-        if (args.length === 0) {
-            
-            api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
-  
-            return api.sendMessage("❗ | يرجى إدخال اسم الأغنية للبحث عنها.", event.threadID, event.messageID);
-        }
-
-        const searchQuery = encodeURIComponent(args.join(' '));
-        const apiUrl = `https://c-v1.onrender.com/yt/s?query=${searchQuery}`;
-
-        try {
-            const waitingMessageID = await api.sendMessage("", event.threadID, event.messageID);
-            const response = await axios.get(apiUrl);
-            const tracks = response.data;
-
-            if (tracks.length > 0) {
-                const firstTrack = tracks[0];
-                const videoUrl = firstTrack.videoUrl;
-                const downloadApiUrl = `https://c-v1.onrender.com/yt/d?url=${encodeURIComponent(videoUrl)}`;
-
-                api.sendMessage("", event.threadID, async (err, info) => {
-                    if (err) {
-                        console.error('خطأ في إرسال رسالة التحميل:', err);
-                        return api.sendMessage("🚧 | حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى لاحقًا.", event.threadID);
-                    }
-
-                    try {
-                        const downloadLinkResponse = await axios.get(downloadApiUrl);
-                        const downloadLink = downloadLinkResponse.data.result.audio;
-
-                        if (!downloadLink) {
-                            throw new Error("فشل في الحصول على رابط التحميل.");
-                        }
-
-                        const filePath = path.join(cacheDir, `${Date.now()}.mp3`);
-                        const writer = fs.createWriteStream(filePath);
-
-                        const response = await axios({
-                            url: downloadLink,
-                            method: 'GET',
-                            responseType: 'stream'
-                        });
-
-                        response.data.pipe(writer);
-
-                        writer.on('finish', () => {
-                            api.setMessageReaction("✅", info.messageID);
-                            api.sendMessage({
-                                body: `࿇ ══━━━✥◈✥━━━══ ࿇\n ✅ | تم تحميل الأغنية بنجاح \n 🎧 | استمتع بأغنيتك: ${firstTrack.title}.\n📒 | العنوان: ${firstTrack.title}\n📅 | تاريخ النشر: ${new Date(firstTrack.publishDate).toLocaleDateString()}\n👀 | عدد المشاهدات: ${firstTrack.viewCount}\n👍 | عدد اللايكات: ${firstTrack.likeCount}\n࿇ ══━━━✥◈✥━━━══ ࿇`,
-                                attachment: fs.createReadStream(filePath),
-                            }, event.threadID, () => fs.unlinkSync(filePath));
-                        });
-
-                        writer.on('error', (err) => {
-                            console.error('خطأ في حفظ الملف:', err);
-                            api.sendMessage("🚧 | حدث خطأ أثناء معالجة طلبك.", event.threadID);
-                        });
-                    } catch (error) {
-                        console.error('خطأ أثناء تحميل الأغنية:', error.message);
-                        api.sendMessage(`🚧 | حدث خطأ أثناء معالجة طلبك: \n ${error.message}`, event.threadID);
-                    }
-                });
-
-            } else {
-                api.sendMessage("❓ | عذرًا، لم أتمكن من العثور على الأغنية.", event.threadID);
-            }
-        } catch (error) {
-            console.error('خطأ أثناء البحث:', error.message);
-            api.sendMessage("🚧 | حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى لاحقًا.", event.threadID);
-        }
-    }
+export default { 
+  name: "اغنية", 
+  author: "حسين يعقوبي", 
+  role: "member", 
+  description: "تشغيل الأغاني وعرض كلماتها إذا توفرت.", 
+  execute: execute 
 };
