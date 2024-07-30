@@ -1,56 +1,36 @@
-import axios from "axios";
-import path from "path";
-import fs from "fs-extra";
+import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
 
 export default {
   name: "ارت",
   author: "Samir Œ",
   role: "member",
   description: "Convert image to cartoon style.",
-  
-  execute: async function ({ api, args, event }) {
+
+  execute: async ({ api, event }) => {
+    const imageLink = event.messageReply?.attachments?.[0]?.url;
+
+    if (!imageLink) {
+      return api.sendMessage('🛡️ | أرجوك قم بالرد على صورة.', event.threadID, event.messageID);
+    }
+
+    const apiURL = `https://samirxpikachuio.onrender.com/artify?url=${encodeURIComponent(imageLink)}`;
+    const outPath = path.join(process.cwd(), 'generated_image.jpg');
+
     try {
-      const imageLink = event.messageReply?.attachments?.[0]?.url;
+      const response = await axios.get(apiURL, { responseType: 'arraybuffer' });
+      fs.writeFileSync(outPath, response.data);
+      console.log(`Image saved to ${outPath}`);
 
-      if (!imageLink) {
-        return api.sendMessage(' 🛡️ | أرجوك قم بالرد على صورة.', event.threadID, event.messageID);
-      }
+      api.sendMessage({
+        body: '❍───────────────❍\n🎨 | 𝐷𝑂𝑁𝐸 𝑆𝑈𝐶𝐶𝐸𝑆𝑆𝐹𝑈𝐿𝐿𝑌 𖤍\n❍───────────────❍',
+        attachment: fs.createReadStream(outPath)
+      }, event.threadID, () => fs.unlinkSync(outPath)); // Clean up the file after sending
 
-      try {
-        const imgurResponse = await axios.get(`https://www.samirxpikachu.run.place/telegraph?url=${encodeURIComponent(imageLink)}&senderId=${event.senderID}`);
-
-        if (!imgurResponse.data.success) {
-          const errorMessage = imgurResponse.data.error;
-
-          if (errorMessage === 'Limit Exceeded') {
-            return api.sendMessage('Limit exceeded, try again after 2 hours.', event.threadID, event.messageID);
-          } else if (errorMessage === 'Access Forbidden') {
-            return api.sendMessage('You are banned because of trying to change credits. Contact admin: [Admin ID](https://www.facebook.com/samir.oe70)', event.threadID, event.messageID);
-          }
-        }
-
-        const imgur = imgurResponse.data.result.link;
-        const filter = args[0];
-        const apiUrl = `https://samirxpikachu.onrender.com/cartoon?url=${encodeURIComponent(imgur)}&model=${filter || 5}&apikey=richixsamir`;
-
-        const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
-
-        const downloadDirectory = process.cwd();
-        const filePath = path.join(downloadDirectory, 'cache', 'cartoonized_image.png');
-        fs.writeFileSync(filePath, Buffer.from(response.data, 'binary'));
-
-        const imageStream = fs.createReadStream(filePath);
-
-        await api.sendMessage({ attachment: imageStream }, event.threadID, event.messageID);
-        
-        fs.unlinkSync(filePath);
-      } catch (error) {
-        console.error(error);
-        return api.sendMessage('Skill issues', event.threadID, event.messageID);
-      }
     } catch (error) {
-      console.error(error);
-      return api.sendMessage('Unknown error', event.threadID, event.messageID);
+      console.error('Error processing image:', error.message);
+      api.sendMessage('🚧 | حدث خطأ أثناء معالجة الصورة. يرجى المحاولة مرة أخرى.', event.threadID, event.messageID);
     }
   }
 };
