@@ -1,7 +1,6 @@
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
-import request from 'request';
 
 export default {
   name: "شوتي",
@@ -14,7 +13,7 @@ export default {
     const apiUrl = 'https://c-v1.onrender.com/shoti?apikey=$c-v1-7bejgsue6@iygv';
 
     // Send initial message to indicate fetching
-    const sentMessage = await api.sendMessage(" ⏱️ | جاري الحصول على مقطع شوتي يرحى الانتظار....", event.threadID, event.messageID);
+    const sentMessage = await api.sendMessage("⏱️ | جاري الحصول على مقطع شوتي يرجى الانتظار....", event.threadID, event.messageID);
 
     try {
       // Fetch data from the API
@@ -22,25 +21,26 @@ export default {
       const { data } = response;
 
       if (data && data.code === 200 && data.data) {
-        const { url: videoURL, cover: coverURL, title, duration, user } = data.data;
+        const { url: videoURL, title, duration, user } = data.data;
         const { username: userName, nickname: userNickname, userID } = user;
 
-        const file = fs.createWriteStream(videoPath);
-        const rqs = request(encodeURI(videoURL));
+        // Download the video
+        const videoResponse = await axios.get(videoURL, { responseType: 'stream' });
+        const writer = fs.createWriteStream(videoPath);
 
-        rqs.pipe(file);
+        videoResponse.data.pipe(writer);
 
-        file.on('finish', () => {
+        writer.on('finish', () => {
           api.unsendMessage(sentMessage.messageID); // Remove the initial message
 
           const messageToSend = {
-            body: `🎀 𝗦𝗵𝗼𝘁𝗶\n❍───────────────❍\n📝 | العنوان : ${title}\n👑 | إسم المستخدم : ${userName}\n🎯 | اللقب : ${userNickname}\n⏳ | المدة : ${duration}\n🆔 | معرف المستخدم : ${userID}\n❍───────────────❍`,
+            body: `🎀 𝗦𝗵𝗼𝘁𝗶\n❍───────────────❍\n📝 | العنوان: ${title}\n👑 | إسم المستخدم: ${userName}\n🎯 | اللقب: ${userNickname}\n⏳ | المدة: ${duration}\n🆔 | معرف المستخدم: ${userID}\n❍───────────────❍`,
             attachment: fs.createReadStream(videoPath)
           };
 
           api.sendMessage(messageToSend, event.threadID, (err) => {
             if (err) {
-              console.error(err);
+              console.error("Error sending video:", err);
               api.sendMessage("An error occurred while sending the video.", event.threadID, event.messageID);
             }
 
@@ -53,7 +53,7 @@ export default {
           api.setMessageReaction("✅", event.messageID, (err) => {}, true);
         });
 
-        file.on('error', (err) => {
+        writer.on('error', (err) => {
           console.error("Error downloading video:", err);
           api.sendMessage("An error occurred while downloading the video.", event.threadID, event.messageID);
         });
