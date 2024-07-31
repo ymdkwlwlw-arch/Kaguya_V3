@@ -58,7 +58,7 @@ export default {
             }
 
             if (!videoUrl) {
-                api.sendMessage("❓ | No video found for the given query.", event.threadID, event.messageID);
+                api.sendMessage("❓ | لم يتم ايجاد الاغتية بالنسبة للأغنية المحددة.", event.threadID, event.messageID);
                 return;
             }
 
