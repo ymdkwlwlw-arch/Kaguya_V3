@@ -12,7 +12,7 @@ export default {
     try {
       const searchQuery = args.join(" ");
       if (!searchQuery.includes("-")) {
-        return api.sendMessage(`Invalid format. Example: {p}ephoto text -1`, event.threadID, event.messageID);
+        return api.sendMessage(`⚠️ | صيغة خاطئة ادخلها هكذا \n لوغو نص بالإنجليزي ثم عارضة - ثم رقم من 1 إلى 6`, event.threadID, event.messageID);
       }
 
       const [text, num] = searchQuery.split("-").map(str => str.trim());
