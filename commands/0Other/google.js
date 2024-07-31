@@ -1,42 +1,86 @@
-import axios from 'axios';
-import fs from 'fs-extra';
-import path from 'path';
+import { MessageEmbed } from 'discord.js';
 
 export default {
-  name: "تحسين",
-  version: "1.0.0",
-  author: "مشروع كاغويا",
-  description: "رفع جودة الصور المقدمة أو المردود عليها",
-  role: "member",
-  usages: "[رابط الصورة | الرد على الصورة]",
-  cooldowns: 5,
-  execute: async ({ api, event, args }) => {
-    const cachePath = path.join(process.cwd(), "cache", "upscalate_photo.jpg");
-    const { threadID, messageID } = event;
+   name: "نرد",
+   author: "اسمك",
+   role: "مطور",
+   description: "يرجع حالة البينج في الويب سُكِيت",
+   execute: async (api, Economy, args) => {
+      const userID = message.author.id;
+      const userBalance = await Economy.getBalance(userID);
 
-    const photoUrl = event.messageReply ? event.messageReply.attachments[0].url : args.join(" ");
+      if (!userBalance) {
+         await Economy.create({
+            userID: userID,
+            money: 0,
+            user: message.author.tag,
+            GuildID: message.guild.id,
+            accountage: message.createdTimestamp,
+            attemptgmar: 0,
+         }).catch(err => {
+            return api.sendMessage('Something went wrong', message.channel.id);
+         });
+      }
 
-    if (!photoUrl) {
-      return api.sendMessage("📸 | يرجى الرد على صورة أو تقديم عنوان URL للصورة للمعالجة والتحسين.", threadID, messageID);
-    }
+      const cooldown = cooldowns.get(userID);
+      if (cooldown) {
+         const remaining = humanizeDuration(cooldown - Date.now());
+         return api.sendMessage(`:x: | **${remaining}, انتظر لاهنت**`, message.channel.id)
+            .catch(console.error);
+      }
 
-    try {
-      await api.sendMessage("🕟 | جاري رفع جودة الصورة ، يرجى الإنتظار...", threadID, messageID);
+      const inv = parseInt(args[0]);
+      if (isNaN(inv) || inv < 1000) {
+         return api.sendMessage('يرجى كتابة الامر بالطريقة الصحيحة \n> \نرد المبلغ#\``', message.channel.id);
+      }
 
-      const response = await axios.get(`https://for-devs.onrender.com/api/upscale?imageurl=${encodeURIComponent(photoUrl)}&apikey=api1`);
-      const processedImageURL = response.data.hazescale;
+      if (inv > userBalance) {
+         return api.sendMessage('اطلب الله مامعك المبلغ هذاذا', message.channel.id);
+      }
 
-      const imgResponse = await axios.get(processedImageURL, { responseType: "arraybuffer" });
-      const imgBuffer = Buffer.from(imgResponse.data, 'binary');
+      cooldowns.set(userID, Date.now() + 300000);
+      setTimeout(() => cooldowns.delete(userID), 300000);
 
-      await fs.writeFile(cachePath, imgBuffer);
+      const pick = ["lose", "win"];
+      const value = pick[Math.floor(Math.random() * pick.length)];
 
-      await api.sendMessage({
-        body: "✅ | تم رفع جودة الصورة بنجاح",
-        attachment: fs.createReadStream(cachePath)
-      }, threadID, () => fs.unlinkSync(cachePath), messageID);
-    } catch (error) {
-      await api.sendMessage(`Error processing image: ${error.message}`, threadID, messageID);
-    }
-  }
+      if (value === "win") {
+         const winAmount = inv * 2;
+         await Economy.increase(winAmount, userID);
+         const newBalance = await Economy.getBalance(userID);
+
+         const embed = new MessageEmbed()
+            .setThumbnail("https://cdn.discordapp.com/attachments/947898070845247529/968207531220566157/dice.png?size=4096")
+            .setAuthor(message.author.tag, message.author.avatarURL())
+            .setTitle("نرد 🎲")
+            .setFooter(`${message.guild.name}`, message.guild.iconURL())
+            .setDescription(`**يامجننننون فزت !**
+لعبت بـ: ${inv.toLocaleString()} ريال وربحت ${winAmount.toLocaleString()} !
+رصيدك السابق 💸: ${userBalance.toLocaleString()} ريال
+رصيدك الحالي 💸: ${newBalance.toLocaleString()} ريال`)
+            .setColor("#35ba74");
+        api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+  
+
+         api.sendMessage({ embeds: [embed] }, message.channel.id);
+      } else {
+         await Economy.decrease(inv, userID);
+         const newBalance = await Economy.getBalance(userID);
+
+         const embed = new MessageEmbed()
+            .setThumbnail("https://cdn.discordapp.com/attachments/947898070845247529/968207531220566157/dice.png?size=4096")
+            .setAuthor(message.author.tag, message.author.avatarURL())
+            .setTitle("نرد 🎲")
+            .setFooter(`${message.guild.name}`, message.guild.iconURL())
+            .setDescription(`**القمممم فزت عليك**
+لعبت بـ: ${inv.toLocaleString()} ريال وخسرتهم !
+رصيدك السابق 💸: ${userBalance.toLocaleString()} ريال
+رصيدك الحالي 💸: ${newBalance.toLocaleString()} ريال`)
+            .setColor("#3e0001");
+        api.setMessageReaction("❌", event.messageID, (err) => {}, true);
+  
+
+         api.sendMessage({ embeds: [embed] }, message.channel.id);
+      }
+   }
 };
