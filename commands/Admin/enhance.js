@@ -26,7 +26,7 @@ export default {
         const shortenedUrl = await tinyurl.shorten(url);
 
         // طلب تحسين الصورة من الـ API
-        const { data } = await axios.get(`https://king-aryanapis.onrender.com/api/4k?url=${encodeURIComponent(shortenedUrl)}`, {
+        const { data } = await axios.get(`https://c-v1.onrender.com/api/4k?url=${encodeURIComponent(shortenedUrl)}`, {
           responseType: "json"
         });
 
