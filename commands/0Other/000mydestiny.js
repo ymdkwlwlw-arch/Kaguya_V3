@@ -5,7 +5,7 @@ import path from 'path';
 async function generateImages({ api, event, args }) {
     try {
         if (args.length < 3) {
-            await api.sendMessage("⚠️ | أرجوك قم بإدخال وصف ثم ادخل موديل. استخدم الفاصلة '|' للفصل بين الوصف والموديل.", event.threadID, event.messageID);
+            await api.sendMessage(`⚠️ | أرجوك قم بإدخال وصف ثم ادخل موديل. استخدم الفاصلة '|' للفصل بين الوصف والموديل\nالموديلات المتاحة : ${availableModels.join(", ")}`, event.threadID, event.messageID);
             return;
         }
 
