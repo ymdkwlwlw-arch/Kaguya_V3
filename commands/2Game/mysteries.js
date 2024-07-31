@@ -22,10 +22,16 @@ export default {
   description: "جلب صورة للعضو بناءً على منشن أو الرد على رسالة للعضو",
 
   async execute({ api, event, args }) {
+    // التحقق من عدم وجود أي مدخلات في args
+    if (args.length === 0 && !event.messageReply) {
+      api.sendMessage({ body: "⚠️ | يرجى استخدام هذا الأمر عن طريق عمل منشن للعضو أو الرد على رسالة للعضو. \n💡 كيفية الاستخدام: استخدم الأمر مع منشن للعضو أو الرد على رسالة تحتوي على العضو المطلوب." , threadID: event.threadID });
+      return;
+    }
+
     const mentionedUserID = event?.messageReply?.senderID || (Object.keys(event.mentions).length > 0 ? Object.keys(event.mentions)[0] : null);
 
     if (!mentionedUserID) {
-      api.sendMessage({ body: "يرجى استخدام هذا الأمر عن طريق عمل منشن للعضو أو الرد على رسالة للعضو.", threadID: event.threadID });
+      api.sendMessage({ body: "⚠️ | يرجى عمل منشن للعضو أو الرد على رسالة للعضو.", threadID: event.threadID });
       return;
     }
 
