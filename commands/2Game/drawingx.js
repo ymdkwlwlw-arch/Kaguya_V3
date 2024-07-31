@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs-extra";
 
 export default {
-  name: "تخيلي4",
+  name: "تخيلي3",
   author: "kaguya project",
   role: "member",
   description: "Generates an image from a prompt.",
@@ -32,7 +32,7 @@ export default {
         // إرسال الصورة كملف مرفق
         api.setMessageReaction("✅", event.messageID, (err) => {}, true);
         await api.sendMessage({
-          body: '࿇ ══━━━━✥◈✥━━━━══ ࿇\n ✅ |تم توليد الصورة بنجاح\n࿇ ══━━━━✥◈✥━━━━══ ࿇',
+          body: '࿇ ══━━━✥◈✥━━━══ ࿇\n ✅ |تم توليد الصورة بنجاح\n࿇ ══━━━l━✥◈✥━━━══ ࿇',
           attachment: fs.createReadStream(filePath)
         }, event.threadID, () => fs.unlinkSync(filePath), event.messageID);
       });
