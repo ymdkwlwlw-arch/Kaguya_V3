@@ -9,7 +9,13 @@ export default {
   role: "member",
   description: "توليد صور بناءً على الوصف.",
   async execute({ message, args, api, event }) {
+    if (args.length === 0) {
+      api.sendMessage("⚠️ | يرجى إدخال وصف لتوليد الصورة.", event.threadID, event.messageID);
+      return;
+    }
+
     api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
+
     try {
       const prompt = args.join(" ");
 
