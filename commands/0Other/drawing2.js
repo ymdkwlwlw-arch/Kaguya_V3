@@ -40,7 +40,7 @@ export default {
       api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
       api.sendMessage({
-        body: `\t✅━❪𝒈𝒆𝒏𝒆𝒓𝒂𝒕𝒆𝒅 𝒔𝒖𝒄𝒄𝒆𝒔𝒔𝒇𝒖𝒍𝒍𝒚❫━✅\n\n⌬︙𝒆𝒙𝒆𝒄𝒖𝒕𝒊𝒐𝒏 𝒕𝒊𝒎𝒆  ➭ 『${executionTime}』s\n⌬︙𝖙𝖎𝖒𝖊 ➭ 『${timeString}』\n⌬︙𝖉𝖆𝖙𝖊 ➭ 『${dateString}』`,
+        body: `✅━❪𝒈𝒆𝒏𝒆𝒓𝒂𝒕𝒆𝒅 𝒔𝒖𝒄𝒄𝒆𝒔𝒔𝒇𝒖𝒍𝒍𝒚❫━✅\n\n⌬︙𝒆𝒙𝒆𝒄𝒖𝒕𝒊𝒐𝒏 𝒕𝒊𝒎𝒆  ➭ 『${executionTime}』s\n⌬︙𝖙𝖎𝖒𝖊 ➭ 『${timeString}』\n⌬︙𝖉𝖆𝖙𝖊 ➭ 『${dateString}』`,
         attachment: stream
       }, event.threadID, event.messageID);
     } catch (error) {
