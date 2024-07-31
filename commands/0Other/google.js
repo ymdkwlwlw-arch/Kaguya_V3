@@ -1,9 +1,9 @@
-import { MessageEmbed } from 'discord.js';
+const cooldowns = new Map();
 
 export default {
    name: "نرد",
-   author: "اسمك",
-   role: "مطور",
+   author: "kaguya project",
+   role: "member",
    description: "يرجع حالة البينج في الويب سُكِيت",
    execute: async (api, Economy, args) => {
       const userID = message.author.id;
@@ -24,7 +24,7 @@ export default {
 
       const cooldown = cooldowns.get(userID);
       if (cooldown) {
-         const remaining = humanizeDuration(cooldown - Date.now());
+         const remaining = humanTime(cooldown - Date.now());
          return api.sendMessage(`:x: | **${remaining}, انتظر لاهنت**`, message.channel.id)
             .catch(console.error);
       }
@@ -49,38 +49,4 @@ export default {
          await Economy.increase(winAmount, userID);
          const newBalance = await Economy.getBalance(userID);
 
-         const embed = new MessageEmbed()
-            .setThumbnail("https://cdn.discordapp.com/attachments/947898070845247529/968207531220566157/dice.png?size=4096")
-            .setAuthor(message.author.tag, message.author.avatarURL())
-            .setTitle("نرد 🎲")
-            .setFooter(`${message.guild.name}`, message.guild.iconURL())
-            .setDescription(`**يامجننننون فزت !**
-لعبت بـ: ${inv.toLocaleString()} ريال وربحت ${winAmount.toLocaleString()} !
-رصيدك السابق 💸: ${userBalance.toLocaleString()} ريال
-رصيدك الحالي 💸: ${newBalance.toLocaleString()} ريال`)
-            .setColor("#35ba74");
-        api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-  
-
-         api.sendMessage({ embeds: [embed] }, message.channel.id);
-      } else {
-         await Economy.decrease(inv, userID);
-         const newBalance = await Economy.getBalance(userID);
-
-         const embed = new MessageEmbed()
-            .setThumbnail("https://cdn.discordapp.com/attachments/947898070845247529/968207531220566157/dice.png?size=4096")
-            .setAuthor(message.author.tag, message.author.avatarURL())
-            .setTitle("نرد 🎲")
-            .setFooter(`${message.guild.name}`, message.guild.iconURL())
-            .setDescription(`**القمممم فزت عليك**
-لعبت بـ: ${inv.toLocaleString()} ريال وخسرتهم !
-رصيدك السابق 💸: ${userBalance.toLocaleString()} ريال
-رصيدك الحالي 💸: ${newBalance.toLocaleString()} ريال`)
-            .setColor("#3e0001");
-        api.setMessageReaction("❌", event.messageID, (err) => {}, true);
-  
-
-         api.sendMessage({ embeds: [embed] }, message.channel.id);
-      }
-   }
-};
+         const messageContent = `
