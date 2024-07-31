@@ -1,70 +1,69 @@
-const numberslst = {};
+import axios from 'axios';
+import fs from 'fs';
+import path from 'path';
+
+const cacheDir = path.join(process.cwd(), 'cache');
+if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir);
+}
+
 export default {
+  name: "ارسمي2",
+  author: "ArYAN",
+  role: "member",
+  description: "رسم معتمدا على الانمي",
   
-  name: "ارقام",
-  author: "kaguya project",
-  role: "عضو",
-  description: "لعبة تخمين رقم بين 1 و 20.",
-
-  execute: async ({ api, event }) => {
-    if (!numberslst[event.threadID]) numberslst[event.threadID] = {};
-    const s = event.senderID;
-    numberslst[event.threadID].s = {
-      a: true,
-      b: getRandomNumber(1, 20),
-      d: 0
-    };
-
-    api.sendMessage('حسنًا، احزر رقما بين 1 و 20.', event.threadID);
-  },
-
-  onReply: async ({ api, event, reply }) => {
-    const threadID = event.threadID;
-    if (!numberslst[threadID] || !numberslst[threadID].s || reply.type !== "pick") return;
-
-    const guess = parseInt(event.body);
-    if (isNaN(guess) || guess < 1 || guess > 20) {
-      api.sendMessage('الرجاء إدخال رقم صحيح بين 1 و 20.', threadID);
-      return;
-    }
-
-    let { a, b, d } = numberslst[threadID].s;
-
-    if (a && guess !== b) {
-      numberslst[threadID].s.d = d + 1;
-      if (guess > b) {
-        api.setMessageReaction("⬇️", event.messageID, (err) => {}, true);
-      } else {
-        api.setMessageReaction("⬆️", event.messageID, (err) => {}, true);
+  execute: async ({ api, event, args }) => {
+    try {
+      const prompt = args.join(" ");
+      if (!prompt) {
+        return api.sendMessage("⚠️ | قم بإدخال نص.", event.threadID, event.messageID);
       }
-      return;
-    }
+      
+      // Translate the prompt from Arabic to English
+      const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
+      const translatedPrompt = translationResponse?.data?.[0]?.[0]?.[0];
 
-    if (a && guess === b) {
-      let rewardAmount, message;
-      if (d < 10) {
-        rewardAmount = 400;
-        message = "عدد محاولاتك قليل جداً، أداء رائع!";
-      } else {
-        rewardAmount = 200;
-        message = "محاولاتك كانت كثيرة قليلاً!";
+      if (!translatedPrompt) {
+        return api.sendMessage("⚠️ | Error translating the prompt.", event.threadID, event.messageID);
       }
 
-      await Economy.increase(rewardAmount, event.senderID);
-      await Users.update(event.senderID, {
-        other: {
-          cooldowns: currentTime,
-        },
+      api.setMessageReaction("⏰", event.messageID, () => {}, true);
+
+      const startTime = new Date().getTime();
+    
+      const baseURL = `https://king-aryanapis.onrender.com/api/animex?prompt=${encodeURIComponent(translatedPrompt)}`;
+
+      const response = await axios.get(baseURL, {
+        responseType: 'stream'
       });
 
-      api.setMessageReaction("🥳", event.messageID, (err) => {}, true);
-      api.sendMessage(`كفوا! الرقم الصحيح هو ${b}.\n- ربحت ${rewardAmount} لأن ${message}\n- ${d} محاولة.`, threadID);
+      const endTime = new Date().getTime();
+      const timeTaken = (endTime - startTime) / 1000;
 
-      numberslst[threadID].s = {};
+      const fileName = 'emix.png';
+      const filePath = path.join(cacheDir, fileName); 
+
+      const writerStream = fs.createWriteStream(filePath);
+      response.data.pipe(writerStream);
+
+      writerStream.on('finish', function() {
+        api.setMessageReaction("✅", event.messageID, () => {}, true);
+
+        api.sendMessage({
+          body: `◆❯━━━━━▣✦▣━━━━━━❮◆\n✅ | تم بنجاح \n\n📝 | وصفك : ${prompt}\n⏱️ | الوقت المستغرق : ${timeTaken} ثانية\n◆❯━━━━━▣✦▣━━━━━━❮◆`,
+          attachment: fs.createReadStream(filePath)
+        }, event.threadID, () => fs.unlinkSync(filePath));
+      });
+
+      writerStream.on('error', function(err) {
+        console.error('Error writing file:', err);
+        api.sendMessage("🚧 | An error occurred while processing your request.", event.threadID);
+      });
+
+    } catch (error) {
+      console.error('Error generating image:', error);
+      api.sendMessage("🚧 | An error occurred while processing your request.", event.threadID);
     }
   }
 };
-
-function getRandomNumber(min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
