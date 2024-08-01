@@ -25,34 +25,41 @@ class Admin {
     try {
       const [type, tags] = args;
       const isAdmin = global.client.config.ADMIN_IDS.includes(event.senderID);
-      const isAdminCommand = ["تفعيل", "تعطيل", "إضافة", "إزالة", "قائمة"].includes(type);
 
-      if (!isAdmin && !["قائمة", "list"].includes(type)) {
+      if (!isAdmin) {
         return kaguya.reply(" ⚠️ | ليس لديك الإذن لاستخدام هذا الأمر!");
       }
 
-      if (isAdminCommand) {
-        if (type === "تفعيل") {
-          global.client.setConfig({ botEnabled: true });
-          return kaguya.reply(" ✅ | تم تفعيل تقييد إستخدام البوت بنجاح!");
-        }
-        if (type === "تعطيل") {
-          global.client.setConfig({ botEnabled: false });
-          return kaguya.reply(" ❌ | تم تعطيل تقييد إستخدام البوت بنجاح!");
-        }
-        if (type === "إضافة") {
-          return this.addAdmin(tags);
-        }
-        if (type === "إزالة") {
-          return this.removeAdmin(tags);
-        }
-        if (type === "قائمة" || type === "-l" || type === "-all") {
-          return this.listAdmins();
-        }
-      } else {
-        var commandName = client.config.prefix + this.name;
-        return kaguya.reply(`[ آدمن ]\n${commandName} تفعيل لتفعيل البوت\n${commandName} تعطيل لتعطيل البوت\n${commandName} إضافة <@منشن أو الآيدي> لإضافة العضو كآدمن\n${commandName} إزالة <@منشن أو الآيدي> لإزالة العضو من قائمة الآدمنية\n${commandName} قائمة لإظهار قائمة الآدمنية`);
+      const { api, threadID, senderID } = event;
+
+      if (type === "تفعيل") {
+        global.client.setConfig({ botEnabled: true });
+        const botName = "》 《 ❃ ➠ بوت مفعل";
+        await api.changeNickname(botName, threadID, senderID);
+        return kaguya.reply(" ✅ | تم تفعيل البوت بنجاح!");
       }
+
+      if (type === "تعطيل") {
+        global.client.setConfig({ botEnabled: false });
+        const botName = "》 《 ❃ ➠ بوت معطل";
+        await api.changeNickname(botName, threadID, senderID);
+        return kaguya.reply(" ❌ | تم تعطيل البوت بنجاح!");
+      }
+
+      if (type === "إضافة") {
+        return this.addAdmin(tags);
+      }
+
+      if (type === "إزالة") {
+        return this.removeAdmin(tags);
+      }
+
+      if (type === "قائمة" || type === "-l" || type === "-all") {
+        return this.listAdmins();
+      }
+
+      const commandName = client.config.prefix + this.name;
+      return kaguya.reply(`[ آدمن ]\n${commandName} تفعيل لتفعيل البوت\n${commandName} تعطيل لتعطيل البوت\n${commandName} إضافة <@منشن أو الآيدي> لإضافة العضو كآدمن\n${commandName} إزالة <@منشن أو الآيدي> لإزالة العضو من قائمة الآدمنية\n${commandName} قائمة لإظهار قائمة الآدمنية`);
     } catch (err) {
       console.log(err);
     }
