@@ -31,7 +31,10 @@ export class CommandHandler {
       const config = JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
 
       if (!config.botEnabled) {
-        return api.sendMessage("البوت غير مفعل حاليًا", threadID, messageID);
+        
+        api.setMessageReaction("🚫", event.messageID, (err) => {}, true);
+  
+        return api.sendMessage("❌ | البوت مقيد من الإستخدام حاليا", threadID, messageID);
       }
 
       const getThreadPromise = Threads.find(event.threadID);
