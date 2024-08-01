@@ -46,9 +46,8 @@ export class CommandHandler {
 
       // Check if the bot is enabled
       if (!this.config.botEnabled) {
-        api.setMessageReaction("🚫", event.messageID, (err) => {}, true);
   
-        return api.sendMessage("❌ | تم تقييد استخدام البوت حالياً", threadID, messageID);
+        return api.sendMessage("", threadID, messageID);
       }
 
       const [cmd, ...args] = body.trim().split(/\s+/);
