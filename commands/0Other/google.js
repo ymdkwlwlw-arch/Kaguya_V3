@@ -1,11 +1,9 @@
-const cooldowns = new Map();
-
 export default {
    name: "نرد",
-   author: "kaguya project",
-   role: "member",
-   description: "يرجع حالة البينج في الويب سُكِيت",
-   execute: async (api, Economy, args) => {
+   author: "حسين اليعقوبي",
+   role: "HUSSEIN YACOUBI",
+   description: "لعب النرد وتحديد المكافأة أو الخسارة بناءً على النتيجة",
+   execute: async (client, message, args) => {
       const userID = message.author.id;
       const userBalance = await Economy.getBalance(userID);
 
@@ -22,15 +20,8 @@ export default {
          });
       }
 
-      const cooldown = cooldowns.get(userID);
-      if (cooldown) {
-         const remaining = humanTime(cooldown - Date.now());
-         return api.sendMessage(`:x: | **${remaining}, انتظر لاهنت**`, message.channel.id)
-            .catch(console.error);
-      }
-
       const inv = parseInt(args[0]);
-      if (isNaN(inv) || inv < 1000) {
+      if (isNaN(inv) || inv < 100) {
          return api.sendMessage('يرجى كتابة الامر بالطريقة الصحيحة \n> \نرد المبلغ#\``', message.channel.id);
       }
 
@@ -38,15 +29,46 @@ export default {
          return api.sendMessage('اطلب الله مامعك المبلغ هذاذا', message.channel.id);
       }
 
-      cooldowns.set(userID, Date.now() + 300000);
-      setTimeout(() => cooldowns.delete(userID), 300000);
+      if (inv < 100) {
+         return api.sendMessage('ماتقدر تلعب بأقل من 100 دولار', message.channel.id);
+      }
 
-      const pick = ["lose", "win"];
-      const value = pick[Math.floor(Math.random() * pick.length)];
+      // إرسال رسالة "جاري تقليب النر
+      api.setMessageReaction("🎲", event.messageID, (err) => {}, true);
+  
+      const sentMessage = await api.sendMessage('جاري تقليب النرد...', message.channel.id);
 
-      if (value === "win") {
-         const winAmount = inv * 2;
-         await Economy.increase(winAmount, userID);
-         const newBalance = await Economy.getBalance(userID);
+      // تحديد نتيجة النرد
+      const diceEmojis = ["⚀", "⚁", "⚂", "⚃", "⚄", "⚅"];
+      const diceRoll = Math.floor(Math.random() * diceEmojis.length);
+      const rolledNumber = diceEmojis[diceRoll];
 
-         const messageContent = `
+      // تحديد المكافأة أو الخسارة بناءً على نتيجة النرد
+      let resultMessage = '';
+      let amount = 0;
+
+      if (diceRoll >= 4) { // إذا كان العدد أكبر من أو يساوي 5
+         if (diceRoll === 5) {
+            amount = 1000;
+         } else {
+            amount = Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000;
+         }
+         api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+  
+         await Economy.increase(amount, userID);
+         resultMessage = `**فزت!** 🎉\nقلبت النرد: ${rolledNumber}\nفزت بمبلغ قدره ${amount.toLocaleString()} ريال`;
+      } else { // إذا كان العدد أقل من 5
+         amount = 100;
+         api.setMessageReaction("❌", event.messageID, (err) => {}, true);
+  
+         await Economy.decrease(amount, userID);
+         resultMessage = `**خسرت!** 💔\nقلبت النرد: ${rolledNumber}\nخسرت ${amount.toLocaleString()} ريال`;
+      }
+
+      // إرسال الرسالة النهائية مع نتيجة النرد والمكافأة أو الخسارة
+      await api.sendMessage(resultMessage, message.channel.id);
+
+      // حذف رسالة "جاري تقليب النرد"
+      api.unsendMessage(sentMessage.messageID, message.channel.id);
+   }
+};
