@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import axios from 'axios';
 import { log } from "../logger/index.js";
 
 export class CommandHandler {
@@ -26,6 +25,15 @@ export class CommandHandler {
     try {
       const { Users, Threads, api, event } = this.arguments;
       const { body, threadID, senderID, isGroup, messageID } = event;
+
+      // قراءة حالة التفعيل من ملف الإعدادات
+      const configFilePath = path.join(process.cwd(), 'config.json');
+      const config = JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
+
+      if (!config.botEnabled) {
+        return api.sendMessage("البوت غير مفعل حاليًا", threadID, messageID);
+      }
+
       const getThreadPromise = Threads.find(event.threadID);
       const getUserPromise = Users.find(senderID);
 
@@ -38,7 +46,6 @@ export class CommandHandler {
 
       if (isGroup) {
         const banThread = getThread?.data?.data?.banned;
-
         if (banThread?.status && !this.config.ADMIN_IDS.includes(event.senderID)) {
           return api.sendMessage(getLang("handler.thread_ban", banThread.reason), threadID);
         }
@@ -142,4 +149,4 @@ export class CommandHandler {
     }
     command.onReaction && (await command.onReaction({ ...this.arguments, reaction }));
   }
-      }
+}
