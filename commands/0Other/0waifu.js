@@ -35,6 +35,8 @@ export default {
         response.data.pipe(writer);
 
         writer.on('finish', () => {
+          api.setMessageReaction("😘", event.messageID, (err) => {}, true);
+  
           api.sendMessage({
             body: `࿇ ══━━━✥◈✥━━━══ ࿇\n💜☟  ω𝒶ⓘғυ  ☟💜\n${randomCategory}\n࿇ ══━━━✥◈✥━━━══ ࿇`,
             attachment: fs.createReadStream(imagePath)
