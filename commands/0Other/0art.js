@@ -15,7 +15,7 @@ export default {
       return api.sendMessage('🛡️ | أرجوك قم بالرد على صورة.', event.threadID, event.messageID);
     }
 
-    const apiURL = `https://samirxpikachuio.onrender.com/artify?url=${encodeURIComponent(imageLink)}`;
+    const apiURL = `https://www.samirxpikachu.run.place/gta?url=${encodeURIComponent(imageLink)}`;
     const outPath = path.join(process.cwd(), 'generated_image.jpg');
 
     try {
