@@ -3,43 +3,54 @@ import fs from 'fs-extra';
 import path from 'path';
 
 export default {
-  name: 'زوجة',
-  author: 'Hussein',
-  role: 'member',
-  description: 'الحصول على صورة عشوائية لشخصية أنمي',
+  name: "زوجة",
+  author: "YourName",
+  role: "member",
+  description: "أحضر صورة أنمي عشوائية.",
+
   async execute({ api, event }) {
-    const cacheFolderPath = path.join(process.cwd(), 'cache');
-    const imagePath = path.join(cacheFolderPath, 'waifu_image.jpg');
+    const categories = [
+      'waifu', 'neko', 'shinobu', 'megumin', 'bully', 'cuddle', 'cry', 'hug', 
+      'awoo', 'kiss', 'lick', 'pat', 'smug', 'bonk', 'yeet', 'blush', 'smile', 
+      'wave', 'highfive', 'handhold', 'nom', 'bite', 'glomp', 'slap', 'kill', 
+      'kick', 'happy', 'wink', 'poke', 'dance', 'cringe'
+    ];
 
-    if (!fs.existsSync(cacheFolderPath)) {
-      fs.mkdirSync(cacheFolderPath);
-    }
-
-    const tid = event.threadID;
-    const mid = event.messageID;
-
+    // اختيار فئة عشوائية
+    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+    
     try {
-      const response = await axios.get('https://nash-api-end.onrender.com/waifu?search=waifu');
+      const res = await axios.get(`https://api.waifu.pics/sfw/${randomCategory}`);
+      const imgUrl = res.data.url;
 
-      if (response.data && response.data.images && response.data.images.length > 0) {
-        const imageUrl = response.data.images[0].preview_url; // استخدام preview_url
+      if (imgUrl) {
+        const imagePath = path.join(process.cwd(), 'cache', `${Date.now()}_${randomCategory}.png`);
+        const writer = fs.createWriteStream(imagePath);
+        const response = await axios({
+          url: imgUrl,
+          method: 'GET',
+          responseType: 'stream'
+        });
 
-        // تحميل الصورة كـ arraybuffer
-        const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-        const imageBuffer = Buffer.from(imageResponse.data, 'binary');
+        response.data.pipe(writer);
 
-        // حفظ الصورة في المسار المحدد
-        await fs.outputFile(imagePath, imageBuffer);
+        writer.on('finish', () => {
+          api.sendMessage({
+            body: `࿇ ══━━━✥◈✥━━━══ ࿇\n💜☟  ω𝒶ⓘғυ  ☟💜\n${randomCategory}\n࿇ ══━━━✥◈✥━━━══ ࿇`,
+            attachment: fs.createReadStream(imagePath)
+          }, event.threadID, () => fs.unlinkSync(imagePath));
+        });
 
-        api.setMessageReaction('😘', event.messageID, (err) => {}, true);
-
-        // إرسال الصورة في رسالة
-        api.sendMessage({ attachment: fs.createReadStream(imagePath) }, tid, () => fs.unlinkSync(imagePath), mid);
+        writer.on('error', (err) => {
+          console.error('Error writing file:', err);
+          api.sendMessage('🚧 | حدث خطأ أثناء معالجة طلبك.', event.threadID, event.messageID);
+        });
       } else {
-        return api.sendMessage('فشل في جلب صورة عشوائية لشخصية أنمي. يرجى المحاولة مرة أخرى.', tid, mid);
+        api.sendMessage('❓ | لم يتم العثور على صورة.', event.threadID, event.messageID);
       }
     } catch (e) {
-      return api.sendMessage(e.message, tid, mid);
+      console.error('Error fetching image:', e);
+      api.sendMessage('🚧 | حدث خطأ أثناء معالجة طلبك.', event.threadID, event.messageID);
     }
-  },
+  }
 };
