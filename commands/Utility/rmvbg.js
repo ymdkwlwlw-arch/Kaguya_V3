@@ -1,75 +1,80 @@
-import axios from "axios";
-import fs from "fs/promises";
-import path from "path";
-import request from "request";
-
-const currentDir = process.cwd();
+import axios from 'axios';
+import fs from 'fs-extra';
+import path from 'path';
+import tinyurl from 'tinyurl'; // Assuming tinyurl package is installed
 
 export default {
   name: "إزالة_الخلفية",
-  author: "حسين يعقوبي",
+  author: "ArYAN",
   role: "member",
-  description: "يقوم بإزالة الخلفية من الصورة المُرسلة.",
-  cooldown: 60, // cooldown بالثواني
+  description: "إزالة الخلفية من صورة بناءً على URL أو رد على صورة.",
 
-  async execute({ api, event }) {
-    const { threadID, messageID, type, messageReply } = event;
-
-    api.setMessageReaction("⚙️", event.messageID, (err) => {}, true);
-
-    if (type !== 'message_reply') {
-      api.sendMessage('[❌] إستخدام غير صالح المرجو الرد على صورة.', threadID, messageID);
-      return;
+  async execute({ api, event, args }) {
+    api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
+  
+    function isValidUrl(string) {
+      try {
+        new URL(string);
+        return true;
+      } catch (_) {
+        return false;
+      }
     }
 
-    if (!messageReply || !messageReply.attachments || messageReply.attachments.length !== 1 || messageReply.attachments[0].type !== 'photo') {
-      api.sendMessage('[❌] صورة غير صالحة، يرجى الرد على صورة واحدة وواضحة.', threadID, messageID);
-      return;
-    }
+    let imageUrl;
 
-    const url = messageReply.attachments[0].url;
-    const inputPath = path.join(currentDir, 'cache', 'removebg.png');
+    if (event.type === "message_reply" && event.messageReply.attachments.length > 0) {
+      const replyAttachment = event.messageReply.attachments[0];
+      if (["photo", "sticker"].includes(replyAttachment.type)) {
+        imageUrl = replyAttachment.url;
+      } else {
+        return api.sendMessage({ body: `⚠️ | يرجى الرد على صورة صحيحة.` }, event.threadID, event.messageID);
+      }
+    } else if (args[0] && isValidUrl(args[0]) && args[0].match(/\.(png|jpg|jpeg)$/)) {
+      imageUrl = args[0];
+    } else {
+      return api.sendMessage({ body: `⚠️ | يرجى تقديم عنوان URL صورة صحيح أو الرد على صورة.` }, event.threadID, event.messageID);
+    }
 
     try {
-      // Download the image
-      await new Promise((resolve, reject) => {
-        request(url)
-          .pipe(fs.createWriteStream(inputPath))
-          .on('finish', resolve)
-          .on('error', reject);
-      });
+      const startTime = new Date().getTime();
+      const shortenedUrl = await tinyurl.shorten(imageUrl);
 
-      const apiUrl = `https://www.samirxpikachu.run.place/rbg?url=${encodeURIComponent(url)}`;
+      // Remove background using custom API with GET method
+      const apiUrl = `https://king-aryanapis.onrender.com/api/removebg?url=${encodeURIComponent(imageUrl)}`;
+      const response = await axios.get(apiUrl, { responseType: 'stream' });
 
-      // Call the API to remove the background
-      const response = await axios({
-        method: 'get',
-        url: apiUrl,
-        responseType: 'arraybuffer',
-      });
+      if (response && response.data) {
+        const endTime = new Date().getTime();
+        const timeTaken = (endTime - startTime) / 1000;
 
-      if (response.status !== 200) {
-        console.error('Error:', response.status, response.statusText);
-        api.sendMessage('[❌] فشل في إزالة الخلفية. حاول مجدداً لاحقاً.', threadID, messageID);
-        return;
+        const imageStream = response.data;
+
+        const filePath = path.join(process.cwd(), 'cache', `${Date.now()}_removed_bg.png`);
+        const writer = fs.createWriteStream(filePath);
+        imageStream.pipe(writer);
+
+        writer.on('finish', () => {
+          api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+  
+          api.sendMessage({
+            body: `╼╾─────⊹⊱⊰⊹─────╼╾\n✅ | تم إزالة الخلفية بنجاح.\n\n━━━━━━━━━━━━━\n` +
+                  `⚙️ | URL: ${shortenedUrl}\n` +
+                  `⏰ | الوقت المستغرق: ${timeTaken.toFixed(2)} ثواني\n`,
+            attachment: fs.createReadStream(filePath)
+          }, event.threadID, () => fs.unlinkSync(filePath));
+        });
+
+        writer.on('error', (err) => {
+          console.error('Error writing file:', err);
+          api.sendMessage({ body: `🚧 | حدث خطأ أثناء معالجة الصورة.` }, event.threadID, event.messageID);
+        });
+      } else {
+        throw new Error(`فشل في جلب الصورة أو استجابة فارغة.`);
       }
-
-      // Save the result image
-      await fs.writeFile(inputPath, response.data);
-
-      // Send the result
-      api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-
-      const message = {
-        body: '✅ | تم بنجاح إزالة الخلفية.',
-        attachment: fs.createReadStream(inputPath),
-      };
-
-      api.sendMessage(message, threadID, messageID);
-
     } catch (error) {
-      api.sendMessage('[❌] فشل الطلب \n\n' + error.message, threadID, messageID);
-      console.error('Request failed:', error);
+      console.error('Error processing image:', error);
+      api.sendMessage({ body: `🚧 | حدث خطأ أثناء معالجة الصورة: ${error.message}` }, event.threadID, event.messageID);
     }
-  },
+  }
 };
