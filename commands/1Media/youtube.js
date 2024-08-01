@@ -6,9 +6,9 @@ export default {
   name: "يوتيوب",
   author: "YourName",
   role: "member",
-  aliases:["يوتيب"],
+  aliases: ["يوتيب"],
   description: "بحث وتحميل فيديو من YouTube بناءً على عنوان.",
-  
+
   async execute({ api, event, args }) {
     const searchQuery = args.join(" ");
     const apiUrl = `https://c-v1.onrender.com/yt/s?query=${encodeURIComponent(searchQuery)}`;
@@ -24,10 +24,23 @@ export default {
       const tracks = response.data;
 
       if (tracks.length > 0) {
-        const topTracks = tracks.slice(0, 9);
-        let message = "❍───────────────❍\n🎶 | إليك 9 نتائج تطابق نتيجة البحث:\n";
+        const topTracks = tracks.slice(0,6);
+        let message = "❍───────────────❍\n🎶 | إليك ست نتائج تطابق نتيجة البحث:\n";
         const attachments = await Promise.all(topTracks.map(async (track) => {
-          return await global.utils.getStreamFromURL(track.thumbnail);
+          const thumbnailPath = path.join(process.cwd(), 'cache', `${track.id}_thumbnail.png`);
+          await axios({
+            url: track.thumbnail,
+            method: 'GET',
+            responseType: 'stream'
+          }).then(response => {
+            return new Promise((resolve, reject) => {
+              const writer = fs.createWriteStream(thumbnailPath);
+              response.data.pipe(writer);
+              writer.on('finish', () => resolve(thumbnailPath));
+              writer.on('error', reject);
+            });
+          });
+          return thumbnailPath;
         }));
 
         topTracks.forEach((track, index) => {
@@ -40,7 +53,7 @@ export default {
         message += "\n🎯 | رد على الرسالة برقم حتى يتم تحميل المقطع.";
         api.sendMessage({
           body: message,
-          attachment: attachments
+          attachment: attachments.map(filePath => fs.createReadStream(filePath))
         }, event.threadID, (err, info) => {
           if (err) {
             console.error(err);
