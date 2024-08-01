@@ -3,7 +3,7 @@ export default {
    author: "حسين اليعقوبي",
    role: "HUSSEIN YACOUBI",
    description: "لعب النرد وتحديد المكافأة أو الخسارة بناءً على النتيجة",
-   execute: async (client, message, args) => {
+   execute: async (api, Economy, args) => {
       const userID = message.author.id;
       const userBalance = await Economy.getBalance(userID);
 
