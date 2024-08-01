@@ -1,4 +1,4 @@
-export default {
+{
   "prefix": "*",
   "language": "ar_MA",
   "BOT_NAME": "ⓀⒶⒼⓊⓎⒶ",
@@ -7,6 +7,7 @@ export default {
     "100065328385465",
     "61558729340569"
   ],
+  "botEnabled": true,
   "options": {
     "forceLogin": true,
     "listenEvents": true,
@@ -24,4 +25,4 @@ export default {
   },
   "port": 3000,
   "mqtt_refresh": 1200000
-};
+      }
