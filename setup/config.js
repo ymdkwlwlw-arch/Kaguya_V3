@@ -1,4 +1,4 @@
-{
+export default {
   "prefix": "*",
   "language": "ar_MA",
   "BOT_NAME": "ⓀⒶⒼⓊⓎⒶ",
@@ -25,4 +25,5 @@
   },
   "port": 3000,
   "mqtt_refresh": 1200000
-      }
+};
+هل اضيفها هنا 
