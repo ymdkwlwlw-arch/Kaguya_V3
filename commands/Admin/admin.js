@@ -13,7 +13,7 @@ class Admin {
       global.client.__proto__.setConfig = function (newConfig) {
         try {
           Object.assign(global.client.config, newConfig);
-          fs.writeFileSync("./setup/config.json", JSON.stringify(global.client.config, null, 2));
+          fs.writeFileSync("./setup/config.js", `export default ${JSON.stringify(global.client.config, null, 2)};`);
         } catch (err) {
           this.emit("system:err", err);
         }
@@ -30,19 +30,15 @@ class Admin {
         return kaguya.reply(" ⚠️ | ليس لديك الإذن لاستخدام هذا الأمر!");
       }
 
-      const { api, threadID, senderID } = event;
-
       if (type === "تفعيل") {
         global.client.setConfig({ botEnabled: true });
-        const botName = "》 《 ❃ ➠ بوت مفعل";
-        await api.changeNickname(botName, threadID, senderID);
+        await this.updateBotNickname("》 《 ❃ ➠ بوت مفعل", event.threadID, event.senderID);
         return kaguya.reply(" ✅ | تم تفعيل البوت بنجاح!");
       }
 
       if (type === "تعطيل") {
         global.client.setConfig({ botEnabled: false });
-        const botName = "》 《 ❃ ➠ بوت معطل";
-        await api.changeNickname(botName, threadID, senderID);
+        await this.updateBotNickname("》 《 ❃ ➠ بوت معطل", event.threadID, event.senderID);
         return kaguya.reply(" ❌ | تم تعطيل البوت بنجاح!");
       }
 
@@ -62,6 +58,14 @@ class Admin {
       return kaguya.reply(`[ آدمن ]\n${commandName} تفعيل لتفعيل البوت\n${commandName} تعطيل لتعطيل البوت\n${commandName} إضافة <@منشن أو الآيدي> لإضافة العضو كآدمن\n${commandName} إزالة <@منشن أو الآيدي> لإزالة العضو من قائمة الآدمنية\n${commandName} قائمة لإظهار قائمة الآدمنية`);
     } catch (err) {
       console.log(err);
+    }
+  }
+
+  async updateBotNickname(botName, threadID, senderID) {
+    try {
+      await global.client.api.changeNickname(botName, threadID, senderID);
+    } catch (error) {
+      console.error("Error updating bot nickname:", error);
     }
   }
 
