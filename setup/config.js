@@ -26,4 +26,3 @@ export default {
   "port": 3000,
   "mqtt_refresh": 1200000
 };
-هل اضيفها هنا 
