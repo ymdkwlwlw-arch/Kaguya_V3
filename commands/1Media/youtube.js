@@ -24,8 +24,8 @@ export default {
       const tracks = response.data;
 
       if (tracks.length > 0) {
-        const topTracks = tracks.slice(0, 6);
-        let message = "❍───────────────❍\n🎶 | إليك ست نتائج تطابق نتيجة البحث:\n";
+        const topTracks = tracks.slice(0,6);
+        let message = "❍───────────────❍\n🎶 | إليك أفضل ست مقاطع\n\n";
         const attachments = await Promise.all(topTracks.map(async (track) => {
           const thumbnailPath = path.join(process.cwd(), 'cache', `${track.id}_thumbnail.png`);
           await axios({
@@ -50,7 +50,7 @@ export default {
           message += "❍───────────────❍\n"; // Separator between tracks
         });
 
-        message += "\n🎯 | رد على الرسالة برقم حتى يتم تحميل المقطع.";
+        message += "\n🎯 | رد على الرسالة برقم لتحميل المقطع.";
         api.sendMessage({
           body: message,
           attachment: attachments.map(filePath => fs.createReadStream(filePath))
@@ -69,7 +69,7 @@ export default {
           });
         });
       } else {
-        api.sendMessage("❓ | آسف، لا يمكن العثور على الفيديو.", event.threadID);
+        api.sendMessage("❓ | آسف، لا يمكن العثور على الفيديو المطلوب.", event.threadID);
       }
     } catch (error) {
       console.error(error);
@@ -78,7 +78,7 @@ export default {
   },
 
   async onReply({ api, event, reply, args }) {
-    if (reply.type === "pick") {
+    if (reply.type === "pick" && args.length > 0) {
       const replyIndex = parseInt(args[0]);
       const { author, tracks } = reply;
 
@@ -93,7 +93,7 @@ export default {
         const videoUrl = selectedTrack.videoUrl;
         const downloadApiUrl = `https://c-v1.onrender.com/downloader?url=${encodeURIComponent(videoUrl)}`;
 
-        api.sendMessage("⏳ | جاري تحميل المقطع...", event.threadID, async (err) => {
+        api.sendMessage("⏳ | جاري تحميل المقطع، يرجى الانتظار...", event.threadID, async (err, info) => {
           if (err) {
             console.error(err);
             api.sendMessage("🚧 | حدث خطأ أثناء إرسال الرسالة.", event.threadID);
@@ -116,10 +116,10 @@ export default {
             response.data.pipe(writer);
 
             writer.on('finish', () => {
-              api.setMessageReaction("✅", event.messageID, () => {}, true);
+              api.setMessageReaction("✅", info.messageID, () => {}, true);
 
               api.sendMessage({
-                body: `◆❯━━━━━▣✦▣━━━━━━❮◆\nإليك الفيديو ${selectedTrack.title}.\n\n📒 | العنوان: ${selectedTrack.title}\n📅 | تاريخ النشر: ${selectedTrack.publishDate}\n👀 | المشاهدات: ${selectedTrack.viewCount}\n👍 | الإعجابات: ${selectedTrack.likeCount}\n◆❯━━━━━▣✦▣━━━━━━❮◆`,
+                body: `🎶 𝗬𝗼𝘂𝗧𝘂𝗯𝗲\n\n━━━━━━━━━━━━━\nإليك الفيديو ${selectedTrack.title}.\n\n📒 | العنوان: ${selectedTrack.title}\n📅 | تاريخ النشر: ${selectedTrack.publishDate}\n👀 | المشاهدات: ${selectedTrack.viewCount}\n👍 | الإعجابات: ${selectedTrack.likeCount}\n\nاستمتع بالمشاهدة! 🥰`,
                 attachment: fs.createReadStream(filePath),
               }, event.threadID, () => fs.unlinkSync(filePath));
             });
@@ -137,6 +137,11 @@ export default {
         console.error(error);
         api.sendMessage(`🚧 | حدث خطأ أثناء معالجة طلبك: ${error.message}`, event.threadID);
       }
+    } else {
+      api.sendMessage("❓ | لا يمكن معالجة ردك. تأكد من اختيار رقم صحيح.", event.threadID);
     }
+
+    api.unsendMessage(reply.messageID);
+    global.client.handler.reply.delete(reply.messageID);
   }
 };
