@@ -41,7 +41,7 @@ export default {
       const shortenedUrl = await tinyurl.shorten(imageUrl);
 
       // Remove background using custom API with GET method
-      const apiUrl = `https://king-aryanapis.onrender.com/api/removebg?url=${encodeURIComponent(imageUrl)}`;
+      const apiUrl = `https://c-v1.onrender.com/api/removebg?url=${encodeURIComponent(imageUrl)}`;
       const response = await axios.get(apiUrl, { responseType: 'stream' });
 
       if (response && response.data) {
