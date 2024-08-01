@@ -24,7 +24,7 @@ export default {
       const tracks = response.data;
 
       if (tracks.length > 0) {
-        const topTracks = tracks.slice(0,6);
+        const topTracks = tracks.slice(0, 6);
         let message = "❍───────────────❍\n🎶 | إليك ست نتائج تطابق نتيجة البحث:\n";
         const attachments = await Promise.all(topTracks.map(async (track) => {
           const thumbnailPath = path.join(process.cwd(), 'cache', `${track.id}_thumbnail.png`);
