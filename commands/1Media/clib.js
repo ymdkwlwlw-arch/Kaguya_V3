@@ -1,81 +1,84 @@
-import fs from 'fs-extra';
+import fs from 'fs';
 import path from 'path';
 import axios from 'axios';
 
-const API_URL = "https://yt-music-7ind.onrender.com/search?query=";
-
-async function downloadVideo(url, filePath) {
-    const writer = fs.createWriteStream(filePath);
-    const response = await axios({
-        url,
-        method: 'GET',
-        responseType: 'stream'
-    });
-
-    return new Promise((resolve, reject) => {
-        response.data.pipe(writer);
-        writer.on('finish', resolve);
-        writer.on('error', reject);
-    });
-}
-
 export default {
-    name: "فيديو",
-    author: "YourName",
-    role: "member",
-    aliases: ["فيديو", "مقطع"],
-    description: "ابحث عن مقطع فيديو عبر كتابة عنوانه أو الرد على فيديو أو مقطع صوتي.",
+  name: "يوتيوب",
+  author: "YourName",
+  role: "member",
+  aliases:["مقطع","يوتيب"],
+  description: "بحث ومشاهدة النقاطع على اي لليوتيوب ",
 
-    async execute({ api, event, args, message }) {
-        api.setMessageReaction("🕢", event.messageID, () => {}, true);
+  execute: async ({ api, event, args }) => {
+    const searchQuery = encodeURIComponent(args.join(" "));
+    const apiUrl = `https://c-v1.onrender.com/yt/s?query=${searchQuery}`;
+    const chatId = event.threadID;
+    const messageID = event.messageID;
 
-        try {
-            let title = '';
-            let videoUrl = '';
+    if (!searchQuery) {
+      return api.sendMessage(" ⚠️ | المرجو إدخال إسم الأغنية", chatId, messageID);
+    }
 
-            const extractShortUrl = async () => {
-                const attachment = event.messageReply?.attachments[0];
-                if (attachment?.type === "video" || attachment?.type === "audio") {
-                    return attachment.url;
-                } else {
-                    throw new Error("Invalid attachment type.");
-                }
-            };
+    try {
+      api.sendMessage("🔍 | جاري البحث عن المقطع ، يرجى الإنتظار.....", chatId, messageID);
 
-            if (event.messageReply && event.messageReply.attachments && event.messageReply.attachments.length > 0) {
-                const shortUrl = await extractShortUrl();
-                const musicRecognitionResponse = await axios.get(`https://audio-recon-ahcw.onrender.com/kshitiz?url=${encodeURIComponent(shortUrl)}`);
-                title = musicRecognitionResponse.data.title;
-                const searchResponse = await axios.get(`${API_URL}${encodeURIComponent(title)}`);
-                videoUrl = searchResponse.data.videoUrl;
-            } else if (args.length === 0) {
-                api.sendMessage("⚠️ | يرجى إدخال عنوان الفيديو أو الرد على فيديو أو مقطع صوتي.", event.threadID, event.messageID);
-                return;
-            } else {
-                title = args.join(" ");
-                const searchResponse = await axios.get(`${API_URL}${encodeURIComponent(title)}`);
-                videoUrl = searchResponse.data.videoUrl;
-            }
+      const response = await axios.get(apiUrl);
+      const tracks = response.data;
 
-            if (!videoUrl) {
-                api.sendMessage("❓ | لم يتم العثور على فيديو للبحث المحدد.", event.threadID, event.messageID);
-                return;
-            }
+      if (tracks.length > 0) {
+        const selectedTrack = tracks[0];
+        const videoUrl = selectedTrack.videoUrl;
+        const downloadApiUrl = `https://c-v1.onrender.com/downloader?url=${encodeURIComponent(videoUrl)}`;
 
-            const cachePath = path.join(process.cwd(), 'cache', 'video.mp4');
-            await downloadVideo(videoUrl, cachePath);
+        api.sendMessage("", chatId, async (err, info) => {
+          if (err) {
+            console.error(err);
+            api.sendMessage("🚧 An error occurred while sending the message.", chatId);
+            return;
+          }
 
-            const videoStream = fs.createReadStream(cachePath);
-            api.sendMessage({ body: `📹 | جاري تشغيل: ${title}`, attachment: videoStream }, event.threadID, (err) => {
-                if (err) console.error("Error sending message:", err);
-                fs.unlinkSync(cachePath); // Clean up the cache file after sending
+          try {
+            const downloadLinkResponse = await axios.get(downloadApiUrl);
+            const downloadLink = downloadLinkResponse.data.media.url;
+
+            const filePath = path.join(process.cwd(), 'cache', `${Date.now()}.mp4`);
+            const writer = fs.createWriteStream(filePath);
+
+            const downloadResponse = await axios({
+              url: downloadLink,
+              method: 'GET',
+              responseType: 'stream'
             });
 
-            api.setMessageReaction("✅", event.messageID, () => {}, true);
+            downloadResponse.data.pipe(writer);
 
-        } catch (error) {
-            console.error("Error:", error);
-            api.sendMessage("🚧 | حدث خطأ أثناء المعالجة. يرجى المحاولة مرة أخرى لاحقاً.", event.threadID, event.messageID);
-        }
+            writer.on('finish', () => {
+              api.setMessageReaction("✅", info.messageID, () => {}, true);
+
+              api.sendMessage({
+                body : `◆❯━━━━━▣✦▣━━━━━━❮◆\n ✅ | تم تحميل المقطع بنجاح\n\n📒 | العنوان : ${selectedTrack.title}\n📅 | تاريخ النشر : ${selectedTrack.publishDate}\n👀 | المشاهدات : ${selectedTrack.viewCount}\n👍 | الإعحابات : ${selectedTrack.likeCount}\n◆❯━━━━━▣✦▣━━━━━━❮◆`,
+                attachment: fs.createReadStream(filePath),
+              }, chatId, () => fs.unlinkSync(filePath)); // Clean up the file after sending
+            });
+
+            writer.on('error', (err) => {
+              console.error(err);
+              api.sendMessage("🚧 An error occurred while processing your request.", chatId);
+            });
+
+          } catch (error) {
+            console.error(error);
+            api.sendMessage(`🚧 An error occurred while processing your request: ${error.message}`, chatId);
+          }
+        });
+
+      } else {
+        api.sendMessage("❓ Sorry, couldn't find the requested video.", chatId);
+      }
+
+    } catch (error) {
+      console.error(error);
+      api.sendMessage("🚧 An error occurred while processing your request.", chatId, messageID);
     }
+  }
 };
