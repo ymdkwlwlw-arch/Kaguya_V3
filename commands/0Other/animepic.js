@@ -21,13 +21,13 @@ class RestrictCommand {
       if (action === "تفعيل") {
         global.client.setConfig({ botEnabled: true });
         await this.updateBotNickname(api, "》✅《 ❃ ➠ بوت مفعل", event.threadID, event.senderID);
-        return api.sendMessage("✅ | تم تفعيل إستخدام البوت !", event.threadID);
+        return api.sendMessage("✅ | تم تعطيل تقييد إستخدام البوت !", event.threadID);
       }
 
       if (action === "تعطيل") {
         global.client.setConfig({ botEnabled: false });
         await this.updateBotNickname(api, "》❌《 ❃ ➠ بوت مقيد", event.threadID, event.senderID);
-        return api.sendMessage("❌ | تم تعطيل إستخدام البوت !", event.threadID);
+        return api.sendMessage("❌ | تم تقييد إستخدام البوت !", event.threadID);
       }
 
       return api.sendMessage("⚠️ | استخدم الأمر بشكل صحيح: تقييد تفعيل | تعطيل", event.threadID);
