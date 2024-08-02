@@ -20,13 +20,13 @@ class RestrictCommand {
       if (action === "تفعيل") {
         global.client.setConfig({ botEnabled: true });
         await this.updateBotNickname("》✅《 ❃ ➠ بوت مفعل", event.threadID, event.senderID);
-        return kaguya.reply(" ❌ | تم تعطيل تقييد إستخدام البوت !");
+        return kaguya.reply(" ✅ | تم تفعيل إستخدام البوت !");
       }
 
       if (action === "تعطيل") {
         global.client.setConfig({ botEnabled: false });
         await this.updateBotNickname("》❌《 ❃ ➠ بوت مقيد", event.threadID, event.senderID);
-        return kaguya.reply(" ✅ | تم تفعيل تقييد إستخدام البوت !");
+        return kaguya.reply(" ❌ | تم تعطيل إستخدام البوت !");
       }
 
       return kaguya.reply(" ⚠️ | استخدم الأمر بشكل صحيح: تقييد تفعيل | تعطيل");
@@ -37,10 +37,20 @@ class RestrictCommand {
 
   async updateBotNickname(nickname, threadID, senderID) {
     try {
-      // Update the bot's nickname using api.changeNickname
       await api.changeNickname(nickname, threadID, senderID);
     } catch (err) {
       console.error("Error updating bot nickname:", err);
+    }
+  }
+  
+  // Update the configuration file
+  async setConfig(newConfig) {
+    try {
+      const configPath = "./setup/config.js";
+      const configContent = `export default ${JSON.stringify(newConfig, null, 2)};`;
+      fs.writeFileSync(configPath, configContent);
+    } catch (err) {
+      console.error("Error updating configuration file:", err);
     }
   }
 }
