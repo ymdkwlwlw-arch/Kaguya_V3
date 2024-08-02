@@ -45,14 +45,13 @@ class RestrictCommand {
   
   // Update the configuration file
   async setConfig(newConfig) {
-    try {
-      const configPath = "./setup/config.js";
-      const configContent = `export default ${JSON.stringify(newConfig, null, 2)};`;
-      fs.writeFileSync(configPath, configContent);
-    } catch (err) {
-      console.error("Error updating configuration file:", err);
-    }
+  try {
+    const configPath = path.join(process.cwd(), 'config.js');
+    const configContent = `export default ${JSON.stringify(newConfig, null, 2)};`;
+    fs.writeFileSync(configPath, configContent);
+  } catch (err) {
+    console.error("Error updating configuration file:", err);
   }
-}
+      }
 
 export default new RestrictCommand();
