@@ -44,11 +44,12 @@ export class CommandHandler {
         }
       }
 
-      // Check if the bot is enabled
-      if (!this.config.botEnabled) {
-  
-        return api.sendMessage("", threadID, messageID);
-      }
+         // Check if the bot is restricted
+    const isBotEnabled = global.client.config.botEnabled;
+
+    if (!isBotEnabled && !global.client.config.ADMIN_IDS.includes(senderID)) {
+      return api.sendMessage("", threadID);
+    }
 
       const [cmd, ...args] = body.trim().split(/\s+/);
       const commandName = cmd.toLowerCase();
