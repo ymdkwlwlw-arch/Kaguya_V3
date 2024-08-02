@@ -7,6 +7,7 @@ export default {
     "100065328385465",
     "61558729340569"
   ],
+  "botEnabled": true,
   "options": {
     "forceLogin": true,
     "listenEvents": true,
