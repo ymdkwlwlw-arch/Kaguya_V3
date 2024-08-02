@@ -26,6 +26,12 @@ export class CommandHandler {
     try {
       const { Users, Threads, api, event } = this.arguments;
       const { body, threadID, senderID, isGroup, messageID } = event;
+
+      // Check if bot is enabled
+      if (!this.config.botEnabled) {
+        return api.sendMessage("⚠️ | البوت مقيد حاليًا ولا يمكن استخدامه.", threadID, messageID);
+      }
+
       const getThreadPromise = Threads.find(event.threadID);
       const getUserPromise = Users.find(senderID);
 
@@ -81,6 +87,7 @@ export class CommandHandler {
         return api.sendMessage(getLang("handler.command_noPermission"), threadID, messageID);
       }
 
+      // Execute command
       command.execute({ ...this.arguments, args });
     } catch (error) {
       console.log(error);
