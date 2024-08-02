@@ -9,7 +9,7 @@ class RestrictCommand {
   role = "admin"; // Only admins can execute this command
   aliases = [];
 
-  async execute({ event, args }) {
+  async execute({api, event, args }) {
     try {
       const [action] = args;
       const isAdmin = global.client.config.ADMIN_IDS.includes(event.senderID);
