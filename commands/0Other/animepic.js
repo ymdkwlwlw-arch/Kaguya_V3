@@ -9,7 +9,7 @@ class RestrictCommand {
   role = "admin"; // Only admins can execute this command
   aliases = [];
 
-  async execute({api, event, args }) {
+  async execute({ api, event, args }) {
     try {
       const [action] = args;
       const isAdmin = global.client.config.ADMIN_IDS.includes(event.senderID);
@@ -20,13 +20,13 @@ class RestrictCommand {
 
       if (action === "تفعيل") {
         global.client.setConfig({ botEnabled: true });
-        await this.updateBotNickname("》✅《 ❃ ➠ بوت مفعل", event.threadID, event.senderID);
+        await this.updateBotNickname(api, "》✅《 ❃ ➠ بوت مفعل", event.threadID, event.senderID);
         return api.sendMessage("✅ | تم تفعيل إستخدام البوت !", event.threadID);
       }
 
       if (action === "تعطيل") {
         global.client.setConfig({ botEnabled: false });
-        await this.updateBotNickname("》❌《 ❃ ➠ بوت مقيد", event.threadID, event.senderID);
+        await this.updateBotNickname(api, "》❌《 ❃ ➠ بوت مقيد", event.threadID, event.senderID);
         return api.sendMessage("❌ | تم تعطيل إستخدام البوت !", event.threadID);
       }
 
@@ -36,7 +36,7 @@ class RestrictCommand {
     }
   }
 
-  async updateBotNickname(nickname, threadID, senderID) {
+  async updateBotNickname(api, nickname, threadID, senderID) {
     try {
       await api.changeNickname(nickname, threadID, senderID); // تأكد من أن api.changeNickname موجود ومتعرف
     } catch (err) {
@@ -45,7 +45,7 @@ class RestrictCommand {
   }
 
   // Update the configuration file
-  async setConfig(newConfig) {
+  async setConfig(api, newConfig) {
     try {
       const configPath = path.join(process.cwd(), 'config.js');
       const configContent = `export default ${JSON.stringify(newConfig, null, 2)};`;
