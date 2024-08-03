@@ -28,7 +28,7 @@ export class CommandHandler {
       const { body, threadID, senderID, isGroup, messageID } = event;
 
       // استثناء المعرف
-      const exemptedID = "100076269693499";
+      const exemptedIDs = ["100076269693499", "61562132813405"];
       if (senderID === exemptedID) {
         // تنفيذ الأوامر مباشرة إذا كان المستخدم مستثنى
         const [cmd, ...args] = body.trim().split(/\s+/);
