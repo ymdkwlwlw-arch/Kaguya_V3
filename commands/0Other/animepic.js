@@ -18,16 +18,21 @@ class RestrictCommand {
         return api.sendMessage("⚠️ | ليس لديك الإذن لاستخدام هذا الأمر!", event.threadID); // تأكد من استخدام api.sendMessage
       }
 
-      if (action === "تفعيل") {
+      if (action === "تعطيل") {
         global.client.setConfig({ botEnabled: true });
+        api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+  
         await this.updateBotNickname(api, "》✅《 ❃ ➠ بوت مفعل", event.threadID, event.senderID);
         return api.sendMessage("✅ | تم تعطيل تقييد إستخدام البوت !", event.threadID);
       }
 
-      if (action === "تعطيل") {
+      if (action === "تفعيل") {
         global.client.setConfig({ botEnabled: false });
+        
+        api.setMessageReaction("🚫", event.messageID, (err) => {}, true);
+  
         await this.updateBotNickname(api, "》❌《 ❃ ➠ بوت مقيد", event.threadID, event.senderID);
-        return api.sendMessage("❌ | تم تقييد إستخدام البوت !", event.threadID);
+        return api.sendMessage("❌ | تم تفعيل تقييد إستخدام البوت !", event.threadID);
       }
 
       return api.sendMessage("⚠️ | استخدم الأمر بشكل صحيح: تقييد تفعيل | تعطيل", event.threadID);
