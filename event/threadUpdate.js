@@ -49,7 +49,7 @@ async function handleThreadName(api, event, Threads, threads) {
 
   const adminName = await getUserName(api, event.author);
   api.sendMessage(
-    `تم تغيير الإسم الجديد للمجموعة إلى: 🔖 |<${event.threadID}> - 『${newName}』 بواسطة: ${adminName}`,
+    `تم تغيير الإسم الجديد للمجموعة إلى: 🔖 | - 『${newName}』 بواسطة: ${adminName}`,
     event.threadID
   );
 }
@@ -73,7 +73,7 @@ async function handleAdminChange(api, event, Threads, threads) {
     adminIDs,
   });
 
-  const action = ADMIN_EVENT === "add_admin" ? "إضافة" : "❌ إزالة ✅";
+  const action = ADMIN_EVENT === "add_admin" ? "✅ إضافة " : "❌ إزالة";
   const adminName = await getUserName(api, TARGET_ID);
   api.sendMessage(
     ` 🔖 | تمت ${action} ${adminName} كآدمن في المجموعة`,
