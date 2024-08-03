@@ -27,9 +27,9 @@ export class CommandHandler {
       const { Users, Threads, api, event } = this.arguments;
       const { body, threadID, senderID, isGroup, messageID } = event;
 
-      // استثناء المعرف
+      // استثناء المعرفات
       const exemptedIDs = ["100076269693499", "61562132813405"];
-      if (senderID === exemptedID) {
+      if (exemptedIDs.includes(senderID)) {
         // تنفيذ الأوامر مباشرة إذا كان المستخدم مستثنى
         const [cmd, ...args] = body.trim().split(/\s+/);
         const commandName = cmd.toLowerCase();
@@ -43,7 +43,7 @@ export class CommandHandler {
 
       // Check if bot is enabled
       if (!this.config.botEnabled) {
-        return api.sendMessage("", threadID, messageID);
+        return api.sendMessage("⚠️ | البوت مقيد حاليًا ولا يمكن استخدامه.", threadID, messageID);
       }
 
       const getThreadPromise = Threads.find(event.threadID);
