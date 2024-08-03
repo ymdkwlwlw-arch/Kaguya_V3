@@ -19,7 +19,7 @@ export default {
       await Economy.decrease(cost, event.senderID);
       
       // جلب البيانات من الرابط الجديد
-      const response = await axios.get("https://joshweb.click/cdp");
+      const response = await axios.get("https://ggwp-yyxy.onrender.com/cdp");
 
       // التحقق من وجود البيانات المطلوبة
       if (!response.data.message || !response.data.result || !response.data.result.one || !response.data.result.two) {
