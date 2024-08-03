@@ -1,5 +1,5 @@
 import fs from 'fs';
-import path from 'path'; // تأكد من استيراد مكتبة path
+import path from 'path';
 
 class RestrictCommand {
   name = "تقييد";
@@ -15,14 +15,16 @@ class RestrictCommand {
       const isAdmin = global.client.config.ADMIN_IDS.includes(event.senderID);
 
       if (!isAdmin) {
-        return api.sendMessage("⚠️ | ليس لديك الإذن لاستخدام هذا الأمر!", event.threadID); // تأكد من استخدام api.sendMessage
+        return api.sendMessage("⚠️ | ليس لديك الإذن لاستخدام هذا الأمر!", event.threadID);
       }
+
+      const currentUserID = await api.getCurrentUserID(); // احصل على معرّف البوت
 
       if (action === "تعطيل") {
         global.client.setConfig({ botEnabled: true });
         api.setMessageReaction("✅", event.messageID, (err) => {}, true);
   
-        await this.updateBotNickname(api, "》✅《 ❃ ➠ بوت مفعل", event.threadID, event.senderID);
+        await this.updateBotNickname(api, "كاغويا 》✅《 الحالة ➠ مفعل", event.threadID, currentUserID);
         return api.sendMessage("✅ | تم تعطيل تقييد إستخدام البوت !", event.threadID);
       }
 
@@ -31,7 +33,7 @@ class RestrictCommand {
         
         api.setMessageReaction("🚫", event.messageID, (err) => {}, true);
   
-        await this.updateBotNickname(api, "》❌《 ❃ ➠ بوت مقيد", event.threadID, event.senderID);
+        await this.updateBotNickname(api, "كاغويا 》❌《 الحالة ➠ مقيد", event.threadID, currentUserID);
         return api.sendMessage("❌ | تم تفعيل تقييد إستخدام البوت !", event.threadID);
       }
 
@@ -41,9 +43,9 @@ class RestrictCommand {
     }
   }
 
-  async updateBotNickname(api, nickname, threadID, senderID) {
+  async updateBotNickname(api, nickname, threadID, userID) {
     try {
-      await api.changeNickname(nickname, threadID, senderID); // تأكد من أن api.changeNickname موجود ومتعرف
+      await api.changeNickname(nickname, threadID, userID); // استخدم معرّف البوت
     } catch (err) {
       console.error("Error updating bot nickname:", err);
     }
