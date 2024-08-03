@@ -15,7 +15,7 @@ class RestrictCommand {
       const isAdmin = global.client.config.ADMIN_IDS.includes(event.senderID);
 
       if (!isAdmin) {
-        api.setMessageReaction("", event.messageID, (err) => {}, true);
+        api.setMessageReaction("⚠️", event.messageID, (err) => {}, true);
   
         return api.sendMessage("⚠️ | ليس لديك الإذن لاستخدام هذا الأمر!", event.threadID);
       }
