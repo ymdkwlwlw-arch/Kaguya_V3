@@ -6,8 +6,8 @@ class RestrictCommand {
   author = "Kaguya Project";
   cooldowns = 60;
   description = "تقييد أو إلغاء تقييد البوت";
-  role = "owner"; // Only admins can execute this command
-  aliases = [];
+  role = "admin"; // Only admins can execute this command
+  aliases = ["onlyadmin"];
 
   async execute({ api, event, args }) {
     try {
