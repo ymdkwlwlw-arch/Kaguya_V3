@@ -21,7 +21,7 @@ class ImageUploader {
       }
 
       // تحديد عنوان URL لرفع الصورة
-      const uploadUrl = 'https://www.samirxpikachu.run/place/upload';
+      const uploadUrl = 'https://www.samirxpikachu.run.place/upload';
       const data = { file: imageUrl };
 
       // رفع الصورة إلى الخادم
