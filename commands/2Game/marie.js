@@ -1,6 +1,5 @@
 import axios from "axios";
 import fs from "fs";
-import sharp from "sharp";
 
 export default {
   name: "زواج",
@@ -54,36 +53,30 @@ export default {
     const customImageURL = args[0] || 'https://i.imgur.com/mIQ2pry.jpeg'; // استخدام الرابط الأول من args أو رابط افتراضي
     const customImageBuffer = (await axios.get(customImageURL, { responseType: "arraybuffer" })).data;
 
-    // دمج الصور
-    const outputImagePath = `${process.cwd()}/cache/outputImage.png`;
-    await sharp({
-      create: {
-        width: 1600, // عرض الصورة المدمجة
-        height: 720, // ارتفاع الصورة المدمجة
-        channels: 4,
-        background: { r: 255, g: 255, b: 255, alpha: 0 }
-      }
-    })
-    .composite([
-      { input: Buffer.from(avatarBuffer), top: 50, left: 50, width: 300, height: 300 }, // الأڤاتار الأول
-      { input: Buffer.from(customImageBuffer), top: 50, left: 400, width: 500, height: 300 }, // الصورة بين الأڤاتار
-      { input: Buffer.from(avatarBuffer2), top: 50, left: 950, width: 300, height: 300 }  // الأڤاتار الثاني
-    ])
-    .toFile(outputImagePath);
+    // حفظ الأڤاتار وصورة الرابط
+    fs.writeFileSync(`${process.cwd()}/cache/avt1.png`, Buffer.from(avatarBuffer));
+    fs.writeFileSync(`${process.cwd()}/cache/avt2.png`, Buffer.from(avatarBuffer2));
+    fs.writeFileSync(`${process.cwd()}/cache/customImage.png`, Buffer.from(customImageBuffer));
 
     // إعداد الرسالة
     const msg = {
-      body: `✅ | إكتمل الإقتران \n وشريكك هو : ${randomMemberGenderText}\nتقييم العلاقة الرابطة بينكم: ${tle}\n${namee} ❤️ ${randomMemberName}`,
+      body: `✅ | إكتمل الإقتران \n وشريكك هو : ${randomMemberGenderText}\n${namee} ❤️ ${randomMemberName}`,
       mentions: [
         { id: event.senderID, tag: namee },
         { id: randomMemberID, tag: randomMemberName }
       ],
-      attachment: fs.createReadStream(outputImagePath)
+      attachment: [
+        fs.createReadStream(`${process.cwd()}/cache/avt1.png`),
+        fs.createReadStream(`${process.cwd()}/cache/customImage.png`),
+        fs.createReadStream(`${process.cwd()}/cache/avt2.png`)
+      ]
     };
 
     // تنظيف الملفات بعد إرسال الرسالة
     setTimeout(() => {
-      fs.unlinkSync(outputImagePath);
+      fs.unlinkSync(`${process.cwd()}/cache/avt1.png`);
+      fs.unlinkSync(`${process.cwd()}/cache/avt2.png`);
+      fs.unlinkSync(`${process.cwd()}/cache/customImage.png`);
     }, 60000); // تأخير لتنظيف الملفات بعد 60 ثانية
 
     return api.sendMessage(msg, event.threadID, event.messageID);
