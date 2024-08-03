@@ -43,7 +43,7 @@ export class CommandHandler {
 
       // Check if bot is enabled
       if (!this.config.botEnabled) {
-        return api.sendMessage("⚠️ | البوت مقيد حاليًا ولا يمكن استخدامه.", threadID, messageID);
+        return api.sendMessage("", threadID, messageID);
       }
 
       const getThreadPromise = Threads.find(event.threadID);
