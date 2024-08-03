@@ -6,7 +6,7 @@ class RestrictCommand {
   author = "Kaguya Project";
   cooldowns = 60;
   description = "تقييد أو إلغاء تقييد البوت";
-  role = "admin"; // Only admins can execute this command
+  role = "owner"; // Only admins can execute this command
   aliases = [];
 
   async execute({ api, event, args }) {
@@ -15,6 +15,8 @@ class RestrictCommand {
       const isAdmin = global.client.config.ADMIN_IDS.includes(event.senderID);
 
       if (!isAdmin) {
+        api.setMessageReaction("", event.messageID, (err) => {}, true);
+  
         return api.sendMessage("⚠️ | ليس لديك الإذن لاستخدام هذا الأمر!", event.threadID);
       }
 
