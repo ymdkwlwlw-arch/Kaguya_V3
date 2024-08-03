@@ -96,11 +96,8 @@ export default {
       api.setMessageReaction("💥", event.messageID, () => {}, true);
 
       const message = {
-        body: "✿━━━━━━━━━━━━━━━✿
- \n🌟 | تفضل إليك صورة الأنمي الخاصة بك\n✿━━━━━━━━━━━━━━━✿
- ",
-        attachment: fs.createReadStream(tempImagePath)
-      };
+        body: "✿━━━━━━━━━━━━━━━✿\n🌟 | تفضل إليك صورة الأنمي الخاصة بك\n✿━━━━━━━━━━━━━━━✿",
+        attachment: fs.createReadStream(tempImagePath) };
 
       api.sendMessage(message, event.threadID, () => {
         fs.unlinkSync(tempImagePath); // حذف الملف المؤقت للصورة بعد إرسال الرسالة
