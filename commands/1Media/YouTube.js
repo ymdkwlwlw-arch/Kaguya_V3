@@ -67,7 +67,7 @@ export default {
 
       if (userInput.toLowerCase() === 'التالي') {
         // Fetch more tracks and resend the message
-        const nextUrl = `${global.api.samirApi}/spotifysearch?q=${encodeURIComponent(reply.originalQuery)}`;
+        const nextUrl = `https://samirxpikachuio.onrender.com/spotifysearch?q=${encodeURIComponent(reply.originalQuery)}`;
         try {
           const response = await axios.get(nextUrl);
           const nextTracks = response.data.slice(reply.currentIndex, reply.currentIndex + 6);
