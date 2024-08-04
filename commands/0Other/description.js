@@ -17,7 +17,7 @@ export default {
       const { threadID, messageID } = event;
       const path = process.cwd() + "/cache/animated_image.gif"; 
 
-      const response = await axios.get(`https://www.samirxpikachu.run.place/egif?emoji=${encodeURIComponent(emoji)}`, { responseType: "arraybuffer" });
+      const response = await axios.get(`https://samirxpikachuio.onrender.com/egif?emoji=${encodeURIComponent(emoji)}`, { responseType: "arraybuffer" });
 
       fs.writeFileSync(path, Buffer.from(response.data, "utf-8"));
 
