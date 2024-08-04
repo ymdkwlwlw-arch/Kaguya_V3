@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Economy } from 'path/to/economy-module'; // Adjust the import path as needed
+
 
 export default {
   name: "bank",
