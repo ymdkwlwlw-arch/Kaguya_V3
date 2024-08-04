@@ -9,15 +9,6 @@ export default {
   description: "يرسل اقتباسات عميقة مع صور معبرة 💖.",
   execute: async ({ api, event, Economy }) => {
     try {
-      
-      const userMoney = (await Economy.getBalance(event.senderID)).data;
-      const cost = 100;
-      if (userMoney < cost) {
-        return api.sendMessage(`⚠️ | لا يوجد لديك رصيد كافٍ. يجب عليك الحصول على ${cost} دولار أولاً.`, event.threadID);
-      }
-
-      // الخصم من الرصيد
-      await Economy.decrease(cost, event.senderID);
       const messages = [
       `لــيــتـــــنا نـــســـتـــطـــيـــع إيــقــاف الـــــــزمــــن عــــلـــــى لـــــحـــــظـــــات كـــنـــا بـــــهــــــا ســعــداء 
 ⁰⁰.⁰⁰🖤🍷𝕀 𝕨𝕚𝕤𝕙 𝕨𝕖 𝕔𝕠𝕦𝕝𝕕 𝕤𝕥𝕠𝕡 𝕥𝕚𝕞𝕖 𝕠𝕟 𝕞𝕠𝕞𝕖𝕟𝕥𝕤 𝕨𝕙𝕖𝕟 𝕨𝕖 𝕨𝕖𝕣𝕖 𝕙𝕒𝕡𝕡𝕪 ⁰⁰.⁰⁰🖤🍷`,
@@ -316,7 +307,14 @@ _ 𝒯𝒶𝓀ℯ 𝒸ℴ𝓃𝓉𝓇ℴ𝓁 ℴ𝒻 𝓎ℴ𝓊𝓇 𝒻𝓊�
       const imagePath = path.join(process.cwd(), "cache", `random_image.jpg`);
       await fs.writeFile(imagePath, imageResponse.data);
 api.setMessageReaction("💖", event.messageID, (err) => {}, true);
+        const userMoney = (await Economy.getBalance(event.senderID)).data;
+      const cost = 100;
+      if (userMoney < cost) {
+        return api.sendMessage(`⚠️ | لا يوجد لديك رصيد كافٍ. يجب عليك الحصول على ${cost} دولار أولاً.`, event.threadID);
+      }
 
+      // الخصم من الرصيد
+      await Economy.decrease(cost, event.senderID);
 
       await api.sendMessage({
         body: randomMessage,
