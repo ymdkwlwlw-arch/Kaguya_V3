@@ -3,12 +3,12 @@ import path from 'path';
 
 
 export default {
-  name: "bank",
+  name: "بنك",
   author: "Kaguya Project",
   role: "user",
   description: "أوامر البنك المختلفة (رصيدي، إيداع، سحب، تسجيل).",
   
-  async execute({ event, args, api }) {
+  async execute({ event, args, api, Economy }) {
     const { getBalance, increase, decrease } = Economy;
     const userID = event.senderID;
     const command = args[0];
