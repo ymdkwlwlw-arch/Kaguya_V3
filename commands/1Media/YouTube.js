@@ -15,7 +15,7 @@ export default {
         return api.sendMessage("⚠️ | ادخل اسم الاغنية", event.threadID);
       }
 
-      const url = `${global.api.samirApi}/spotifysearch?q=${encodeURIComponent(query)}`;
+      const url = `https://samirxpikachuio.onrender.com/spotifysearch?q=${encodeURIComponent(query)}`;
       const response = await axios.get(url);
       const tracks = response.data;
 
@@ -65,7 +65,7 @@ export default {
       const { tracks } = reply;
       const selectedIndex = parseInt(userInput, 10) - 1;
 
-      if (userInput.toLowerCase() === 'next') {
+      if (userInput.toLowerCase() === 'التالي') {
         // Fetch more tracks and resend the message
         const nextUrl = `${global.api.samirApi}/spotifysearch?q=${encodeURIComponent(reply.originalQuery)}`;
         try {
@@ -84,7 +84,7 @@ export default {
           const attachments = await Promise.all(thumbnails.map(thumbnail => global.utils.getStreamFromURL(thumbnail)));
 
           await api.sendMessage({
-            body: `${trackInfo}\n\nReply with a number to choose a track or type 'next' to see more tracks.`,
+            body: `${trackInfo}\n\nرد برقم از رد ب 'التالي' من اجل رؤية بافي الصفحات `,
             attachment: attachments,
           }, event.threadID);
 
