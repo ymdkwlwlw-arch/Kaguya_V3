@@ -102,7 +102,7 @@ export default {
       } else if (!isNaN(selectedIndex) && selectedIndex >= 0 && selectedIndex < tracks.length) {
         const selectedTrack = tracks[selectedIndex];
         const downloadingMessage = await api.sendMessage(`Downloading track "${selectedTrack.title}"`, event.threadID);
-        const downloadUrl = `${global.api.samirApi}/spotifydl?url=${encodeURIComponent(selectedTrack.url)}`;
+        const downloadUrl = `https://samirxpikachuio.onrender.com/spotifydl?url=${encodeURIComponent(selectedTrack.url)}`;
 
         try {
           const apiResponse = await axios.get(downloadUrl);
