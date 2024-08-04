@@ -1,18 +1,25 @@
 import fs from 'fs';
 import path from 'path';
+import { Economy } from 'path/to/economy-module'; // Adjust the import path as needed
 
 export default {
-  name: "بنك",
+  name: "bank",
   author: "Kaguya Project",
-  role: "member",
+  role: "user",
   description: "أوامر البنك المختلفة (رصيدي، إيداع، سحب، تسجيل).",
-  async execute({ event, args, api, Economy }) {
+  
+  async execute({ event, args, api }) {
     const { getBalance, increase, decrease } = Economy;
     const userID = event.senderID;
     const command = args[0];
     const amount = parseInt(args[1], 10);
     const userInfo = await api.getUserInfo(userID);
     const userName = userInfo[userID]?.name || "Unknown";
+    
+    // Ensure threadID is present
+    if (!event.threadID) {
+      return api.sendMessage("حدث خطأ، لا يمكن تحديد المحادثة.", event.threadID);
+    }
 
     // تحديد مسار ملف البنك
     const bankFilePath = path.join(process.cwd(), 'bank.json');
@@ -29,36 +36,36 @@ export default {
     if (!bankData[userID]) {
       bankData[userID] = { bank: 100, lastInterestClaimed: Date.now() };
       fs.writeFileSync(bankFilePath, JSON.stringify(bankData));
-      return api.sendMessage(`أهلاً ${userName}! تم تسجيلك في البنك برصيد ابتدائي قدره 100 دولار.`);
+      return api.sendMessage(`أهلاً ${userName}! تم تسجيلك في البنك برصيد ابتدائي قدره 100 دولار.`, event.threadID);
     }
 
     switch (command) {
       case "رصيدي":
-        return api.sendMessage(`رصيد حسابك البنكي هو ${bankData[userID].bank} دولار.`);
+        return api.sendMessage(`رصيد حسابك البنكي هو ${bankData[userID].bank} دولار.`, event.threadID);
 
       case "إيداع":
         if (isNaN(amount) || amount <= 0) {
-          return api.sendMessage("الرجاء إدخال المبلغ الذي ترغب في إيداعه.");
+          return api.sendMessage("الرجاء إدخال المبلغ الذي ترغب في إيداعه.", event.threadID);
         }
-        decrease(amount, userID);
+        await decrease(amount, userID);
         bankData[userID].bank += amount;
         fs.writeFileSync(bankFilePath, JSON.stringify(bankData));
-        return api.sendMessage(`تم إيداع ${amount} دولار في حسابك البنكي.`);
+        return api.sendMessage(`تم إيداع ${amount} دولار في حسابك البنكي.`, event.threadID);
 
       case "سحب":
         if (isNaN(amount) || amount <= 0) {
-          return api.sendMessage("الرجاء إدخال المبلغ الذي ترغب في سحبه.");
+          return api.sendMessage("الرجاء إدخال المبلغ الذي ترغب في سحبه.", event.threadID);
         }
         if (bankData[userID].bank < amount) {
-          return api.sendMessage("ليس لديك ما يكفي من المال.");
+          return api.sendMessage("ليس لديك ما يكفي من المال.", event.threadID);
         }
-        increase(amount, userID);
+        await increase(amount, userID);
         bankData[userID].bank -= amount;
         fs.writeFileSync(bankFilePath, JSON.stringify(bankData));
-        return api.sendMessage(`تم سحب ${amount} دولار من حسابك البنكي.`);
+        return api.sendMessage(`تم سحب ${amount} دولار من حسابك البنكي.`, event.threadID);
 
       default:
-        return api.sendMessage(`❍───────────────❍\n🏦𝙱𝙰𝙽𝙺 𝙺𝙰𝙶𝙺𝙰𝚈𝙰🏦\n\nرصيدي: لعرض رصيدك البنكي\nإيداع [الكمية]: لإيداع الأموال\nسحب [الكمية]: لسحب الأموال\n❍───────────────❍`);
+        return api.sendMessage(`❍───────────────❍\n🏦𝙱𝙰𝙽𝙺 𝙺𝙰𝙶𝙺𝙰𝚈𝙰🏦\n\nرصيدي: لعرض رصيدك البنكي\nإيداع [الكمية]: لإيداع الأموال\nسحب [الكمية]: لسحب الأموال\n❍───────────────❍`, event.threadID);
     }
   }
 };
