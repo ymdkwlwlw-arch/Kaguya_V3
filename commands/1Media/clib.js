@@ -6,8 +6,8 @@ export default {
   name: "يوتيوب",
   author: "YourName",
   role: "member",
-  aliases:["مقطع","يوتيب"],
-  description: "بحث ومشاهدة النقاطع على اي لليوتيوب ",
+  aliases: ["مقطع", "يوتيب"],
+  description: "بحث ومشاهدة النقاطع على يوتيوب",
 
   execute: async ({ api, event, args }) => {
     const searchQuery = encodeURIComponent(args.join(" "));
@@ -16,7 +16,7 @@ export default {
     const messageID = event.messageID;
 
     if (!searchQuery) {
-      return api.sendMessage(" ⚠️ | المرجو إدخال إسم الأغنية", chatId, messageID);
+      return api.sendMessage("⚠️ | المرجو إدخال إسم الأغنية", chatId, messageID);
     }
 
     try {
@@ -38,12 +38,15 @@ export default {
           }
 
           try {
+            // الحصول على رابط التحميل من API
             const downloadLinkResponse = await axios.get(downloadApiUrl);
-            const downloadLink = downloadLinkResponse.data.media.url;
+            const downloadLink = downloadLinkResponse.data.video; // استخدام data.video بدلاً من data.media.url
 
+            // تحديد مسار حفظ الملف
             const filePath = path.join(process.cwd(), 'cache', `${Date.now()}.mp4`);
             const writer = fs.createWriteStream(filePath);
 
+            // تحميل الفيديو
             const downloadResponse = await axios({
               url: downloadLink,
               method: 'GET',
@@ -56,9 +59,9 @@ export default {
               api.setMessageReaction("✅", info.messageID, () => {}, true);
 
               api.sendMessage({
-                body : `◆❯━━━━━▣✦▣━━━━━━❮◆\n ✅ | تم تحميل المقطع بنجاح\n\n📒 | العنوان : ${selectedTrack.title}\n📅 | تاريخ النشر : ${selectedTrack.publishDate}\n👀 | المشاهدات : ${selectedTrack.viewCount}\n👍 | الإعحابات : ${selectedTrack.likeCount}\n◆❯━━━━━▣✦▣━━━━━━❮◆`,
+                body: `◆❯━━━━━▣✦▣━━━━━━❮◆\n ✅ | تم تحميل المقطع بنجاح\n\n📒 | العنوان : ${selectedTrack.title}\n📅 | تاريخ النشر : ${selectedTrack.publishDate}\n👀 | المشاهدات : ${selectedTrack.viewCount}\n👍 | الإعجابات : ${selectedTrack.likeCount}\n◆❯━━━━━▣✦▣━━━━━━❮◆`,
                 attachment: fs.createReadStream(filePath),
-              }, chatId, () => fs.unlinkSync(filePath)); // Clean up the file after sending
+              }, chatId, () => fs.unlinkSync(filePath)); // تنظيف الملف بعد الإرسال
             });
 
             writer.on('error', (err) => {
