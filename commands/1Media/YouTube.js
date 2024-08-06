@@ -1,6 +1,6 @@
 import fs from 'fs';
 import axios from 'axios';
-import Prodia from 'prodia-sdk'; // Ensure the Prodia SDK is correctly imported
+import Prodia from 'prodia.js'; // Ensure the Prodia SDK is correctly imported
 
 export default {
   name: 'مزج',
