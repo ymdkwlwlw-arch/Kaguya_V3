@@ -28,15 +28,19 @@ export default {
       }
 
       const video = videos[0];
-      const { url, title: videoTitle, duration } = video;
+      const { url, title: videoTitle } = video;
 
       // الحصول على رابط تحميل الفيديو
-      const downloadUrlResponse = await axios.get(`https://apiv3-2l3o.onrender.com/ytb?link=${encodeURIComponent(url)}&type=music`);
+      const downloadUrlResponse = await axios.get(`https://joncll.serv00.net/videodl.php?url=${encodeURIComponent(url)}`);
       if (downloadUrlResponse.status !== 200) {
         throw new Error(`فشل الحصول على رابط التنزيل: ${downloadUrlResponse.statusText}`);
       }
-      
-      const downloadLink = downloadUrlResponse.data.url;
+
+      const downloadLink = downloadUrlResponse.data.video;
+      if (!downloadLink) {
+        throw new Error("لم يتم العثور على رابط تحميل.");
+      }
+
       const filePath = path.join(process.cwd(), 'cache', `${Date.now()}.mp4`);
       
       // تحميل الفيديو
@@ -51,7 +55,7 @@ export default {
 
       writer.on('finish', () => {
         api.sendMessage({
-          body: `◆❯━━━━━▣✦▣━━━━━━❮◆\n📋 | العنوان: ${videoTitle}\n⏰ | المدة: ${duration}\n◆❯━━━━━▣✦▣━━━━━━❮◆`,
+          body: `◆❯━━━━━▣✦▣━━━━━━❮◆\n📋 | العنوان: ${videoTitle}\n◆❯━━━━━▣✦▣━━━━━━❮◆`,
           attachment: fs.createReadStream(filePath)
         }, event.threadID, () => fs.unlinkSync(filePath)); // تنظيف الملف بعد الإرسال
       });
