@@ -24,7 +24,7 @@ export default {
       console.log(`Image saved to ${outPath}`);
 
       api.sendMessage({
-        body: '❍───────────────❍\n🎨 | 𝐷𝑂𝑁𝐸 𝑆𝑈𝐶𝐶𝐸𝑆𝑆𝐹𝑈𝐿𝐿𝑌 𖤍\n❍───────────────❍',
+        body: '❍───────────────❍\n🎨 | 𝐷𝑂𝑁𝐸 𝑆𝑈𝐶𝐶𝐸𝑆𝑆𝐹𝑈𝐿𝐿𝑌 \n❍───────────────❍',
         attachment: fs.createReadStream(outPath)
       }, event.threadID, () => fs.unlinkSync(outPath)); // Clean up the file after sending
 
