@@ -10,12 +10,10 @@ export default {
   description: "بحث ومشاهدة النقاطع على يوتيوب.",
   
   execute: async ({ api, event, args }) => {
-    const pr = `${global.utils.getPrefix(event.threadID)}${this.config.name}`;
-    
     try {
       const type = args[0]?.toLowerCase();
       if (!type || !['اغنية', 'مقطع'].includes(type)) {
-        return api.sendMessage(`⚠️ | يرجى استخدام الأمر بشكل صحيح: ${pr} [اغنية/مقطع] <عنوان المقطع أو الأغنية>\n\nمثال: ${pr} اغنية fifty fifty copied`, event.threadID, event.messageID);
+        return api.sendMessage(`⚠️ | يرجى استخدام الأمر بشكل صحيح: [اغنية/مقطع] <عنوان المقطع أو الأغنية>\n\nمثال: يوتيوب اغنية fifty fifty copied`, event.threadID, event.messageID);
       }
       
       const title = args.slice(1).join(" ");
@@ -76,6 +74,7 @@ export default {
 
     const { data } = await axios.get(`https://apiv3-2l3o.onrender.com/yts?title=${encodeURIComponent(args.slice(1).join(" "))}`);
     const selectedVideo = data.videos[choice - 1];
+    if (!selectedVideo) return api.sendMessage("⚠️ | لم أتمكن من العثور على الفيديو المحدد.", event.threadID, event.messageID);
     const { url, title, duration } = selectedVideo;
 
     try {
