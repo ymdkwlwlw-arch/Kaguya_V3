@@ -28,7 +28,7 @@ async function getMessageCounts(api, threadId) {
       messageCounts[participantId] = 0;
     });
 
-    const messages = await api.getThreadHistory(threadId, 10000); // زيادة الحد لزيادة عدد الرسائل المسترجعة
+    const messages = await api.getThreadHistory(threadId, 10000);
     if (!messages || !Array.isArray(messages)) {
       console.error('Error fetching messages:', messages);
       return messageCounts;
@@ -114,4 +114,4 @@ function getRank(userMessageCount) {
   if (userMessageCount >= 10) return '👾مبتدأ';
   if (userMessageCount >= 5) return '🗿صنم';
   return 'ميت⚰️';
-  }
+}
