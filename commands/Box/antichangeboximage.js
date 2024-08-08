@@ -1,119 +1,81 @@
 import fs from 'fs';
 import path from 'path';
-import axios from 'axios';
 import FormData from 'form-data';
- // تأكد من صحة مسار الاستيراد
+import axios from 'axios';
+ // Assuming this import is correct
 
-const uploadImgbb = async (filePath) => {
-  const formData = new FormData();
-  formData.append('source', fs.createReadStream(filePath));
-  formData.append('type', 'file');
-  formData.append('action', 'upload');
-  
-  const res = await axios.post('https://imgbb.com/json', formData, {
-    headers: {
-      ...formData.getHeaders(),
-    },
-  });
+const regCheckURL = /^(http|https):\/\/[^ "]+$/;
 
-  return res.data.image.url;
-};
+async function uploadImgbb(filePath) {
+  try {
+    const formData = new FormData();
+    formData.append('source', fs.createReadStream(filePath));
+    formData.append('action', 'upload');
+    
+    const res_ = await axios({
+      method: 'GET',
+      url: 'https://imgbb.com',
+    });
 
-class AntiBoxImage {
-  name = "حماية_الصورة";
-  author = "Kaguya Project";
-  cooldowns = 60;
-  description = "حماية المجموعة من تغيير صورتها!";
-  role = "admin";
-  aliases = [];
+    const auth_token = res_.data.match(/auth_token="([^"]+)"/)[1];
+    const timestamp = Date.now();
 
-  async execute({ event, Threads, kaguya }) {
+    formData.append('timestamp', timestamp);
+    formData.append('auth_token', auth_token);
+
+    const res = await axios.post('https://imgbb.com/json', formData, {
+      headers: formData.getHeaders(),
+    });
+
+    return res.data.image.url;
+  } catch (err) {
+    throw new Error(err.response ? err.response.data : err);
+  }
+}
+
+class AntiboxImage {
+  constructor() {
+    this.name = 'حماية_الصورة';
+    this.author = 'Kaguya Project';
+    this.cooldowns = 60;
+    this.description = 'حماية المجموعة من تغيير صورتها!';
+    this.role = 'admin';
+    this.aliases = [];
+  }
+
+  async execute({ event, Threads, api }) {
     try {
-      if (event.role !== "admin") {
-        return kaguya.reply("❌ | ليس لديك الصلاحيات اللازمة لتنفيذ هذا الأمر!");
-      }
-
-      const threadsData = (await Threads.find(event.threadID))?.data?.data || {};
-      const status = !threadsData.anti?.imageBox;
+      const threadID = event.threadID;
+      const threads = (await Threads.find(threadID))?.data?.data;
+      const status = threads?.anti?.imageBox ? false : true;
       
-      // تحديث الحالة
-      await Threads.update(event.threadID, {
+      // Get the current image of the group
+      const currentImage = await api.getGroupImage(threadID);
+      const tempImagePath = path.join(process.cwd(), 'cache', 'currentImage.jpg');
+
+      // Save the image to the cache directory
+      fs.writeFileSync(tempImagePath, currentImage);
+
+      // Upload the image and get the URL
+      const newImageUrl = await uploadImgbb(tempImagePath);
+
+      // Update thread data
+      await Threads.update(threadID, {
         anti: {
           imageBox: status,
         },
       });
 
-      // نقل الصورة إلى مجلد cache
-      const imageUrl = threadsData.imageSrc; // افترض أن لديك رابط الصورة في بيانات المجموعات
-      if (imageUrl) {
-        const response = await axios({
-          method: 'GET',
-          url: imageUrl,
-          responseType: 'stream'
-        });
-        
-        const cachePath = path.join(process.cwd(), 'cache', 'group_image.jpg');
-        const writer = fs.createWriteStream(cachePath);
-        response.data.pipe(writer);
+      // Notify the user
+      api.sendMessage(`تم ${status ? 'تشغيل' : '❌ إطفاء ✅'} ميزة الحماية من تغيير صورة المجموعة`, threadID);
 
-        writer.on('finish', async () => {
-          // رفع الصورة إلى imgbb
-          const imageUrlOnImgbb = await uploadImgbb(cachePath);
-
-          // تحديث بيانات حماية تغيير الصورة
-          await Threads.update(event.threadID, {
-            anti: { imageBox: imageUrlOnImgbb },
-          });
-
-          return kaguya.reply(`تم ${status ? "تشغيل" : "❌ إطفاء ✅"} ميزة الحماية من تغيير صورة المجموعة`);
-        });
-
-        writer.on('error', (err) => {
-          console.error(err);
-          return kaguya.reply("❌ | لقد حدث خطأ أثناء نقل الصورة.");
-        });
-      } else {
-        return kaguya.reply("❌ | لا توجد صورة لتحديثها.");
-      }
+      // Remove temporary file
+      fs.unlinkSync(tempImagePath);
     } catch (err) {
       console.error(err);
-      return kaguya.reply("❌ | لقد حدث خطأ غير متوقع!");
-    }
-  }
-
-  async onRun({ event, Threads, api, kaguya }) {
-    const { threadID, logMessageType, logMessageData, author } = event;
-    const dataAntiChange = (await Threads.find(threadID))?.data?.data?.anti || {};
-
-    if (!dataAntiChange.imageBox) return;
-
-    switch (logMessageType) {
-      case "log:thread-image": {
-        if (api.getCurrentUserID() !== author) {
-          kaguya.reply("حماية تغيير الصورة مشغلة بالفعل في صندوق الدردشة الخاص بك");
-          api.changeGroupImage(
-            await getStreamFromPath(dataAntiChange.imageBox),
-            threadID
-          );
-        } else {
-          const imageSrc = logMessageData.url;
-          if (!imageSrc) {
-            await Threads.update(threadID, {
-              anti: { imageBox: "REMOVE" },
-            });
-          } else {
-            const newImageSrc = await uploadImgbb(imageSrc);
-            await Threads.update(threadID, {
-              anti: { imageBox: newImageSrc },
-            });
-          }
-        }
-        break;
-      }
-
-      // إضافة التعديلات هنا إذا كنت ترغب في التعامل مع تغييرات أخرى
+      api.sendMessage('❌ | لقد حدث خطأ غير متوقع!', event.threadID);
     }
   }
 }
 
-export default new AntiBoxImage();
+export default new AntiboxImage();
