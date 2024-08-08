@@ -11,11 +11,15 @@ export default {
   
   execute: async ({ api, event, args }) => {
     try {
-      
       api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
   
-      const title = args.join(" ");
-      if (!title) return api.sendMessage("⚠️ | يرجى استخدام الأمر بشكل صحيح: يوتيوب <عنوان المقطع>\n\nمثال: يوتيوب funny cat video", event.threadID, event.messageID);
+      const type = args[0]?.toLowerCase();
+      if (type !== 'مقطع') {
+        return api.sendMessage(`⚠️ | يرجى استخدام الأمر بشكل صحيح: [مقطع] <عنوان المقطع>\n\nمثال: يوتيوب مقطع funny cat video`, event.threadID, event.messageID);
+      }
+      
+      const title = args.slice(1).join(" ");
+      if (!title) return api.sendMessage("⚠️ | يرجى إدخال اسم المقطع.", event.threadID, event.messageID);
       
       // البحث عن الفيديو
       const { data } = await axios.get(`https://apiv3-2l3o.onrender.com/yts?title=${encodeURIComponent(title)}`);
@@ -52,7 +56,6 @@ export default {
       downloadResponse.data.pipe(writer);
 
       writer.on('finish', () => {
-        
         api.setMessageReaction("✅", event.messageID, (err) => {}, true);
   
         api.sendMessage({
@@ -72,3 +75,4 @@ export default {
     }
   }
 };
+لم يرسل المقطع مثل هذا الكود
