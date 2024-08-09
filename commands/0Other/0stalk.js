@@ -17,7 +17,7 @@ async function getProfilePicture(userID) {
 
 async function getMessageCounts(api, threadId) {
   try {
-    const participants = await api.getThreadInfo(threadId, { participantIDs: true });
+    const participants = await api.getThreadInfo(threadId);
     if (!participants || !participants.participantIDs) {
       console.error('Error fetching participants:', participants);
       return {};
