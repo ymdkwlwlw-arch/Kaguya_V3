@@ -30,13 +30,13 @@ async function getExp(uid, Exp) {
   try {
     const expInfo = await Exp.check(uid); // استخدام Exp.check لجلب نقاط الخبرة
     if (expInfo.status) {
-      return expInfo.data;
+      return expInfo.data.exp; // إرجاع قيمة exp فقط
     }
   } catch (error) {
     console.error('Error fetching experience points:', error);
-    return { currentLevel: 0, exp: 0, expNeededForNextLevel: 0 };
+    return 0; // إرجاع 0 كنقاط خبرة في حال حدوث خطأ
   }
-  return { currentLevel: 0, exp: 0, expNeededForNextLevel: 0 };
+  return 0; // إرجاع 0 كنقاط خبرة إذا لم يكن هناك بيانات
 }
 
 export default {
@@ -55,7 +55,6 @@ export default {
       }
       const { firstName, name, gender, profileUrl } = userInfo;
       const userIsFriend = userInfo.isFriend ? "✅ نعم" : "❌ لا";
-      const isBirthdayToday = userInfo.isBirthdayToday ? "✅ نعم" : "❌ لا";
       const profilePath = await getProfilePicture(uid);
 
       // استخدام Economy.getBalance لجلب الرصيد
@@ -63,8 +62,7 @@ export default {
       const money = balanceResult.data;
 
       // استخدام Exp.check لجلب نقاط الخبرة
-      const expInfo = await getExp(uid, Exp);
-      const { currentLevel, exp, expNeededForNextLevel } = expInfo;
+      const exp = await getExp(uid, Exp);
 
       // جلب النقاط من ملف البيانات
       const userPoints = await getUserPoints(event.senderID);
@@ -74,7 +72,7 @@ export default {
 
       const message = `
  ❛ ━━━━━･❪ 🕊️ ❫ ･━━━━━ ❜\n\t\t
-•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${money}』 دولار\n❏🎖️ نقاطك : 『${userPoints}』 نقطة\n❏📈 نقاط الخبرة : 『${exp} / ${expNeededForNextLevel}』\n❏صديق؟: 『${userIsFriend}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』\n
+•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${money}』 دولار\n❏🎖️ نقاطك : 『${userPoints}』 نقطة\n❏📈 نقاط الخبرة : 『${exp}』\n❏صديق؟: 『${userIsFriend}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』\n
  ❛ ━━━━━･❪ 🕊️ ❫ ･━━━━━ ❜`;
 
       api.sendMessage({
