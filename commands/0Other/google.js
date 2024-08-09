@@ -1,40 +1,31 @@
 export default {
    name: "نرد",
    author: "حسين اليعقوبي",
-   role: "HUSSEIN YACOUBI",
+   role: "member",
    description: "لعب النرد وتحديد المكافأة أو الخسارة بناءً على النتيجة",
-   execute: async (api, Economy, args) => {
+   execute: async (api, Economy, args, message) => {
       const userID = message.author.id;
       const userBalance = await Economy.getBalance(userID);
 
-      if (!userBalance) {
-         await Economy.create({
-            userID: userID,
-            money: 0,
-            user: message.author.tag,
-            GuildID: message.guild.id,
-            accountage: message.createdTimestamp,
-            attemptgmar: 0,
-         }).catch(err => {
-            return api.sendMessage('Something went wrong', message.channel.id);
-         });
+      if (userBalance === null) {
+         return api.sendMessage('حدث خطأ في استرجاع رصيدك. يرجى المحاولة لاحقًا.', message.channel.id);
       }
 
       const inv = parseInt(args[0]);
       if (isNaN(inv) || inv < 100) {
-         return api.sendMessage('يرجى كتابة الامر بالطريقة الصحيحة \n> \نرد المبلغ#\``', message.channel.id);
+         return api.sendMessage('يرجى كتابة الأمر بالطريقة الصحيحة \n> \نرد المبلغ#\``', message.channel.id);
       }
 
       if (inv > userBalance) {
-         return api.sendMessage('اطلب الله مامعك المبلغ هذاذا', message.channel.id);
+         return api.sendMessage('لا يوجد لديك رصيد كافٍ.', message.channel.id);
       }
 
       if (inv < 100) {
-         return api.sendMessage('ماتقدر تلعب بأقل من 100 دولار', message.channel.id);
+         return api.sendMessage('لا يمكنك اللعب بمبلغ أقل من 100 دولار.', message.channel.id);
       }
 
-      // إرسال رسالة "جاري تقليب النر
-      api.setMessageReaction("🎲", event.messageID, (err) => {}, true);
+      // إرسال رسالة "جاري تقليب النرد"
+      api.setMessageReaction("🎲", message.messageID, (err) => {}, true);
   
       const sentMessage = await api.sendMessage('جاري تقليب النرد...', message.channel.id);
 
@@ -53,13 +44,13 @@ export default {
          } else {
             amount = Math.floor(Math.random() * (2000 - 1000 + 1)) + 1000;
          }
-         api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+         api.setMessageReaction("✅", message.messageID, (err) => {}, true);
   
          await Economy.increase(amount, userID);
          resultMessage = `**فزت!** 🎉\nقلبت النرد: ${rolledNumber}\nفزت بمبلغ قدره ${amount.toLocaleString()} ريال`;
       } else { // إذا كان العدد أقل من 5
          amount = 100;
-         api.setMessageReaction("❌", event.messageID, (err) => {}, true);
+         api.setMessageReaction("❌", message.messageID, (err) => {}, true);
   
          await Economy.decrease(amount, userID);
          resultMessage = `**خسرت!** 💔\nقلبت النرد: ${rolledNumber}\nخسرت ${amount.toLocaleString()} ريال`;
