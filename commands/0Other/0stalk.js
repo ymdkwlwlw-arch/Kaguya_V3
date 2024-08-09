@@ -1,7 +1,7 @@
+import jimp from 'jimp';
 import fs from 'fs';
 import path from 'path';
-import jimp from 'jimp';
-// تأكد من تحديد المسار الصحيح للوحدة
+// افترض أن هذا هو ملف exp الذي يحتوي على وظائف check
 
 async function getProfilePicture(userID) {
   const url = `https://graph.facebook.com/${userID}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
@@ -16,39 +16,61 @@ async function getProfilePicture(userID) {
   }
 }
 
+async function getUserInfo(api, uid) {
+  const userInfo = await api.getUserInfo(parseInt(uid));
+  return userInfo[uid];
+}
+
+async function getUserPoints(userID) {
+  const userDataFile = path.join(process.cwd(), 'pontsData.json');
+  const userData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
+  return userData[userID]?.points || 0;
+}
+
+async function getExpInfo(uid) {
+  const expInfo = await Exp.check(uid);
+  if (expInfo.status) {
+    return expInfo.data;
+  }
+  return { currentLevel: 0, exp: 0, expNeededForNextLevel: 0 };
+}
+
 export default {
   name: "معلوماتي",
   author: "Kaguya Project",
   role: "member",
   description: "جلب معلومات العضو.",
   aliases: ["ايدي"],
-  execute: async function({ api, event, args, Economy, Exp}) {
+  execute: async function({ api, event, args, Economy, Exp }) {
     try {
       const uid = event?.messageReply?.senderID || (Object.keys(event.mentions).length > 0 ? Object.keys(event.mentions)[0] : event.senderID);
-      const userInfo = await api.getUserInfo(parseInt(uid));
-      if (!userInfo[uid]) {
+      const userInfo = await getUserInfo(api, uid);
+      if (!userInfo) {
         api.sendMessage(`⚠️ | قم بعمل منشن للشخص ما.`, event.threadID, event.messageID);
         return;
       }
-      const { firstName, name, gender, profileUrl } = userInfo[uid];
-      const userIsFriend = userInfo[uid].isFriend ? "✅ نعم" : "❌ لا";
-      const isBirthdayToday = userInfo[uid].isBirthdayToday ? "✅ نعم" : "❌ لا";
+      const { firstName, name, gender, profileUrl } = userInfo;
+      const userIsFriend = userInfo.isFriend ? "✅ نعم" : "❌ لا";
+      const isBirthdayToday = userInfo.isBirthdayToday ? "✅ نعم" : "❌ لا";
       const profilePath = await getProfilePicture(uid);
 
-      // استخدام Exp.check لجلب نقاط الخبرة
-      const expResult = await Exp.check(uid);
-      const exp = expResult.data.exp;
+      // استخدام Economy.getBalance لجلب الرصيد
+      const balanceResult = await Economy.getBalance(uid);
+      const money = balanceResult.data;
 
-      const userDataFile = path.join(process.cwd(), 'pontsData.json');
-      const userData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
-      const userPoints = userData[event.senderID]?.points || 0;
+      // جلب نقاط الخبرة
+      const expInfo = await getExpInfo(uid);
+      const { currentLevel, exp, expNeededForNextLevel } = expInfo;
+
+      // جلب النقاط من ملف البيانات
+      const userPoints = await getUserPoints(event.senderID);
 
       // تصنيف المستخدم باستخدام نقاط الخبرة
       const rank = getRank(exp);
 
       const message = `
  ❛ ━━━━━･❪ 🕊️ ❫ ･━━━━━ ❜\n\t\t
-•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${userPoints}』 دولار\n❏🎖️ نقاطك : 『${exp}』 نقطة\n❏صديق؟: 『${userIsFriend}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』\n
+•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${money}』 دولار\n❏🎖️ نقاطك : 『${userPoints}』 نقطة\n❏📩 نقاط الخبرة : 『${exp} / ${expNeededForNextLevel}』\n❏صديق؟: 『${userIsFriend}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』\n
  ❛ ━━━━━･❪ 🕊️ ❫ ･━━━━━ ❜`;
 
       api.sendMessage({
