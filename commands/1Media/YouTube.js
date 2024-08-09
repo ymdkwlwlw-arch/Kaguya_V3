@@ -7,7 +7,7 @@ export default {
   execute: async function({ api, event, args }) {
     if (args.length < 2) {
       return api.sendMessage(
-        "❌ | خطأ في الصيغة، استخدم: anon ID_BOX [message]",
+        "❌ | خطأ في الصيغة، استخدم: مجهول معرف المجموعة [الرسالة]",
         event.threadID,
         event.messageID
       );
