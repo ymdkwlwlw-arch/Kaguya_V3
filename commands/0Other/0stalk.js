@@ -41,7 +41,7 @@ export default {
   role: "member",
   description: "جلب معلومات العضو.",
   aliases: ["ايدي"],
-  execute: async function({ api, event, args, Economy, Exp }) {
+  execute: async function({ api, event, args, Economy, exp }) {
     try {
       const uid = event?.messageReply?.senderID || (Object.keys(event.mentions).length > 0 ? Object.keys(event.mentions)[0] : event.senderID);
       const userInfo = await getUserInfo(api, uid);
