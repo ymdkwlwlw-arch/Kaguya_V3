@@ -1,6 +1,6 @@
-import jimp from 'jimp';
 import fs from 'fs';
 import path from 'path';
+// تأكد من تحديد المسار الصحيح للوحدة
 
 async function getProfilePicture(userID) {
   const url = `https://graph.facebook.com/${userID}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
@@ -15,37 +15,13 @@ async function getProfilePicture(userID) {
   }
 }
 
-async function getUserMessageCount(api, threadId, userId) {
-  try {
-    // جلب تاريخ المحادثة
-    const messages = await api.getThreadHistory(threadId, 10000);
-    if (!messages || !Array.isArray(messages)) {
-      console.error('Error fetching messages: No messages found or response is not an array');
-      return 0;
-    }
-
-    // حساب عدد الرسائل التي أرسلها المستخدم المحدد
-    const messageCount = messages.reduce((count, message) => {
-      if (message && message.senderID === userId) {
-        count++;
-      }
-      return count;
-    }, 0);
-
-    return messageCount;
-  } catch (error) {
-    console.error('Error fetching message count:', error.message);
-    return 0;
-  }
-}
-
 export default {
   name: "معلوماتي",
   author: "Kaguya Project",
   role: "member",
   description: "جلب معلومات العضو.",
   aliases: ["ايدي"],
-  execute: async function({ api, event, args, Economy }) {
+  execute: async function({ api, event, args, Economy, Exp}) {
     try {
       const uid = event?.messageReply?.senderID || (Object.keys(event.mentions).length > 0 ? Object.keys(event.mentions)[0] : event.senderID);
       const userInfo = await api.getUserInfo(parseInt(uid));
@@ -58,23 +34,20 @@ export default {
       const isBirthdayToday = userInfo[uid].isBirthdayToday ? "✅ نعم" : "❌ لا";
       const profilePath = await getProfilePicture(uid);
 
-      // استخدام Economy.getBalance لجلب الرصيد
-      const balanceResult = await Economy.getBalance(uid);
-      const money = balanceResult.data;
+      // استخدام Exp.check لجلب نقاط الخبرة
+      const expResult = await Exp.check(uid);
+      const exp = expResult.data.exp;
 
       const userDataFile = path.join(process.cwd(), 'pontsData.json');
       const userData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
       const userPoints = userData[event.senderID]?.points || 0;
 
-      // جلب عدد الرسائل للمستخدم
-      const userMessageCount = await getUserMessageCount(api, event.threadID, uid);
-
-      // تصنيف المستخدم باستخدام عدد الرسائل
-      const rank = getRank(userMessageCount);
+      // تصنيف المستخدم باستخدام نقاط الخبرة
+      const rank = getRank(exp);
 
       const message = `
  ❛ ━━━━━･❪ 🕊️ ❫ ･━━━━━ ❜\n\t\t
-•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${money}』 دولار\n❏🎖️ نقاطك : 『${userPoints}』 نقطة\n❏📩 عدد الرسائل : 『${userMessageCount}』\n❏صديق؟: 『${userIsFriend}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』\n
+•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${userPoints}』 دولار\n❏🎖️ نقاطك : 『${exp}』 نقطة\n❏صديق؟: 『${userIsFriend}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』\n
  ❛ ━━━━━･❪ 🕊️ ❫ ･━━━━━ ❜`;
 
       api.sendMessage({
@@ -89,18 +62,18 @@ export default {
   }
 }
 
-// دالة لتحديد تصنيف المستخدم بناءً على عدد الرسائل
-function getRank(userMessageCount) {
-  if (userMessageCount >= 3000) return 'خارق🥇';
-  if (userMessageCount >= 2000) return '🥈عظيم';
-  if (userMessageCount >= 1000) return '👑أسطوري';
-  if (userMessageCount >= 500) return 'نشط🔥 قوي';
-  if (userMessageCount >= 400) return '🌠نشط';
-  if (userMessageCount >= 300) return 'متفاعل🏅 قوي';
-  if (userMessageCount >= 200) return '🎖️متفاعل جيد';
-  if (userMessageCount >= 100) return '🌟متفاعل';
-  if (userMessageCount >= 50) return '✨لا بأس';
-  if (userMessageCount >= 10) return '👾مبتدأ';
-  if (userMessageCount >= 5) return '🗿صنم';
+// دالة لتحديد تصنيف المستخدم بناءً على نقاط الخبرة
+function getRank(exp) {
+  if (exp >= 3000) return 'خارق🥇';
+  if (exp >= 2000) return '🥈عظيم';
+  if (exp >= 1000) return '👑أسطوري';
+  if (exp >= 500) return 'نشط🔥 قوي';
+  if (exp >= 400) return '🌠نشط';
+  if (exp >= 300) return 'متفاعل🏅 قوي';
+  if (exp >= 200) return '🎖️متفاعل جيد';
+  if (exp >= 100) return '🌟متفاعل';
+  if (exp >= 50) return '✨لا بأس';
+  if (exp >= 10) return '👾مبتدأ';
+  if (exp >= 5) return '🗿صنم';
   return 'ميت⚰️';
 }
