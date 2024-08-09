@@ -15,28 +15,28 @@ async function getProfilePicture(userID) {
   }
 }
 
-async function getUserInfo(api, uid) {
-  const userInfo = await api.getUserInfo(parseInt(uid));
-  return userInfo[uid];
-}
-
-async function getUserPoints(userID) {
-  const userDataFile = path.join(process.cwd(), 'pontsData.json');
-  const userData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
-  return userData[userID]?.points || 0;
-}
-
-async function getExp(uid, Exp) {
+async function getUserMessageCount(api, threadId, userId) {
   try {
-    const expInfo = await Exp.check(uid); // استخدام Exp.check لجلب نقاط الخبرة
-    if (expInfo.status) {
-      return expInfo.data; // تأكد من أن `data` تحتوي على `exp`
+    // جلب تاريخ المحادثة
+    const messages = await api.getThreadHistory(threadId, 10000);
+    if (!messages || !Array.isArray(messages)) {
+      console.error('Error fetching messages: No messages found or response is not an array');
+      return 0;
     }
+
+    // حساب عدد الرسائل التي أرسلها المستخدم المحدد
+    const messageCount = messages.reduce((count, message) => {
+      if (message && message.senderID === userId) {
+        count++;
+      }
+      return count;
+    }, 0);
+
+    return messageCount;
   } catch (error) {
-    console.error('Error fetching experience points:', error);
-    return { exp: 0 }; // تعيين القيمة الافتراضية إلى 0 إذا حدث خطأ
+    console.error('Error fetching message count:', error.message);
+    return 0;
   }
-  return { exp: 0 }; // تعيين القيمة الافتراضية إلى 0 إذا لم تكن البيانات متاحة
 }
 
 export default {
@@ -45,36 +45,36 @@ export default {
   role: "member",
   description: "جلب معلومات العضو.",
   aliases: ["ايدي"],
-  execute: async function({ api, event, args, Economy, Exp }) {
+  execute: async function({ api, event, args, Economy }) {
     try {
       const uid = event?.messageReply?.senderID || (Object.keys(event.mentions).length > 0 ? Object.keys(event.mentions)[0] : event.senderID);
-      const userInfo = await getUserInfo(api, uid);
-      if (!userInfo) {
+      const userInfo = await api.getUserInfo(parseInt(uid));
+      if (!userInfo[uid]) {
         api.sendMessage(`⚠️ | قم بعمل منشن للشخص ما.`, event.threadID, event.messageID);
         return;
       }
-      const { firstName, name, gender, profileUrl } = userInfo;
-      const userIsFriend = userInfo.isFriend ? "✅ نعم" : "❌ لا";
-      const isBirthdayToday = userInfo.isBirthdayToday ? "✅ نعم" : "❌ لا";
+      const { firstName, name, gender, profileUrl } = userInfo[uid];
+      const userIsFriend = userInfo[uid].isFriend ? "✅ نعم" : "❌ لا";
+      const isBirthdayToday = userInfo[uid].isBirthdayToday ? "✅ نعم" : "❌ لا";
       const profilePath = await getProfilePicture(uid);
 
       // استخدام Economy.getBalance لجلب الرصيد
       const balanceResult = await Economy.getBalance(uid);
       const money = balanceResult.data;
 
-      // استخدام Exp.check لجلب نقاط الخبرة
-      const expInfo = await getExp(uid, Exp);
-      const { exp } = expInfo;
+      const userDataFile = path.join(process.cwd(), 'pontsData.json');
+      const userData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
+      const userPoints = userData[event.senderID]?.points || 0;
 
-      // جلب النقاط من ملف البيانات
-      const userPoints = await getUserPoints(event.senderID);
+      // جلب عدد الرسائل للمستخدم
+      const userMessageCount = await getUserMessageCount(api, event.threadID, uid);
 
-      // تصنيف المستخدم باستخدام نقاط الخبرة
-      const rank = getRank(exp);
+      // تصنيف المستخدم باستخدام عدد الرسائل
+      const rank = getRank(userMessageCount);
 
       const message = `
  ❛ ━━━━━･❪ 🕊️ ❫ ･━━━━━ ❜\n\t\t
-•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${money}』 دولار\n❏🎖️ نقاطك : 『${userPoints}』 نقطة\n❏📈 | مستوى نشاطك : 『${exp}』\n❏صديق؟: 『${userIsFriend}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』\n
+•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${money}』 دولار\n❏🎖️ نقاطك : 『${userPoints}』 نقطة\n❏📩 عدد الرسائل : 『${userMessageCount}』\n❏صديق؟: 『${userIsFriend}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』\n
  ❛ ━━━━━･❪ 🕊️ ❫ ･━━━━━ ❜`;
 
       api.sendMessage({
@@ -89,18 +89,18 @@ export default {
   }
 }
 
-// دالة لتحديد تصنيف المستخدم بناءً على نقاط الخبرة
-function getRank(exp) {
-  if (exp >= 3000) return 'خارق🥇';
-  if (exp >= 2000) return '🥈عظيم';
-  if (exp >= 1000) return '👑أسطوري';
-  if (exp >= 500) return 'نشط🔥 قوي';
-  if (exp >= 400) return '🌠نشط';
-  if (exp >= 300) return 'متفاعل🏅 قوي';
-  if (exp >= 200) return '🎖️متفاعل جيد';
-  if (exp >= 100) return '🌟متفاعل';
-  if (exp >= 50) return '✨لا بأس';
-  if (exp >= 10) return '👾مبتدأ';
-  if (exp >= 5) return '🗿صنم';
+// دالة لتحديد تصنيف المستخدم بناءً على عدد الرسائل
+function getRank(userMessageCount) {
+  if (userMessageCount >= 3000) return 'خارق🥇';
+  if (userMessageCount >= 2000) return '🥈عظيم';
+  if (userMessageCount >= 1000) return '👑أسطوري';
+  if (userMessageCount >= 500) return 'نشط🔥 قوي';
+  if (userMessageCount >= 400) return '🌠نشط';
+  if (userMessageCount >= 300) return 'متفاعل🏅 قوي';
+  if (userMessageCount >= 200) return '🎖️متفاعل جيد';
+  if (userMessageCount >= 100) return '🌟متفاعل';
+  if (userMessageCount >= 50) return '✨لا بأس';
+  if (userMessageCount >= 10) return '👾مبتدأ';
+  if (userMessageCount >= 5) return '🗿صنم';
   return 'ميت⚰️';
 }
