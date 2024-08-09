@@ -2,7 +2,6 @@ import jimp from 'jimp';
 import fs from 'fs';
 import path from 'path';
 
-// جلب صورة الملف الشخصي
 async function getProfilePicture(userID) {
   const url = `https://graph.facebook.com/${userID}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
   try {
@@ -16,26 +15,26 @@ async function getProfilePicture(userID) {
   }
 }
 
-// جلب عدد الرسائل لعضو معين
 async function getUserMessageCount(api, threadId, userId) {
   try {
+    // جلب تاريخ المحادثة
     const messages = await api.getThreadHistory(threadId, 10000);
     if (!messages || !Array.isArray(messages)) {
-      console.error('Error fetching messages:', messages);
+      console.error('Error fetching messages: No messages found or response is not an array');
       return 0;
     }
 
-    let messageCount = 0;
-    messages.forEach(message => {
-      if (message.senderID === userId) {
-        messageCount++;
+    // حساب عدد الرسائل التي أرسلها المستخدم المحدد
+    const messageCount = messages.reduce((count, message) => {
+      if (message && message.senderID === userId) {
+        count++;
       }
-    });
+      return count;
+    }, 0);
 
-    console.log(`User ${userId} Message Count:`, messageCount); // سجل تصحيح
     return messageCount;
-  } catch (err) {
-    console.error('Error fetching message count:', err);
+  } catch (error) {
+    console.error('Error fetching message count:', error.message);
     return 0;
   }
 }
