@@ -28,7 +28,7 @@ async function getUserPoints(userID) {
 }
 
 async function getExpInfo(uid) {
-  const expInfo = await Exp.check(uid);
+  const expInfo = await exp.check(uid);
   if (expInfo.status) {
     return expInfo.data;
   }
