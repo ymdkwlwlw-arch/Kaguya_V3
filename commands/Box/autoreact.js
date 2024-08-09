@@ -12,9 +12,9 @@ async function gpt4(prompt, customId, link) {
 }
 
 export default {
-  name: "GPT4",
+  name: "ذكاء",
   author: "Kaguya Project",
-  role: "admin",
+  role: "member",
   description: "يتفاعل مع الذكاء الاصطناعي ويواصل المحادثة",
   execute: async function({ api, event, args, messageReply }) {
     try {
