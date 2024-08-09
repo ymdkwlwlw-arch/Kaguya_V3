@@ -1,63 +1,45 @@
-import axios from "axios";
+import axios from 'axios';
+
+async function gpt4(prompt, customId, link) {
+  try {
+    const endpoint = prompt.toLowerCase() === "تنظيف" ? '/clear' : '/chat';
+    const data = prompt.toLowerCase() === "تنظيف" ? { id: customId } : { prompt, customId, ...(link && { link }) };
+    const res = await axios.post(`https://cadis.onrender.com${endpoint}`, data);
+    return res.data.message;
+  } catch (error) {
+    return error.message;
+  }
+}
 
 export default {
-  name: "ذكاء",
-  author: "kaguya project",
-  role: "member",
-  description: "استخدام Bing للرد على الاستفسارات.",
-
-  execute: async ({ api, event, client }) => {
+  name: "GPT4",
+  author: "Kaguya Project",
+  role: "admin",
+  description: "يتفاعل مع الذكاء الاصطناعي ويواصل المحادثة",
+  execute: async function({ api, event, args, messageReply }) {
     try {
-      const { threadID, messageID, body, senderID } = event;
-
-      api.setMessageReaction("⏰", messageID, (err) => {}, true);
-
-      // إرسال الطلب إلى API
-      const response = await axios.get(`https://king-aryanapis.onrender.com/api/gpt?prompt=${encodeURIComponent(body)}`);
-      const answer = response.data.answer; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
-
-      api.sendMessage(answer, threadID, (err, info) => {
-        if (err) return console.error(err);
-
-        global.client.handler.reply.set(info.messageID, {
-          author: senderID,
-          type: "reply",
-          name: "ذكاء",
-          unsend: false,
-        });
+      const { senderID } = event;
+      const prompt = args.join(" ") || "hello";
+      const link = messageReply?.attachments?.[0]?.type === "photo" ? messageReply.attachments[0].url : null;
+      const res = await gpt4(prompt, senderID, link);
+      
+      const messageID = await api.sendMessage(res, event.threadID);
+      global.client.handler.reply.set(messageID, {
+        author: senderID,
+        type: "reply",
+        name: "ذكاء",
+        unsend: false,
       });
-
-      api.setMessageReaction("✅", messageID, (err) => {}, true);
-
     } catch (error) {
-      console.error("Error:", error.message, error.response?.data);
-      api.setMessageReaction("❌", event.messageID, (err) => {}, true);
-      api.sendMessage("⚠️ حدث خطأ أثناء معالجة طلبك. يرجى المحاولة مرة أخرى.", event.threadID, event.messageID);
+      api.sendMessage(`❌ | حدث خطأ: ${error.message}`, event.threadID);
     }
   },
 
-  onReply: async ({ api, event, reply, client }) => {
+  onReply: async function({ api, event, reply }) {
     if (reply.type === "reply" && reply.author === event.senderID) {
-      try {
-        // إرسال الرد إلى API
-        const response = await axios.get(`https://king-aryanapis.onrender.com/api/gpt?prompt=${encodeURIComponent(event.body)}`);
-        const answer = response.data.answer; // تأكد من الوصول إلى رد الواجهة البرمجية بشكل صحيح
-
-        api.sendMessage(answer, event.threadID, (err, info) => {
-          if (err) return console.error(err);
-
-          // تحديث replyId للرد الجديد
-          global.client.handler.reply.set(info.messageID, {
-            author: event.senderID,
-            type: "reply",
-            name: "ذكاء",
-            unsend: false,
-          });
-        });
-      } catch (error) {
-        console.error("Error:", error.message, error.response?.data);
-        api.sendMessage("⚠️ حدث خطأ أثناء معالجة ردك. يرجى المحاولة مرة أخرى.", event.threadID, event.messageID);
-      }
+      // Handle reply to the user's message
+      const response = await gpt4(reply.message, event.senderID);
+      api.sendMessage(response, event.threadID);
     }
   }
 };
