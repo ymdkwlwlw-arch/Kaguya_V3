@@ -1,7 +1,6 @@
 import jimp from 'jimp';
 import fs from 'fs';
 import path from 'path';
-// افترض أن هذا هو ملف exp الذي يحتوي على وظائف check
 
 async function getProfilePicture(userID) {
   const url = `https://graph.facebook.com/${userID}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
@@ -27,10 +26,15 @@ async function getUserPoints(userID) {
   return userData[userID]?.points || 0;
 }
 
-async function getExpInfo(uid) {
-  const expInfo = await exp.check(uid);
-  if (expInfo.status) {
-    return expInfo.data;
+async function getExp(uid, Exp) {
+  try {
+    const expInfo = await Exp.check(uid); // استخدام Exp.check لجلب نقاط الخبرة
+    if (expInfo.status) {
+      return expInfo.data;
+    }
+  } catch (error) {
+    console.error('Error fetching experience points:', error);
+    return { currentLevel: 0, exp: 0, expNeededForNextLevel: 0 };
   }
   return { currentLevel: 0, exp: 0, expNeededForNextLevel: 0 };
 }
@@ -41,7 +45,7 @@ export default {
   role: "member",
   description: "جلب معلومات العضو.",
   aliases: ["ايدي"],
-  execute: async function({ api, event, args, Economy, exp }) {
+  execute: async function({ api, event, args, Economy, Exp }) {
     try {
       const uid = event?.messageReply?.senderID || (Object.keys(event.mentions).length > 0 ? Object.keys(event.mentions)[0] : event.senderID);
       const userInfo = await getUserInfo(api, uid);
@@ -58,8 +62,8 @@ export default {
       const balanceResult = await Economy.getBalance(uid);
       const money = balanceResult.data;
 
-      // جلب نقاط الخبرة
-      const expInfo = await getExpInfo(uid);
+      // استخدام Exp.check لجلب نقاط الخبرة
+      const expInfo = await getExp(uid, Exp);
       const { currentLevel, exp, expNeededForNextLevel } = expInfo;
 
       // جلب النقاط من ملف البيانات
@@ -70,7 +74,7 @@ export default {
 
       const message = `
  ❛ ━━━━━･❪ 🕊️ ❫ ･━━━━━ ❜\n\t\t
-•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${money}』 دولار\n❏🎖️ نقاطك : 『${userPoints}』 نقطة\n❏📩 نقاط الخبرة : 『${exp} / ${expNeededForNextLevel}』\n❏صديق؟: 『${userIsFriend}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』\n
+•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${money}』 دولار\n❏🎖️ نقاطك : 『${userPoints}』 نقطة\n❏📈 نقاط الخبرة : 『${exp} / ${expNeededForNextLevel}』\n❏صديق؟: 『${userIsFriend}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』\n
  ❛ ━━━━━･❪ 🕊️ ❫ ･━━━━━ ❜`;
 
       api.sendMessage({
