@@ -2,6 +2,7 @@ import jimp from 'jimp';
 import fs from 'fs';
 import path from 'path';
 
+// جلب صورة الملف الشخصي
 async function getProfilePicture(userID) {
   const url = `https://graph.facebook.com/${userID}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
   try {
@@ -15,37 +16,27 @@ async function getProfilePicture(userID) {
   }
 }
 
-async function getMessageCounts(api, threadId) {
+// جلب عدد الرسائل لعضو معين
+async function getUserMessageCount(api, threadId, userId) {
   try {
-    const participants = await api.getThreadInfo(threadId);
-    if (!participants || !participants.participantIDs) {
-      console.error('Error fetching participants:', participants);
-      return {};
-    }
-
-    const messageCounts = {};
-    participants.participantIDs.forEach(participantId => {
-      messageCounts[participantId] = 0;
-    });
-
     const messages = await api.getThreadHistory(threadId, 10000);
     if (!messages || !Array.isArray(messages)) {
       console.error('Error fetching messages:', messages);
-      return messageCounts;
+      return 0;
     }
 
+    let messageCount = 0;
     messages.forEach(message => {
-      if (message.senderID && messageCounts.hasOwnProperty(message.senderID)) {
-        messageCounts[message.senderID]++;
+      if (message.senderID === userId) {
+        messageCount++;
       }
     });
 
-    console.log('Message Counts:', messageCounts); // سجل تصحيح
-
-    return messageCounts;
+    console.log(`User ${userId} Message Count:`, messageCount); // سجل تصحيح
+    return messageCount;
   } catch (err) {
-    console.error('Error fetching message counts:', err);
-    return {};
+    console.error('Error fetching message count:', err);
+    return 0;
   }
 }
 
@@ -77,8 +68,7 @@ export default {
       const userPoints = userData[event.senderID]?.points || 0;
 
       // جلب عدد الرسائل للمستخدم
-      const messageCounts = await getMessageCounts(api, event.threadID);
-      const userMessageCount = messageCounts[uid] || 0;
+      const userMessageCount = await getUserMessageCount(api, event.threadID, uid);
 
       // تصنيف المستخدم باستخدام عدد الرسائل
       const rank = getRank(userMessageCount);
