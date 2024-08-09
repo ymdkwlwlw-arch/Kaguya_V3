@@ -30,13 +30,13 @@ async function getExp(uid, Exp) {
   try {
     const expInfo = await Exp.check(uid); // استخدام Exp.check لجلب نقاط الخبرة
     if (expInfo.status) {
-      return expInfo.data.exp; // إرجاع قيمة exp فقط
+      return expInfo.data; // تأكد من أن `data` تحتوي على `exp`
     }
   } catch (error) {
     console.error('Error fetching experience points:', error);
-    return 0; // إرجاع 0 كنقاط خبرة في حال حدوث خطأ
+    return { exp: 0 }; // تعيين القيمة الافتراضية إلى 0 إذا حدث خطأ
   }
-  return 0; // إرجاع 0 كنقاط خبرة إذا لم يكن هناك بيانات
+  return { exp: 0 }; // تعيين القيمة الافتراضية إلى 0 إذا لم تكن البيانات متاحة
 }
 
 export default {
@@ -55,6 +55,7 @@ export default {
       }
       const { firstName, name, gender, profileUrl } = userInfo;
       const userIsFriend = userInfo.isFriend ? "✅ نعم" : "❌ لا";
+      const isBirthdayToday = userInfo.isBirthdayToday ? "✅ نعم" : "❌ لا";
       const profilePath = await getProfilePicture(uid);
 
       // استخدام Economy.getBalance لجلب الرصيد
@@ -62,7 +63,8 @@ export default {
       const money = balanceResult.data;
 
       // استخدام Exp.check لجلب نقاط الخبرة
-      const exp = await getExp(uid, Exp);
+      const expInfo = await getExp(uid, Exp);
+      const { exp } = expInfo;
 
       // جلب النقاط من ملف البيانات
       const userPoints = await getUserPoints(event.senderID);
