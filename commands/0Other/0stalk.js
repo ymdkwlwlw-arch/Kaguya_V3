@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import jimp from 'jimp';
 // تأكد من تحديد المسار الصحيح للوحدة
 
 async function getProfilePicture(userID) {
