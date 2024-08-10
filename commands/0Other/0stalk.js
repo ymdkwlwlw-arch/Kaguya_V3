@@ -15,28 +15,44 @@ async function getProfilePicture(userID) {
   }
 }
 
-async function getUserMessageCount(api, threadId, userId) {
+async function getMessageCounts(api, threadId) {
   try {
-    // جلب تاريخ المحادثة
-    const messages = await api.getThreadHistory(threadId, 10000);
-    if (!messages || !Array.isArray(messages)) {
-      console.error('Error fetching messages: No messages found or response is not an array');
-      return 0;
-    }
+    const participants = await api.getThreadInfo(threadId);
+    const participantIDs = participants.participantIDs || [];
+    const messageCounts = {};
 
-    // حساب عدد الرسائل التي أرسلها المستخدم المحدد
-    const messageCount = messages.reduce((count, message) => {
-      if (message && message.senderID === userId) {
-        count++;
+    participantIDs.forEach(participantId => {
+      messageCounts[participantId] = 0;
+    });
+
+    const messages = await api.getThreadHistory(threadId, 1000); // Adjust message count limit as needed
+    messages.forEach(message => {
+      const messageSender = message.senderID;
+      if (messageCounts[messageSender] !== undefined) {
+        messageCounts[messageSender]++;
       }
-      return count;
-    }, 0);
+    });
 
-    return messageCount;
+    return messageCounts;
   } catch (error) {
-    console.error('Error fetching message count:', error.message);
-    return 0;
+    console.error("Error fetching message counts:", error.message);
+    return {};
   }
+}
+
+function getRank(userMessageCount) {
+  if (userMessageCount >= 3000) return 'خارق🥇';
+  if (userMessageCount >= 2000) return '🥈عظيم';
+  if (userMessageCount >= 1000) return '👑أسطوري';
+  if (userMessageCount >= 500) return 'نشط🔥 قوي';
+  if (userMessageCount >= 400) return '🌠نشط';
+  if (userMessageCount >= 300) return 'متفاعل🏅 قوي';
+  if (userMessageCount >= 200) return '🎖️متفاعل جيد';
+  if (userMessageCount >= 100) return '🌟متفاعل';
+  if (userMessageCount >= 50) return '✨لا بأس';
+  if (userMessageCount >= 10) return '👾مبتدأ';
+  if (userMessageCount >= 5) return '🗿صنم';
+  return 'ميت⚰️';
 }
 
 export default {
@@ -67,7 +83,8 @@ export default {
       const userPoints = userData[event.senderID]?.points || 0;
 
       // جلب عدد الرسائل للمستخدم
-      const userMessageCount = await getUserMessageCount(api, event.threadID, uid);
+      const messageCounts = await getMessageCounts(api, event.threadID);
+      const userMessageCount = messageCounts[uid] || 0;
 
       // تصنيف المستخدم باستخدام عدد الرسائل
       const rank = getRank(userMessageCount);
@@ -87,20 +104,4 @@ export default {
       api.sendMessage('❌ | حدث خطأ أثناء جلب المعلومات. الرجاء معاودة المحاولة في وقت لاحق.', event.threadID, event.messageID);
     }
   }
-}
-
-// دالة لتحديد تصنيف المستخدم بناءً على عدد الرسائل
-function getRank(userMessageCount) {
-  if (userMessageCount >= 3000) return 'خارق🥇';
-  if (userMessageCount >= 2000) return '🥈عظيم';
-  if (userMessageCount >= 1000) return '👑أسطوري';
-  if (userMessageCount >= 500) return 'نشط🔥 قوي';
-  if (userMessageCount >= 400) return '🌠نشط';
-  if (userMessageCount >= 300) return 'متفاعل🏅 قوي';
-  if (userMessageCount >= 200) return '🎖️متفاعل جيد';
-  if (userMessageCount >= 100) return '🌟متفاعل';
-  if (userMessageCount >= 50) return '✨لا بأس';
-  if (userMessageCount >= 10) return '👾مبتدأ';
-  if (userMessageCount >= 5) return '🗿صنم';
-  return 'ميت⚰️';
-}
+};
