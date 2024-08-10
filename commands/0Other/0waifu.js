@@ -38,7 +38,7 @@ export default {
           api.setMessageReaction("😘", event.messageID, (err) => {}, true);
   
           api.sendMessage({
-            body: `࿇ ══━━━✥◈✥━━━══ ࿇\n💜☟  ω𝒶ⓘғυ  ☟💜\n${randomCategory}\n࿇ ══━━━✥◈✥━━━══ ࿇`,
+            body: `࿇ ══━━━✥◈✥━━━══ ࿇\n\t\t\t\t💜☟  ω𝒶ⓘғυ  ☟💜\n\t\t\t\t${randomCategory}\n࿇ ══━━━✥◈✥━━━══ ࿇`,
             attachment: fs.createReadStream(imagePath)
           }, event.threadID, () => fs.unlinkSync(imagePath));
         });
