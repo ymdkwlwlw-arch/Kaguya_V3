@@ -1,47 +1,30 @@
-import axios from 'axios';
-import fs from 'fs-extra';
 import path from 'path';
+import fs from 'fs';
 
-async function getPairDp({ api, event, args }) {
-    
-    try {
-        // Fetch the data from the API
-        const { data } = await axios.get("https://tanjiro-api.onrender.com/cdp?api_key=tanjiro");
-
-        // Fetch male image
-        const maleImg = await axios.get(data.male, { responseType: "arraybuffer" });
-        const maleImgPath = path.join(process.cwd(), "tmp", "img1.png");
-        await fs.ensureDir(path.dirname(maleImgPath)); // Ensure the directory exists
-        await fs.writeFile(maleImgPath, Buffer.from(maleImg.data, "utf-8"));
-
-        // Fetch female image
-        const femaleImg = await axios.get(data.female, { responseType: "arraybuffer" });
-        const femaleImgPath = path.join(process.cwd(), "tmp", "img2.png");
-        await fs.writeFile(femaleImgPath, Buffer.from(femaleImg.data, "utf-8"));
-
-        // Prepare the message and attachments
-        const msg = "✿━━━━━━━━━━━━━━━━✿\n「 إليك التطقيم الخاص بك✨ 」\n✿━━━━━━━━━━━━━━━━✿";
-        const allImages = [
-            fs.createReadStream(maleImgPath),
-            fs.createReadStream(femaleImgPath)
-        ];
-
-        // Send the message with attachments
-        api.setMessageReaction("✅", event.messageID, () => {}, true);
-        return api.sendMessage({
-            body: msg,
-            attachment: allImages
-        }, event.threadID, event.messageID);
-    } catch (error) {
-        console.error(error);
-        api.sendMessage("❌ | An error occurred while processing your request.", event.threadID, event.messageID);
-    }
+async function getGreetingImage() {
+  // تحديد المسار إلى مجلد 'cache12'
+  const imagePath = path.join(process.cwd(), 'cache12', 'nani.mp3'); // تحديث اسم الصورة إذا كان مختلفًا
+  return fs.createReadStream(imagePath);
 }
 
 export default {
-    name: "تطقيم2",
-    author: "kaguya project",
-    role: "member",
-    description: "يولد زوج من صور العرض.",
-    execute: getPairDp
+  name: "ناني",
+  author: "البوت",
+  role: "member",
+  description: "يرسل رسالة ترحيبية مع صورة.",
+  execute: async function({ api, event }) {
+    try {
+      const greetingImageStream = await getGreetingImage();
+        
+        api.setMessageReaction("😨", event.messageID, (err) => {}, true);
+  
+      api.sendMessage({
+        body: "[ ناني 😗 ]",
+        attachment: greetingImageStream
+      }, event.threadID, event.messageID);
+    } catch (error) {
+      console.error('Error sending greeting message:', error);
+      api.sendMessage('❌ | حدث خطأ أثناء إرسال الرسالة الترحيبية.', event.threadID, event.messageID);
+    }
+  }
 };
