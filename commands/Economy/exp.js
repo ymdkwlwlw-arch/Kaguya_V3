@@ -17,18 +17,21 @@ export default {
         targetID = Object.keys(event.mentions)[0];
       }
 
-      // جلب نقاط الخبرة
+      // جلب معلومات نقاط الخبرة
       const expResponse = await Exp.check(targetID);
 
       if (!expResponse.status) {
         return api.sendMessage(`❌ | حدث خطأ: ${expResponse.data}`, event.threadID);
       }
 
-      const userInfo = await api.getUserInfo(targetID);
-      const userName = userInfo[targetID].name;
-      const exp = expResponse.data; // نقاط الخبرة للمستخدم
+      // استخراج بيانات نقاط الخبرة
+      const { currentLevel, exp, expNeededForNextLevel } = expResponse.data;
 
-      let replyMessage = `نقاط الخبرة الخاصة بـ ${targetID === event.senderID ? "ك" : ` ${userName}`} هي: ${exp}`;
+      // تحضير الرسالة للعرض
+      const replyMessage = `نقاط الخبرة الخاصة بـ ${targetID === event.senderID ? "ك" : ` ${await getUserName(targetID)}`} هي:
+- المستوى الحالي: ${currentLevel}
+- نقاط الخبرة الحالية: ${exp}
+- نقاط الخبرة المطلوبة للترقية: ${expNeededForNextLevel}`;
 
       // قم بإرسال الرد
       return api.sendMessage(replyMessage, event.threadID);
@@ -38,3 +41,14 @@ export default {
     }
   },
 };
+
+// دالة مساعدة لجلب اسم المستخدم
+async function getUserName(userID) {
+  try {
+    const userInfo = await api.getUserInfo(userID);
+    return userInfo[userID].name;
+  } catch (error) {
+    console.error("حدث خطأ أثناء جلب اسم المستخدم:", error);
+    return "مجهول";
+  }
+}
