@@ -1,9 +1,11 @@
+import moment from 'moment-timezone';
+
 let lastExecutionDate = {}; // جدول لتخزين تاريخ آخر تنفيذ لكل مستخدم
 
 export default {
   name: "عمل",
   author: "kaguya project",
-  cooldowns: 86400, // فترة التبريد تعادل يوم واحد بالثواني
+  cooldowns: 3600, // فترة التبريد تعادل ساعة واحدة بالثواني
   description: "قم بإجراء عمل واحصل على مكافأة!",
   role: "member",
   async execute({ api, event, Economy, args }) {
@@ -23,28 +25,34 @@ export default {
         { name: "ربت بيت", reward: 650, duration: 18000 }, // 5 ساعات
         { name: "بائعة الزهور", reward: 700, duration: 7200 }, // 2 ساعة
         { name: "ابحث عن كود jav/hentai لـ SpermLord", reward: 750, duration: 10800 }, // 3 ساعات
-        { name: "العب كرة القدم واحمل فريقك", reward: 800, duration: 18000 }, 
+        { name: "العب كرة القدم واحمل فريقك", reward: 800, duration: 18000 },
         // إضافة المزيد من الأعمال هنا
       ];
 
       const randomWork = works[Math.floor(Math.random() * works.length)];
       const user = event.senderID;
-      const currentTime = Math.floor(Date.now() / 1000);
+      const currentTime = moment().unix(); // الحصول على الوقت الحالي بالثواني
 
-      if (lastExecutionDate[user] && lastExecutionDate[user] === currentTime) {
-        // إذا تم تنفيذ الأمر في نفس اليوم، أرسل رسالة التنبيه
-        return api.sendMessage("⚠️ | لقد قمت بالعمل اليم من أجل تجنب اللأرهاق ، يرجى المحاولة مرة أخرى غدًا.", event.threadID);
+      // التحقق من آخر تنفيذ
+      if (lastExecutionDate[user]) {
+        const lastExecution = moment.unix(lastExecutionDate[user]);
+        const nextAllowedExecution = lastExecution.add(1, 'hour'); // إضافة ساعة واحدة
+
+        if (moment().isBefore(nextAllowedExecution)) {
+          const timeLeft = moment.duration(nextAllowedExecution.diff(moment())).humanize();
+          return api.sendMessage(`⚠️ | لقد قمت بالعمل مؤخراً، يرجى المحاولة مرة أخرى بعد ${timeLeft}.`, event.threadID);
+        }
       }
 
       // إضافة المكافأة إلى الرصيد
       await Economy.increase(randomWork.reward, user);
 
-      // تحديث تاريخ آخر تنفيذ للمستخدم إلى اليوم الحالي
+      // تحديث تاريخ آخر تنفيذ للمستخدم إلى الوقت الحالي
       lastExecutionDate[user] = currentTime;
 
       // حساب وقت انتهاء العمل
       const endTime = currentTime + randomWork.duration;
-      const endTimeFormatted = new Date(endTime * 1000).toLocaleTimeString();
+      const endTimeFormatted = moment.unix(endTime).format('YYYY-MM-DD HH:mm:ss');
 
       // إرسال رسالة النجاح
       return api.sendMessage(
