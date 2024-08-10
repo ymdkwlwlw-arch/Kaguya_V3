@@ -16,14 +16,11 @@ export default {
 
       api.setMessageReaction('⏱️', event.messageID, (err) => {}, true);
 
-      // ترجمة النص
-      const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(args.join(' '))}`);
-      const translatedText = translationResponse.data[0][0][0];
-
       // البحث عن الصور
-      const apiUrl = `https://api.kenliejugarap.com/pinterestbymarjhun/?search=${encodeURIComponent(translatedText)}`;
+      const searchQuery = encodeURIComponent(args.join(' '));
+      const apiUrl = `https://www.noobs-api.000.pe/dipto/pinterest?search=${searchQuery}&limit=9`;
       const res = await axios.get(apiUrl);
-      const images = res.data.data; // تحديث هنا لاستخدام البيانات الجديدة
+      const images = res.data.data; // استخدام البيانات الجديدة
       const imgData = [];
 
       for (let i = 0; i < Math.min(9, images.length); i++) {
@@ -39,8 +36,8 @@ export default {
         attachment: imgData,
       }, event.threadID, event.messageID);
 
+      // حذف الملفات المؤقتة
       await fs.remove(path.join(process.cwd(), 'cache'));
-      api.setMessageReaction('❌', event.messageID, (err) => {}, true);
     } catch (error) {
       console.error(error);
       api.sendMessage('حدث خطأ.', event.threadID, event.messageID);
