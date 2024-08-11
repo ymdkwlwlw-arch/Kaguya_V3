@@ -6,7 +6,7 @@ export default {
   name: "تيك",
   author: "حسين يعقوبي",
   cooldowns: 60,
-  description: "البحث عن مقاطع فيديو TikTok",
+  description: "البحث عن مقاطع فيديو TikTok وتنزيلها",
   role: "member",
   aliases: ["tiktok"],
 
@@ -15,37 +15,49 @@ export default {
 
     try {
       const query = args.join(" ");
-      const apiUrl = `https://cc-project-apis-jonell-magallanes.onrender.com/api/tiktok/searchvideo?keywords=${encodeURIComponent(query)}${encodeURIComponent(query)}`;
+      if (!query) return api.sendMessage("⚠️ | يرجى إدخال استعلام البحث.", event.threadID, event.messageID);
+
+      const apiUrl = `https://markdevs-last-api-as2j.onrender.com/api/tiksearch?search=${encodeURIComponent(query)}`;
       const response = await axios.get(apiUrl);
 
       if (response.data.code === 0 && response.data.data.videos.length > 0) {
         const videoData = response.data.data.videos[0];
         const videoUrl = videoData.play;
+        const title = videoData.title;
+        const duration = videoData.duration;
+
         const videoFileName = `${videoData.video_id}.mp4`;
+        const tempVideoPath = path.join(process.cwd(), 'cache', videoFileName);
 
-        const tempVideoPath = `./cache/${videoFileName}`;
+        // تحميل الفيديو
         const writer = fs.createWriteStream(tempVideoPath);
+        const videoResponse = await axios.get(videoUrl, { responseType: 'stream' });
 
-        const videoResponse = await axios.get(videoUrl, { responseType: "stream" });
         videoResponse.data.pipe(writer);
 
-        writer.on("finish", () => {
-          const videoStream = fs.createReadStream(tempVideoPath);
-          const userName = videoData.author.unique_id;
-          const title = videoData.title; // تحديد عنوان الفيديو من الاستجابة
-          const messageBody = `💾 | العنوان : ${title} \n 👤 |إسم المستخدم : ${userName}`;
-          api.sendMessage({ body: messageBody, attachment: videoStream }, event.threadID, () => {
-            fs.unlinkSync(tempVideoPath);
+        writer.on('finish', () => {
+          api.sendMessage({
+            body: `📹 | العنوان: ${title}\n⏱️ | المدة: ${duration} ث`,
+            attachment: fs.createReadStream(tempVideoPath)
+          }, event.threadID, () => {
+            fs.unlinkSync(tempVideoPath); // تنظيف الملف بعد الإرسال
           }, event.messageID);
           api.setMessageReaction("✅", event.messageID, () => {}, true);
         });
+
+        writer.on('error', (err) => {
+          console.error("Error while downloading video:", err);
+          api.sendMessage("🚧 | حدث خطأ أثناء تحميل الفيديو.", event.threadID);
+          api.setMessageReaction("❌", event.messageID, () => {}, true);
+        });
+
       } else {
-        api.sendMessage("⚠️ | لم يتم العثور على مقاطع فيديو TikTok للاستعلام المحدد.", event.threadID);
+        api.sendMessage("⚠️ | لم يتم العثور على مقاطع فيديو TikTok للاستعلام المحدد.", event.threadID, event.messageID);
         api.setMessageReaction("❌", event.messageID, () => {}, true);
       }
     } catch (error) {
       console.error(error);
-      api.sendMessage("❌ | عذرًا، حدث خطأ أثناء معالجة طلبك.", event.threadID);
+      api.sendMessage("❌ | عذرًا، حدث خطأ أثناء معالجة طلبك.", event.threadID, event.messageID);
     }
   }
 };
