@@ -12,19 +12,14 @@ export default {
   execute: async ({ api, event, args }) => {
     try {
       api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
-  
-      const type = args[0]?.toLowerCase();
-      if (type !== 'مقطع') {
-        return api.sendMessage(`⚠️ | يرجى استخدام الأمر بشكل صحيح: [مقطع] <عنوان المقطع>\n\nمثال: يوتيوب مقطع funny cat video`, event.threadID, event.messageID);
-      }
-      
-      const title = args.slice(1).join(" ");
+
+      const title = args.join(" ");
       if (!title) return api.sendMessage("⚠️ | يرجى إدخال اسم المقطع.", event.threadID, event.messageID);
-      
+
       // البحث عن الفيديو
       const { data } = await axios.get(`https://apiv3-2l3o.onrender.com/yts?title=${encodeURIComponent(title)}`);
       const videos = data.videos.slice(0, 1); // جلب مقطع واحد فقط
-      
+
       if (videos.length === 0) {
         return api.sendMessage("❓ | لم أتمكن من العثور على أي مقاطع فيديو.", event.threadID, event.messageID);
       }
@@ -33,12 +28,12 @@ export default {
       const { url, title: videoTitle } = video;
 
       // الحصول على رابط تحميل الفيديو
-      const downloadUrlResponse = await axios.get(`https://joncll.serv00.net/videodl.php?url=${encodeURIComponent(url)}`);
+      const downloadUrlResponse = await axios.get(`https://www.noobs-api.000.pe/dipto/alldl?url=${encodeURIComponent(url)}`);
       if (downloadUrlResponse.status !== 200) {
         throw new Error(`فشل الحصول على رابط التنزيل: ${downloadUrlResponse.statusText}`);
       }
 
-      const downloadLink = downloadUrlResponse.data.video;
+      const downloadLink = downloadUrlResponse.data.result;
       if (!downloadLink) {
         throw new Error("لم يتم العثور على رابط تحميل.");
       }
