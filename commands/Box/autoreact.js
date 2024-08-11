@@ -19,11 +19,14 @@ export default {
 
   execute: async function({ api, event, args, messageReply }) {
     try {
+      api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
+  
       const { threadID, senderID } = event;
       const prompt = args.join(" ") || "hello";
       const link = messageReply?.attachments?.[0]?.type === "photo" ? messageReply.attachments[0].url : null;
       const response = await gpt4(prompt, senderID, link);
-      
+      api.setMessageReaction("✨", event.messageID, (err) => {}, true);
+  
       // إرسال الرسالة مع تحقق من وجود response
       const messageID = await api.sendMessage(response, threadID);
       global.client.handler.reply.set(messageID, {
