@@ -3,7 +3,7 @@ import fs from 'fs';
 
 async function getGreetingImage() {
   // تحديد المسار إلى مجلد 'ara.mp3'
-  const imagePath = path.join(process.cwd(), 'cache12', 'sista.mp4'); // تحديث اسم الصورة إذا كان مختلفًا
+  const imagePath = path.join(process.cwd(), 'cache12', 'ara.mp3'); // تحديث اسم الصورة إذا كان مختلفًا
   return fs.createReadStream(imagePath);
 }
 
