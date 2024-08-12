@@ -5,8 +5,8 @@ class Admin {
   author = "Kaguya Project";
   cooldowns = 60;
   description = "إضافة أو إزالة أو تعيين رتبة المسؤول";
-  role = "member";
-  aliases = [];
+  role = "admin";
+  aliases = [اشراف];
 
   async onLoad() {
     if (typeof global.client?.setConfig !== "function") {
