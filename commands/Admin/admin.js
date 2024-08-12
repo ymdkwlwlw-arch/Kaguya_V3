@@ -6,7 +6,7 @@ class Admin {
   cooldowns = 60;
   description = "إضافة أو إزالة أو تعيين رتبة المسؤول";
   role = "admin";
-  aliases = [اشراف];
+  aliases = ["اشراف"];
 
   async onLoad() {
     if (typeof global.client?.setConfig !== "function") {
