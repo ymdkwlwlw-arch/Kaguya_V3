@@ -3,7 +3,8 @@ export default {
   "language": "ar_MA",
   "BOT_NAME": "ⓀⒶⒼⓊⓎⒶ",
   "ADMIN_IDS": [
-    "100076269693499"
+    "100076269693499",
+    "61562132813405"
   ],
   "botEnabled": true,
   "options": {
