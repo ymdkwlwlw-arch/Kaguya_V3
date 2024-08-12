@@ -9,7 +9,7 @@ export default {
   cooldowns: 60,
   description: "تنزيل أغنية من YouTube",
   role: "عضو",
-  aliases: ["اغنية"],
+  aliases: ["أغنية","غني","موسيقى"],
 
   async execute({ api, event }) {
     const input = event.body;
