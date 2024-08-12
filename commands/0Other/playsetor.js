@@ -8,8 +8,18 @@ export default {
   author: 'حسين يعقوبي', // مؤلف الأمر
   role: 'member', // الدور المطلوب لاستخدام الأمر
   description: 'يعرض معلومات عن مالك الأمر.', // وصف الأمر
-  async execute({ api, event }) {
+  aliases:['مطور','المالك'],
+  async execute({ api, event, Economy }) {
     try {
+      
+      const userMoney = (await Economy.getBalance(event.senderID)).data;
+      const cost = 1000;
+      if (userMoney < cost) {
+        return api.sendMessage(`⚠️ | إدفع ${cost} دولار أولاً من أجل ان ترى من هو المطور`, event.threadID);
+      }
+
+      // الخصم من الرصيد
+      await Economy.decrease(cost, event.senderID);
 
       api.setMessageReaction('🚀', event.messageID, (err) => {}, true);
       // معلومات المالك
