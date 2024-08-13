@@ -2,33 +2,42 @@ import axios from 'axios';
 
 export default {
   name: "رابط2",
-  author: "ArYAN",
-  role: "member",
-  description: "رفع الصور كرابط الى موقع ايمجور",
-
-  execute: async ({ api, event }) => {
-    const imageUrl = event.messageReply?.attachments?.[0]?.url;
-    if (!imageUrl) {
-      return api.sendMessage('⚠️ | رد على صورة.', event.threadID, event.messageID);
+  author: "YourName",
+  role: "user", // تحديد الدور المناسب بناءً على متطلبات البوت
+  description: "Convert media attachments to a short link.",
+  execute: async function ({ api, event }) {
+    const url = event.messageReply?.attachments[0]?.url;
+    
+    if (!url) {
+      return api.sendMessage(
+        "⚠️ | قم بالرد على , مقطع , صوت , صورة متحركة , صورة .",
+        event.threadID,
+        event.messageID
+      );
     }
 
-    const apiUrl = `https://api.kenliejugarap.com/imgur/?imageLink=${encodeURIComponent(imageUrl)}`;
-
     try {
-      const response = await axios.get(apiUrl);
-      const { data } = response;
+      const baseApiUrl = 'https://g-v1.onrender.com';
 
-      if (data.error) {
-        return api.sendMessage(data.error, event.threadID, event.messageID);
+      const uploadResponse = await axios.post(`${baseApiUrl}/v1/upload`, null, {
+        params: { url: url },
+      });
+
+      if (uploadResponse.status !== 200 || !uploadResponse.data.link) {
+        throw new Error('Failed to upload media.');
       }
 
-      const imgurLink = data.link;
-      api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-      return api.sendMessage(`${imgurLink}`, event.threadID, event.messageID);
+      const shortLink = uploadResponse.data.link;
+
+      return api.sendMessage(shortLink, event.threadID, event.messageID);
 
     } catch (error) {
-      console.error('Error:', error.message);
-      return api.sendMessage('🚧 | حدث خطأ أثناء معالجة طلبك.', event.threadID, event.messageID);
+      console.error("Error during media conversion:", error);
+      return api.sendMessage(
+        "❌ | Failed to convert media into a link.",
+        event.threadID,
+        event.messageID
+      );
     }
   }
 };
