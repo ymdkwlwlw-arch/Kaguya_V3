@@ -1,11 +1,11 @@
 import sleep from "time-sleep";
 
 export default {
-  name: "طرد",
+  name: "kick",
   author: "YourName",
   role: "admin",
-  description: "Kick users based on message count or blocked status.",
-  execute: async function ({ api, args, event, Threads, Users }) {
+  description: "Kick users based on message count.",
+  execute: async function ({ api, args, event, Threads }) {
     const threadData = (await Threads.find(event.threadID))?.data?.data;
 
     if (!threadData || !threadData.adminIDs.includes(api.getCurrentUserID())) {
@@ -25,57 +25,30 @@ export default {
           });
         }
       });
-    } else if (args[0] === "die") {
-      // استخدم Users.find للحصول على معلومات المستخدمين
-      const usersData = await Users.find();
-
-      const membersBlocked = usersData.filter(user => user.data.banned.status === true);
-      const errors = [];
-      const success = [];
-
-      for (const user of membersBlocked) {
-        if (!threadData.adminIDs.includes(user.uid)) {
-          try {
-            await api.removeUserFromGroup(user.uid, event.threadID);
-            success.push(user.uid);
-          } catch (e) {
-            errors.push(user.data.name);
-          }
-          await sleep(700);
-        }
-      }
-
-      let msg = "";
-      if (success.length > 0)
-        msg += `✅ | تمت الإزالة بنجاح ${success.length} حساب من الأعضاء المحظورين\n`;
-      if (errors.length > 0)
-        msg += `❌ | حدث خطأ وتعذر طرد ${errors.length} من الأعضاء:\n${errors.join("\n")}\n`;
-      if (msg === "")
-        msg += "✅ | لا يوجد أعضاء محظورين";
-      return api.sendMessage(msg, event.threadID);
     } else {
-      return api.sendMessage("❌ | استخدام غير صحيح. يرجى تقديم عدد الرسائل أو 'die'.", event.threadID);
+      return api.sendMessage("❌ | استخدام غير صحيح. يرجى تقديم عدد الرسائل.", event.threadID);
     }
   },
 
   onReply: async ({ api, event, reply, Threads, Users }) => {
     if (reply.type === "pick" && event.senderID === reply.author) {
       if (event.body.trim().toLowerCase() === "تم") {
-        const threadData = (await Threads.find(event.threadID))?.data?.data;
+        const threadInfo = await api.getThreadInfo(event.threadID);
 
-        if (!threadData || !threadData.adminIDs.includes(event.senderID)) {
+        if (!threadInfo || !threadInfo.adminIDs.includes(event.senderID)) {
           return api.sendMessage("❌ | تم الرفض: ليست لديك الصلاحيات للوصول الى هذا الأمر", event.threadID);
         }
 
         const minimum = parseInt(reply.messageID.split("_")[1], 10);
 
-        // استخدم Users.find للحصول على معلومات المستخدمين
+        // لاستخراج عدد الرسائل لكل عضو، افترض أن لديك طريقة لتخزين ذلك.
+        // هذا مجرد مثال تخيلي حيث يجب أن يكون لديك بيانات عدد الرسائل.
         const usersData = await Users.find();
 
         const membersCountLess = usersData.filter(member =>
           member.data.exp < minimum &&
           member.data.type === "friend" && // استخدم نوع الصداقة لتصفية الأعضاء
-          !threadData.adminIDs.includes(member.uid)
+          !threadInfo.adminIDs.includes(member.uid)
         );
 
         const errors = [];
