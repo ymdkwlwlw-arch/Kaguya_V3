@@ -2,43 +2,47 @@ import sleep from "time-sleep";
 
 export default {
   name: "تصفية",
-  author: "حسين يعقوبي",
-  cooldowns: 60,
-  description: "طرد الأعضاء بناءً على عدد الرسائل أو من قائمة الحظر",
+  author: "YourName",
   role: "admin",
-  aliases: ["تصفية"],
+  description: "Kick users based on message count or blocked status.",
+  execute: async function ({ api, args, event, Threads, Users }) {
+    // جلب جميع معلومات المحادثات
+    const { data } = await Threads.getAll();
+    const thread = data.find(t => t.threadID === event.threadID);
 
-  async execute({ api, args, event, message }) {
-    const threadData = await threadsData.get(event.threadID);
-    const botID = api.getCurrentUserID();
-    
-    if (!threadData.adminIDs.includes(botID))
+    if (!thread || !thread.adminIDs.includes(api.getCurrentUserID())) {
       return api.sendMessage("⚠️ | الرجاء إضافة البوت كآدمن في المجموعة لاستخدام هذا الأمر", event.threadID);
+    }
 
     if (!isNaN(args[0])) {
-      api.sendMessage(`⚠️ | هل أنت متأكد أنك تريد طرد أعضاء المجموعة الذين لديهم أقل من ${args[0]} رسائل؟\nقم بالرد على هذه الرسالة ب "تم" من أجل التأكيد`, event.threadID, (err, info) => {
-        if (!err) {
+      return api.sendMessage(`⚠️ | هل أنت متأكد أنك تريد طرد أعضاء المجموعة الذين لديهم أقل من ${args[0]} رسالة ?\nقم بالرد على هذه الرسالة ب "تم" من أجل التأكيد`, event.threadID, (err, info) => {
+        if (err) {
+          console.error("Error sending confirmation message:", err);
+        } else {
           global.client.handler.reply.set(info.messageID, {
             author: event.senderID,
             type: "pick",
             name: "تصفية",
             unsend: true,
           });
-        } else {
-          console.error("Error sending message:", err);
         }
       });
-    } else if (args[0] === "die") {
-      const threadInfo = await api.getThreadInfo(event.threadID);
-      const membersBlocked = threadInfo.userInfo.filter(user => user.type !== "User");
+    } else if (args[0] === "موت") {
+      const membersBlocked = thread.userInfo.filter(user => user.type !== "User");
       const errors = [];
       const success = [];
-      
+
       for (const user of membersBlocked) {
-        if (user.type !== "User" && !threadInfo.adminIDs.includes(user.id)) {
+        if (user.type !== "User" && !thread.adminIDs.includes(user.id)) {
           try {
-            await api.removeUserFromGroup(user.id, event.threadID);
-            success.push(user.id);
+            // تحقق من حالة الحظر قبل الطرد
+            const userData = await Users.get(user.id);
+            if (userData && userData.isBanned) {
+              await api.removeUserFromGroup(user.id, event.threadID);
+              success.push(user.id);
+            } else {
+              errors.push(user.name);
+            }
           } catch (e) {
             errors.push(user.name);
           }
@@ -53,34 +57,41 @@ export default {
         msg += `❌ | حدث خطأ وتعذر طرد ${errors.length} من الأعضاء:\n${errors.join("\n")}\n`;
       if (msg === "")
         msg += "✅ | لا يوجد أعضاء الذين تم تأمينهم";
-
-      api.sendMessage(msg, event.threadID);
+      return api.sendMessage(msg, event.threadID);
     } else {
-      message.SyntaxError();
+      return api.sendMessage("❌ | استخدام غير صحيح. يرجى تقديم عدد الرسائل أو "موت".", event.threadID);
     }
   },
 
-  onReply: async ({ api, event, reply }) => {
+  onReply: async ({ api, event, reply, Threads, Users }) => {
+    // التحقق من أن الشخص الذي يرد هو نفس الشخص الذي أرسل الأمر الأصلي
     if (reply.type === "pick" && event.senderID === reply.author) {
       if (event.body.trim().toLowerCase() === "تم") {
-        const threadData = await threadsData.get(event.threadID);
-        const botID = api.getCurrentUserID();
-        const minimum = parseInt(reply.messageID.split(" ")[1]); // Extract minimum value from messageID or modify as needed
-        const membersCountLess = threadData.members.filter(member =>
+        const { data } = await Threads.getAll();
+        const thread = data.find(t => t.threadID === event.threadID);
+
+        if (!thread || !thread.adminIDs.includes(event.senderID)) {
+          return api.sendMessage("❌ | تم الرفض: ليست لديك الصلاحيات للوصول الى هذا الأمر", event.threadID);
+        }
+
+        const minimum = parseInt(reply.messageID.split("_")[1], 10); // Assuming the minimum messages are encoded in the reply.messageID
+
+        const membersCountLess = thread.userInfo.filter(member =>
           member.count < minimum &&
-          member.inGroup === true &&
-          member.userID !== botID &&
-          !threadData.adminIDs.includes(member.userID)
+          member.inGroup &&
+          member.userID !== api.getCurrentUserID() &&
+          !thread.adminIDs.includes(member.userID)
         );
+
         const errors = [];
         const success = [];
-        
+
         for (const member of membersCountLess) {
           try {
             await api.removeUserFromGroup(member.userID, event.threadID);
             success.push(member.userID);
           } catch (e) {
-            errors.push(member.name);
+            errors.push(member.userID);
           }
           await sleep(700);
         }
@@ -92,13 +103,12 @@ export default {
           msg += `❌ | حدث خطأ وتعذر طرد ${errors.length} من الأعضاء:\n${errors.join("\n")}\n`;
         if (msg === "")
           msg += `✅ | لا يوجد أعضاء لديهم أقل من ${minimum} رسالة`;
-
-        api.sendMessage(msg, event.threadID);
+        return api.sendMessage(msg, event.threadID);
       } else {
-        api.sendMessage("⚠️ | تم الرفض، ليست لديك الصلاحيات للوصول إلى هذا الأمر.", event.threadID);
+        return api.sendMessage("❌ | تم الرفض: رد غير صحيح", event.threadID);
       }
     } else {
-      api.sendMessage("⚠️ | تم الرفض، ليست لديك الصلاحيات للوصول إلى هذا الأمر.", event.threadID);
+      return api.sendMessage("❌ | تم الرفض: ليست لديك الصلاحيات للوصول الى هذا الأمر", event.threadID);
     }
   }
 };
