@@ -1,6 +1,7 @@
 import jimp from 'jimp';
 import fs from 'fs';
 import path from 'path';
+import Threads from 'path-to-your-threads-module'; // استبدل بالمسار الصحيح لوحدة Threads
 
 async function getProfilePicture(userID) {
   const url = `https://graph.facebook.com/${userID}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
@@ -15,17 +16,27 @@ async function getProfilePicture(userID) {
   }
 }
 
-async function getMessageCounts(api, threadId) {
+async function getThreadInfo(threadID) {
   try {
-    const participants = await api.getThreadInfo(threadId);
-    const participantIDs = participants.participantIDs || [];
+    const threadData = await Threads.find(threadID);
+    return threadData?.data || {};
+  } catch (error) {
+    console.error("Error fetching thread info:", error.message);
+    return {};
+  }
+}
+
+async function getMessageCounts(api, threadID) {
+  try {
+    const threadInfo = await getThreadInfo(threadID);
+    const participantIDs = threadInfo.members || [];
     const messageCounts = {};
 
     participantIDs.forEach(participantId => {
       messageCounts[participantId] = 0;
     });
 
-    const messages = await api.getThreadHistory(threadId, 1000); // Adjust message count limit as needed
+    const messages = await api.getThreadHistory(threadID, 1000); // Adjust message count limit as needed
     messages.forEach(message => {
       const messageSender = message.senderID;
       if (messageCounts[messageSender] !== undefined) {
@@ -77,10 +88,6 @@ export default {
       // استخدام Economy.getBalance لجلب الرصيد
       const balanceResult = await Economy.getBalance(uid);
       const money = balanceResult.data;
-
-      const userDataFile = path.join(process.cwd(), 'pontsData.json');
-      const userData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
-      const userPoints = userData[event.senderID]?.points || 0;
 
       // جلب عدد الرسائل للمستخدم
       const messageCounts = await getMessageCounts(api, event.threadID);
