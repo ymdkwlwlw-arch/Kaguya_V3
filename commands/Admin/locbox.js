@@ -27,7 +27,7 @@ const find = async (uid) => {
 };
 
 export default {
-  name: "kick",
+  name: "تصفية",
   author: "YourName",
   role: "admin",
   description: "Kick users based on message count or blocked status.",
