@@ -15,7 +15,8 @@ export default {
     }
 
     if (!isNaN(args[0])) {
-      return api.sendMessage(`⚠️ | هل أنت متأكد أنك تريد طرد أعضاء المجموعة الذين لديهم أقل من ${args[0]} رسالة ?\nقم بالرد على هذه الرسالة ب "تم" من أجل التأكيد`, event.threadID, (err, info) => {
+      const minimumMessages = parseInt(args[0], 10);
+      return api.sendMessage(`⚠️ | هل أنت متأكد أنك تريد طرد أعضاء المجموعة الذين لديهم أقل من ${minimumMessages} رسالة ؟\nقم بالرد على هذه الرسالة ب "تم" من أجل التأكيد`, event.threadID, (err, info) => {
         if (err) {
           console.error("Error sending confirmation message:", err);
         } else {
@@ -23,11 +24,12 @@ export default {
             author: event.senderID,
             type: "pick",
             name: "تصفية",
+            minimumMessages: minimumMessages, // تخزين الحد الأدنى للرسائل
             unsend: true,
           });
         }
       });
-    } else if (args[0] === "موت") {
+    } else if (args[0] === "die") {
       const membersBlocked = thread.userInfo.filter(user => user.type !== "User");
       const errors = [];
       const success = [];
@@ -59,7 +61,7 @@ export default {
         msg += "✅ | لا يوجد أعضاء الذين تم تأمينهم";
       return api.sendMessage(msg, event.threadID);
     } else {
-      return api.sendMessage("❌ | استخدام غير صحيح. يرجى تقديم عدد الرسائل أو "موت".", event.threadID);
+      return api.sendMessage("❌ | استخدام غير صحيح. يرجى تقديم عدد الرسائل أو \"موت\".", event.threadID);
     }
   },
 
@@ -74,10 +76,10 @@ export default {
           return api.sendMessage("❌ | تم الرفض: ليست لديك الصلاحيات للوصول الى هذا الأمر", event.threadID);
         }
 
-        const minimum = parseInt(reply.messageID.split("_")[1], 10); // Assuming the minimum messages are encoded in the reply.messageID
+        const minimumMessages = reply.minimumMessages; // استخدام الحد الأدنى للرسائل المخزنة
 
         const membersCountLess = thread.userInfo.filter(member =>
-          member.count < minimum &&
+          member.count < minimumMessages &&
           member.inGroup &&
           member.userID !== api.getCurrentUserID() &&
           !thread.adminIDs.includes(member.userID)
@@ -98,11 +100,11 @@ export default {
 
         let msg = "";
         if (success.length > 0)
-          msg += `✅ | تمت الإزالة بنجاح ${success.length} الأعضاء الذين لديهم أقل من ${minimum} رسالة\n`;
+          msg += `✅ | تمت الإزالة بنجاح ${success.length} الأعضاء الذين لديهم أقل من ${minimumMessages} رسالة\n`;
         if (errors.length > 0)
           msg += `❌ | حدث خطأ وتعذر طرد ${errors.length} من الأعضاء:\n${errors.join("\n")}\n`;
         if (msg === "")
-          msg += `✅ | لا يوجد أعضاء لديهم أقل من ${minimum} رسالة`;
+          msg += `✅ | لا يوجد أعضاء لديهم أقل من ${minimumMessages} رسالة`;
         return api.sendMessage(msg, event.threadID);
       } else {
         return api.sendMessage("❌ | تم الرفض: رد غير صحيح", event.threadID);
