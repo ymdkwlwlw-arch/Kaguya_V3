@@ -1,7 +1,7 @@
 import jimp from 'jimp';
 import fs from 'fs';
 import path from 'path';
- // استبدل بالمسار الصحيح لوحدة Threads
+// تأكد من استبدال هذا بالمسار الصحيح لوحدة 
 
 async function getProfilePicture(userID) {
   const url = `https://graph.facebook.com/${userID}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
@@ -16,7 +16,7 @@ async function getProfilePicture(userID) {
   }
 }
 
-async function getThreadInfo(threadID) {
+async function getThreadInfo(threadID, Threads) {
   try {
     const threadData = await Threads.find(threadID);
     return threadData?.data || {};
@@ -26,9 +26,9 @@ async function getThreadInfo(threadID) {
   }
 }
 
-async function getMessageCounts(api, threadID) {
+async function getMessageCounts(api, threadID, Threads) {
   try {
-    const threadInfo = await getThreadInfo(threadID);
+    const threadInfo = await getThreadInfo(threadID, Threads);
     const participantIDs = threadInfo.members || [];
     const messageCounts = {};
 
@@ -90,7 +90,7 @@ export default {
       const money = balanceResult.data;
 
       // جلب عدد الرسائل للمستخدم
-      const messageCounts = await getMessageCounts(api, event.threadID);
+      const messageCounts = await getMessageCounts(api, event.threadID, Threads);
       const userMessageCount = messageCounts[uid] || 0;
 
       // تصنيف المستخدم باستخدام عدد الرسائل
