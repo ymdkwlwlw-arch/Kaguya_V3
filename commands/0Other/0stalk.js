@@ -1,8 +1,8 @@
 import jimp from 'jimp';
 import fs from 'fs';
 import path from 'path';
-// تأكد من استبدال هذا بالمسار الصحيح لوحدة 
 
+// جلب صورة الملف الشخصي
 async function getProfilePicture(userID) {
   const url = `https://graph.facebook.com/${userID}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
   try {
@@ -16,54 +16,28 @@ async function getProfilePicture(userID) {
   }
 }
 
-async function getThreadInfo(threadID, Threads) {
+// جلب عدد الرسائل لعضو معين
+async function getUserMessageCount(api, threadId, userId) {
   try {
-    const threadData = await Threads.find(threadID);
-    return threadData?.data || {};
-  } catch (error) {
-    console.error("Error fetching thread info:", error.message);
-    return {};
-  }
-}
+    const messages = await api.getThreadHistory(threadId, 10000);
+    if (!messages || !Array.isArray(messages)) {
+      console.error('Error fetching messages:', messages);
+      return 0;
+    }
 
-async function getMessageCounts(api, threadID, Threads) {
-  try {
-    const threadInfo = await getThreadInfo(threadID, Threads);
-    const participantIDs = threadInfo.members || [];
-    const messageCounts = {};
-
-    participantIDs.forEach(participantId => {
-      messageCounts[participantId] = 0;
-    });
-
-    const messages = await api.getThreadHistory(threadID, 1000); // Adjust message count limit as needed
+    let messageCount = 0;
     messages.forEach(message => {
-      const messageSender = message.senderID;
-      if (messageCounts[messageSender] !== undefined) {
-        messageCounts[messageSender]++;
+      if (message.senderID === userId) {
+        messageCount++;
       }
     });
 
-    return messageCounts;
-  } catch (error) {
-    console.error("Error fetching message counts:", error.message);
-    return {};
+    console.log(`User ${userId} Message Count:`, messageCount); // سجل تصحيح
+    return messageCount;
+  } catch (err) {
+    console.error('Error fetching message count:', err);
+    return 0;
   }
-}
-
-function getRank(userMessageCount) {
-  if (userMessageCount >= 3000) return 'خارق🥇';
-  if (userMessageCount >= 2000) return '🥈عظيم';
-  if (userMessageCount >= 1000) return '👑أسطوري';
-  if (userMessageCount >= 500) return 'نشط🔥 قوي';
-  if (userMessageCount >= 400) return '🌠نشط';
-  if (userMessageCount >= 300) return 'متفاعل🏅 قوي';
-  if (userMessageCount >= 200) return '🎖️متفاعل جيد';
-  if (userMessageCount >= 100) return '🌟متفاعل';
-  if (userMessageCount >= 50) return '✨لا بأس';
-  if (userMessageCount >= 10) return '👾مبتدأ';
-  if (userMessageCount >= 5) return '🗿صنم';
-  return 'ميت⚰️';
 }
 
 export default {
@@ -72,7 +46,7 @@ export default {
   role: "member",
   description: "جلب معلومات العضو.",
   aliases: ["ايدي"],
-  execute: async function({ api, event, args, Economy, Threads }) {
+  execute: async function({ api, event, args, Economy }) {
     try {
       const uid = event?.messageReply?.senderID || (Object.keys(event.mentions).length > 0 ? Object.keys(event.mentions)[0] : event.senderID);
       const userInfo = await api.getUserInfo(parseInt(uid));
@@ -90,8 +64,7 @@ export default {
       const money = balanceResult.data;
 
       // جلب عدد الرسائل للمستخدم
-      const messageCounts = await getMessageCounts(api, event.threadID, Threads);
-      const userMessageCount = messageCounts[uid] || 0;
+      const userMessageCount = await getUserMessageCount(api, event.threadID, uid);
 
       // تصنيف المستخدم باستخدام عدد الرسائل
       const rank = getRank(userMessageCount);
@@ -111,4 +84,20 @@ export default {
       api.sendMessage('❌ | حدث خطأ أثناء جلب المعلومات. الرجاء معاودة المحاولة في وقت لاحق.', event.threadID, event.messageID);
     }
   }
-};
+}
+
+// دالة لتحديد تصنيف المستخدم بناءً على عدد الرسائل
+function getRank(userMessageCount) {
+  if (userMessageCount >= 3000) return 'خارق🥇';
+  if (userMessageCount >= 2000) return '🥈عظيم';
+  if (userMessageCount >= 1000) return '👑أسطوري';
+  if (userMessageCount >= 500) return 'نشط🔥 قوي';
+  if (userMessageCount >= 400) return '🌠نشط';
+  if (userMessageCount >= 300) return 'متفاعل🏅 قوي';
+  if (userMessageCount >= 200) return '🎖️متفاعل جيد';
+  if (userMessageCount >= 100) return '🌟متفاعل';
+  if (userMessageCount >= 50) return '✨لا بأس';
+  if (userMessageCount >= 10) return '👾مبتدأ';
+  if (userMessageCount >= 5) return '🗿صنم';
+  return 'ميت⚰️';
+}
