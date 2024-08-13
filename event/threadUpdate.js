@@ -30,6 +30,9 @@ export default {
         case "log:thread-icon":
           await handleThreadIconChange(api, event, Threads, threads);
           break;
+        case "change_thread_nickname":
+          await handleNicknameChange(api, event, Threads, threads);
+          break;
         default:
           break;
       }
@@ -38,6 +41,33 @@ export default {
     }
   },
 };
+
+// التعامل مع تغيير الكنية
+async function handleNicknameChange(api, event, Threads, threads) {
+  const { userID, newNickname } = event.logMessageData;
+
+  if (threads.anti?.nicknameBox) {
+    await api.setUserNickname(userID, threads.data.oldNicknames[userID] || "");
+    return api.sendMessage(
+      `❌ | ميزة حماية الكنية مفعلة، لذا لم يتم تغيير كنية العضو 🔖 |<${event.threadID}> - ${threads.name}`,
+      event.threadID
+    );
+  }
+
+  // تحديث الكنية في البيانات
+  threads.data.oldNicknames = threads.data.oldNicknames || {};
+  threads.data.oldNicknames[userID] = newNickname;
+
+  await Threads.update(event.threadID, {
+    data: threads.data,
+  });
+
+  const adminName = await getUserName(api, event.author);
+  api.sendMessage(
+    `تم تغيير كنية العضو <${userID}> إلى: ${newNickname} 🔖 | بواسطة: ${adminName}`,
+    event.threadID
+  );
+}
 
 // التعامل مع تغيير الاسم
 async function handleThreadName(api, event, Threads, threads) {
@@ -86,7 +116,7 @@ async function handleAdminChange(api, event, Threads, threads) {
   const action = ADMIN_EVENT === "add_admin" ? "✅ إضافة" : "❌ إزالة";
   const adminName = await getUserName(api, TARGET_ID);
   api.sendMessage(
-    `🔖 | تمت ${action} ${adminName} كمدير في المجموعة`,
+    `🔖 | تمت ${action} ${adminName} كآدمن في المجموعة`,
     event.threadID
   );
 }
