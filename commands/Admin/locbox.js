@@ -1,7 +1,7 @@
 import sleep from "time-sleep";
 
 export default {
-  name: "kick",
+  name: "تصفية",
   author: "YourName",
   role: "admin",
   description: "Kick users based on message count.",
