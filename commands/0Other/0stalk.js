@@ -1,7 +1,7 @@
 import jimp from 'jimp';
 import fs from 'fs';
 import path from 'path';
-import Threads from 'path-to-your-threads-module'; // استبدل بالمسار الصحيح لوحدة Threads
+ // استبدل بالمسار الصحيح لوحدة Threads
 
 async function getProfilePicture(userID) {
   const url = `https://graph.facebook.com/${userID}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
@@ -72,7 +72,7 @@ export default {
   role: "member",
   description: "جلب معلومات العضو.",
   aliases: ["ايدي"],
-  execute: async function({ api, event, args, Economy }) {
+  execute: async function({ api, event, args, Economy, Threads }) {
     try {
       const uid = event?.messageReply?.senderID || (Object.keys(event.mentions).length > 0 ? Object.keys(event.mentions)[0] : event.senderID);
       const userInfo = await api.getUserInfo(parseInt(uid));
