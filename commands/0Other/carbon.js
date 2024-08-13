@@ -9,7 +9,13 @@ export default {
     // استخراج البيانات من الرسالة
     const args = event.body.split(' ');
     const coins = parseInt(args[1], 10);
-    const targetUID = args[2];
+    let targetUID = args[2]; // افتراضيًا، نبدأ بالمعرف المقدم
+
+    // التحقق مما إذا كان هناك رد على شخص آخر
+    if (event.mentions && Object.keys(event.mentions).length > 0) {
+      // التحقق مما إذا تم ذكر شخص آخر في الرسالة
+      targetUID = Object.keys(event.mentions)[0];
+    }
 
     // التحقق من صحة المدخلات
     if (isNaN(coins) || coins <= 0 || !targetUID) {
