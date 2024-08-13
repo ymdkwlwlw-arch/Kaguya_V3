@@ -1,38 +1,11 @@
 import sleep from "time-sleep";
 
-// دالة للتحقق من حالة الحظر
-const find = async (uid) => {
-  try {
-    let user;
-
-    if (databaseType === "json") {
-      user = Users.find((i) => i?.uid === uid);
-    } else if (databaseType === "mongodb") {
-      user = await Users.find({ uid });
-    }
-
-    return {
-      status: Boolean(user),
-      data: user || null,
-      banned: user?.data?.banned?.status ?? false, // التحقق من حالة الحظر
-    };
-  } catch (error) {
-    console.error(error);
-    return {
-      status: false,
-      data: "Đã xảy ra lỗi hệ thống!",
-      banned: false, // عند حدوث خطأ، قم بإرجاع حالة الحظر كـ false
-    };
-  }
-};
-
 export default {
-  name: "تصفية",
+  name: "طرد",
   author: "YourName",
   role: "admin",
   description: "Kick users based on message count or blocked status.",
   execute: async function ({ api, args, event, Threads, Users }) {
-    // جلب جميع معلومات المحادثات
     const threadData = (await Threads.find(event.threadID))?.data?.data;
 
     if (!threadData || !threadData.adminIDs.includes(api.getCurrentUserID())) {
@@ -40,7 +13,7 @@ export default {
     }
 
     if (!isNaN(args[0])) {
-      return api.sendMessage(`⚠️ | هل أنت متأكد أنك تريد طرد أعضاء المجموعة الذين لديهم أقل من ${args[0]} رسائل?\nقم بالرد على هذه الرسالة ب "تم" من أجل التأكيد`, event.threadID, (err, info) => {
+      return api.sendMessage(`⚠️ | هل أنت متأكد أنك تريد طرد أعضاء المجموعة الذين لديهم أقل من ${args[0]} رسائل؟\nقم بالرد على هذه الرسالة ب "تم" من أجل التأكيد`, event.threadID, (err, info) => {
         if (err) {
           console.error("Error sending confirmation message:", err);
         } else {
@@ -53,21 +26,20 @@ export default {
         }
       });
     } else if (args[0] === "die") {
-      const membersBlocked = threadData.userInfo.filter(user => user.type !== "User");
+      // استخدم Users.find للحصول على معلومات المستخدمين
+      const usersData = await Users.find();
+
+      const membersBlocked = usersData.filter(user => user.data.banned.status === true);
       const errors = [];
       const success = [];
 
       for (const user of membersBlocked) {
-        if (user.type !== "User" && !threadData.adminIDs.includes(user.id)) {
+        if (!threadData.adminIDs.includes(user.uid)) {
           try {
-            const userData = await find(user.id);
-            if (userData.banned) {
-              continue; // تخطي الأعضاء المحظورين
-            }
-            await api.removeUserFromGroup(user.id, event.threadID);
-            success.push(user.id);
+            await api.removeUserFromGroup(user.uid, event.threadID);
+            success.push(user.uid);
           } catch (e) {
-            errors.push(user.name);
+            errors.push(user.data.name);
           }
           await sleep(700);
         }
@@ -75,11 +47,11 @@ export default {
 
       let msg = "";
       if (success.length > 0)
-        msg += `✅ | تمت الإزالة بنجاح ${success.length} حساب الأعضاء الذين تمت إزالتهم\n`;
+        msg += `✅ | تمت الإزالة بنجاح ${success.length} حساب من الأعضاء المحظورين\n`;
       if (errors.length > 0)
         msg += `❌ | حدث خطأ وتعذر طرد ${errors.length} من الأعضاء:\n${errors.join("\n")}\n`;
       if (msg === "")
-        msg += "✅ | لا يوجد أعضاء الذين تم تأمينهم";
+        msg += "✅ | لا يوجد أعضاء محظورين";
       return api.sendMessage(msg, event.threadID);
     } else {
       return api.sendMessage("❌ | استخدام غير صحيح. يرجى تقديم عدد الرسائل أو 'die'.", event.threadID);
@@ -87,23 +59,23 @@ export default {
   },
 
   onReply: async ({ api, event, reply, Threads, Users }) => {
-    // التحقق من أن الشخص الذي يرد هو نفس الشخص الذي أرسل الأمر الأصلي
     if (reply.type === "pick" && event.senderID === reply.author) {
       if (event.body.trim().toLowerCase() === "تم") {
-        const { data } = await Threads.getAll();
-        const thread = data.find(t => t.threadID === event.threadID);
+        const threadData = (await Threads.find(event.threadID))?.data?.data;
 
-        if (!thread || !thread.adminIDs.includes(event.senderID)) {
+        if (!threadData || !threadData.adminIDs.includes(event.senderID)) {
           return api.sendMessage("❌ | تم الرفض: ليست لديك الصلاحيات للوصول الى هذا الأمر", event.threadID);
         }
 
-        const minimum = parseInt(reply.messageID.split("_")[1], 10); // Assuming the minimum messages are encoded in the reply.messageID
+        const minimum = parseInt(reply.messageID.split("_")[1], 10);
 
-        const membersCountLess = thread.userInfo.filter(member =>
-          member.count < minimum &&
-          member.inGroup &&
-          member.userID !== api.getCurrentUserID() &&
-          !thread.adminIDs.includes(member.userID)
+        // استخدم Users.find للحصول على معلومات المستخدمين
+        const usersData = await Users.find();
+
+        const membersCountLess = usersData.filter(member =>
+          member.data.exp < minimum &&
+          member.data.type === "friend" && // استخدم نوع الصداقة لتصفية الأعضاء
+          !threadData.adminIDs.includes(member.uid)
         );
 
         const errors = [];
@@ -111,21 +83,17 @@ export default {
 
         for (const member of membersCountLess) {
           try {
-            const userData = await find(member.userID);
-            if (userData.banned) {
-              continue; // تخطي الأعضاء المحظورين
-            }
-            await api.removeUserFromGroup(member.userID, event.threadID);
-            success.push(member.userID);
+            await api.removeUserFromGroup(member.uid, event.threadID);
+            success.push(member.uid);
           } catch (e) {
-            errors.push(member.userID);
+            errors.push(member.data.name);
           }
           await sleep(700);
         }
 
         let msg = "";
         if (success.length > 0)
-          msg += `✅ | تمت الإزالة بنجاح ${success.length} الأعضاء الذين لديهم أقل من ${minimum} رسالة\n`;
+          msg += `✅ | تمت الإزالة بنجاح ${success.length} من الأعضاء الذين لديهم أقل من ${minimum} رسالة\n`;
         if (errors.length > 0)
           msg += `❌ | حدث خطأ وتعذر طرد ${errors.length} من الأعضاء:\n${errors.join("\n")}\n`;
         if (msg === "")
