@@ -97,22 +97,3 @@ export default {
     );
   },
 };
-قم يجعلها بنك الرد من أجل الموافقة بدل كتاب.ة موافقة إضافة 
-يتم فقط الرد برقم من أجل قبول 
-
-async function onReply({ api, event, reply }) {
-  if (reply.type !== 'pick') return;
-
-  const { author, groupList } = reply;
-
-  if (event.senderID !== author) returnبالرد  الأجزاء
- الخاصة بالرد 
-global.client.handler.reply.set(info.messageID, {
-            author: event.senderID,
-            type: "pick",
-            name: "قبول",
-            groupList: filteredList,
-            unsend: true,
-          });
-        });
-
