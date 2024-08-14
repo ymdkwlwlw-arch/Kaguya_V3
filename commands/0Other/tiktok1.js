@@ -10,7 +10,7 @@ async function iphoneAlert({ api, event, args }) {
     const imagePath = path.join(process.cwd(), 'cache', `${timestamp}_NETHisPOGI.png`);
 
     if (!query) {
-      return api.sendMessage(" ⚠️ | أدخل شيئا اولا\nمثال : *آيفون أهلا يا صاح", threadID, messageID);
+      return api.sendMessage(" ⚠️ | أدخل شيئا اولا\nمثال : آيفون أهلا يا صاح", threadID, messageID);
     }
 
     api.setMessageReaction("📱", event.messageID, () => {}, true);
