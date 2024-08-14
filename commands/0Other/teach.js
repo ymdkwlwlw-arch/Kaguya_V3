@@ -28,7 +28,7 @@ export default {
       const answer = validAnswers.includes(randomQuestion.answer) ? randomQuestion.answer : "غير معروف";
 
       // إرسال السؤال مع الخيارات
-      const message = `✿━━━━━━━━━━━━━━━━━✿\n ${question}\n❏أ: ${options.أ}\n❏ب: ${options.ب}\n❏ت: ${options.ت}\n❏ث: ${options.ث}\nقم بالرد على الرسالة اعلاه بالحرف على الجواب الصحيح\n✿━━━━━━━━━━━━━━━━━✿`;
+      const message = `✿━━━━━━━━━━━━━━━━✿\n ${question}\n❏أ: ${options.أ}\n❏ب: ${options.ب}\n❏ت: ${options.ت}\n❏ث: ${options.ث}\nقم بالرد على الرسالة اعلاه بالحرف على الجواب الصحيح\n✿━━━━━━━━━━━━━━━━✿`;
       api.sendMessage(message, event.threadID, (err, info) => {
         global.client.handler.reply.set(info.messageID, {
           author: event.senderID,
