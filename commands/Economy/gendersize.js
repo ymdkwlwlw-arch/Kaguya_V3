@@ -1,80 +1,122 @@
-
-const joinGroupCommand = async ({ api, event, args }) => {
-  try {
-    if (!args[0]) {
-      const groupList = await api.getThreadList(10, null, ['INBOX']);
-      const filteredList = groupList.filter(group => group.name !== null);
-
-      if (filteredList.length === 0) {
-        api.sendMessage('No group chats found.', event.threadID);
-      } else {
-        const formattedList = filteredList.map((group, index) =>
-          `│${index + 1}. ${group.name}\n│𝐓𝐈𝐃: ${group.threadID}\n│𝐓𝐨𝐭𝐚𝐥 𝐦𝐞𝐦𝐛𝐞𝐫𝐬: ${group.participantIDs.length}\n│`
-        );
-        const message = `╭─╮\n│𝐋𝐢𝐬𝐭 𝐨𝐟 𝐠𝐫𝐨𝐮𝐩 𝐜𝐡𝐚𝐭𝐬:\n${formattedList.map(line => `${line}`).join("\n")}\n╰───────────ꔪ\nالحد الأقصى للأعضاء = 250\n\nقم بالرد برقم إحدى المجموعات حتى تتم إضافتك في إحداهن`;
-
-        api.sendMessage(message, event.threadID, (err, info) => {
-          if (err) return console.error(err);
-          global.client.handler.reply.set(info.messageID, {
-            author: event.senderID,
-            type: "pick",
-            name: "إنضمام",
-            groupList: filteredList,
-            unsend: true,
-          });
-        });
-      }
-    } else {
-      api.sendMessage('يرجى الرد برقم المجموعة من القائمة.', event.threadID);
-    }
-  } catch (error) {
-    console.error("Error joining group chat", error);
-    api.sendMessage('حدث خطأ أثناء الانضمام إلى الدردشة الجماعية.\nيرجى المحاولة مرة أخرى لاحقًا.', event.threadID);
-  }
-};
-
-async function onReply({ api, event, reply }) {
-  if (reply.type !== 'pick') return;
-
-  const { author, groupList } = reply;
-
-  if (event.senderID !== author) return;
-
-  const selectedNumber = parseInt(event.body);
-
-  if (isNaN(selectedNumber) || selectedNumber < 1 || selectedNumber > groupList.length) {
-    api.sendMessage("رقم غير صالح. يرجى الرد برقم مجموعة صحيح من القائمة.", event.threadID);
-    return;
-  }
-
-  const selectedGroup = groupList[selectedNumber - 1];
-
-  try {
-    const memberList = await api.getThreadInfo(selectedGroup.threadID);
-    if (memberList.participantIDs.includes(event.senderID)) {
-      api.sendMessage(` ⚠️ | لا أستطيع إضافتك الى هذه المجموعة : \n${selectedGroup.name}`, event.threadID);
-      return;
-    }
-
-    if (memberList.participantIDs.length >= 250) {
-      api.sendMessage(` ❗ | لا يمكن إضافتك إلى هذه المجموعة لانها ممتلئة: \n${selectedGroup.name}`, event.threadID);
-      return;
-    }
-
-    await api.addUserToGroup(event.senderID, selectedGroup.threadID);
-    api.sendMessage(` ✅ | تمت إضافتك بنجاح الى هذه المجموعة : ${selectedGroup.name}`, event.threadID);
-  } catch (error) {
-    console.error("Error joining group chat", error);
-    api.sendMessage('حدث خطأ أثناء الانضمام إلى الدردشة الجماعية.\nيرجى المحاولة مرة أخرى لاحقًا.', event.threadID);
-  }
-  await api.unsendMessage(reply.messageID);
-}
+import moment from "moment-timezone";
 
 export default {
-  name: "إنضمام",
-  author: "Kshitiz",
-  role: 1,
-  description: "الإنضمام الى مجموعة محددة",
-  execute: joinGroupCommand,
-  onReply,
+  name: "قبول",
+  author: "kaguya project",
+  role: "admin",
+  description: "قبول الأصدقاء على فيسبوك",
+  execute: async function ({ api, event }) {
+    const handleApprove = async (targetUID) => {
+      const form = {
+        av: api.getCurrentUserID(),
+        fb_api_req_friendly_name: "FriendingCometFriendRequestConfirmMutation",
+        doc_id: "3147613905362928",
+        variables: JSON.stringify({
+          input: {
+            source: "friends_tab",
+            actor_id: api.getCurrentUserID(),
+            friend_requester_id: targetUID,
+            client_mutation_id: Math.round(Math.random() * 19).toString(),
+          },
+          scale: 3,
+          refresh_num: 0,
+        }),
+      };
+      const success = [];
+      const failed = [];
+      try {
+        const friendRequest = await api.httpPost(
+          "https://www.facebook.com/api/graphql/",
+          form,
+        );
+        if (JSON.parse(friendRequest).errors) failed.push(targetUID);
+        else success.push(targetUID);
+      } catch (e) {
+        failed.push(targetUID);
+      }
+      return { success, failed };
+    };
+
+    const form = {
+      av: api.getCurrentUserID(),
+      fb_api_req_friendly_name:
+        "FriendingCometFriendRequestsRootQueryRelayPreloader",
+      fb_api_caller_class: "RelayModern",
+      doc_id: "4499164963466303",
+      variables: JSON.stringify({ input: { scale: 3 } }),
+    };
+
+    const listRequest = JSON.parse(
+      await api.httpPost("https://www.facebook.com/api/graphql/", form),
+    ).data.viewer.friending_possibilities.edges;
+
+    let msg = "";
+    let i = 0;
+    const filteredList = [];
+
+    for (const user of listRequest) {
+      i++;
+      filteredList.push({ id: user.node.id, name: user.node.name });
+      msg +=
+        `\n${i}. الإسم: ${user.node.name}` +
+        `\nالمعرف: ${user.node.id}` +
+        `\nالرابط: ${user.node.url.replace("www.facebook", "fb")}` +
+        `\nالوقت: ${moment(user.time * 1009)
+          .tz("Africa/Casablanca")
+          .format("DD/MM/YYYY HH:mm:ss")}\n`;
+    }
+
+    api.sendMessage(
+      `${msg}\nالاصدقاء الذين ينتظرون قبول طلب الصداقة : استخدم الرد برقم لقبول الصديق`,
+      event.threadID,
+      (error, info) => {
+        if (error) return console.error(error);
+
+        global.client.handler.reply.set(info.messageID, {
+          author: event.senderID,
+          type: "pick",
+          name: "قبول",
+          groupList: filteredList,
+          unsend: true,
+        });
+      },
+      event.messageID,
+    );
+  },
+  onReply: async function ({ api, event, reply }) {
+    if (reply.type !== "pick") return;
+
+    const { author, groupList } = reply;
+
+    if (event.senderID !== author) return;
+
+    const selectedNumber = parseInt(event.body);
+    if (isNaN(selectedNumber) || selectedNumber < 1 || selectedNumber > groupList.length) {
+      return api.sendMessage(
+        "⚠️ | رقم غير صالح. الرجاء الرد برقم صحيح.",
+        event.threadID,
+        event.messageID
+      );
+    }
+
+    const selectedUser = groupList[selectedNumber - 1];
+    const { success, failed } = await handleApprove(selectedUser.id);
+
+    if (success.length > 0) {
+      const userInfo = await api.getUserInfo(selectedUser.id);
+      const userName = userInfo[selectedUser.id].name;
+      api.sendMessage(
+        `✅ | تم قبول العضو ${userName} بنجاح!`,
+        event.threadID,
+        event.messageID
+      );
+    }
+    if (failed.length > 0) {
+      api.sendMessage(
+        `❌ | فشل قبول العضو ${selectedUser.name}.`,
+        event.threadID,
+        event.messageID
+      );
+    }
+  }
 };
