@@ -1,67 +1,37 @@
-import axios from 'axios';
-import fs from 'fs';
-import path from 'path';
-
 export default {
-  name: "تخيلي4",
-  author: "HUSSEIN YACOUBI",
-  role: "member",
-  description: "قم بتوليد صور بالذكاء الاصطناعي حسب الموديل.",
-  execute: async ({ api, event, args }) => {
-    const { threadID, messageID } = event;
-    const info = args.join(" ");
-    
-    if (!info) {
-      return api.sendMessage("❗ | يرجى إدخال نص لتوليد الصورة.", threadID, messageID);
-    }
-
-    const msg = info.split("|");
-    const text = msg[0];
-    const model = msg[1] || '1'; 
-    const timestamp = new Date().getTime();
-
-    try {
-      let msgSend = await api.sendMessage("⏱️ | يرجى الانتظار...", threadID);
-      
-      // Translate the text from Arabic to English
-      const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(text)}`);
-      const translatedText = translationResponse?.data?.[0]?.[0]?.[0] || text;
-
-      const { data } = await axios.get(
-        `https://www.samirxpikachu.run.place/sdxl/generate?prompt=${encodeURIComponent(translatedText)}&model=${model}`
-      );
-
-      const imageUrls = data.imageUrls[0];
-      const imagePath = path.join(process.cwd(), 'cache', `image_${timestamp}.jpg`);
-
-      // Create cache directory if not exists
-      if (!fs.existsSync(path.dirname(imagePath))) {
-        fs.mkdirSync(path.dirname(imagePath), { recursive: true });
-      }
-
-      // Download and save the image
-      const response = await axios({
-        url: imageUrls,
-        responseType: 'stream'
-      });
-      response.data.pipe(fs.createWriteStream(imagePath));
-
-      // Wait for the image to be fully downloaded
-      await new Promise((resolve) => response.data.on('end', resolve));
-
-      await api.unsendMessage(msgSend.messageID);
-
-      if (fs.existsSync(imagePath)) {
-        await api.sendMessage({
-          body: `\n ✅ | تم توليد الصورة بنجاح\n📋 | البرومبت : "${text}" \n📎 | رابط الصورة بجودة HD : ${imageUrls}`,
-          attachment: fs.createReadStream(imagePath)
-        }, threadID, messageID);
-      } else {
-        throw new Error("فشل في جلب الصورة المولدة. يرجى التواصل مع مجموعة الإدارة لحل المشكلة. رابط المجموعة: https://www.facebook.com/groups/761805065901067/?ref=share");
-      }
-    } catch (err) {
-      console.error(err);
-      return api.sendMessage(" ❌ | حدث خطأ، يرجى المحاولة في وقت لاحق.", threadID, messageID);
-    }
-  },
+    name: "قبح",
+    author: "Kaguya Project",
+    role: "member",
+    description: "يقوم بحساب نسبة قبحك",
+    execute:
+        async function ({ api, event }) {
+            const data = [
+                "أنت 1٪ قبيح تمامًا 🥺", "أنت 2٪ قبيح تمامًا 🥺", "أنت 3٪ قبيح تمامًا 🥺", "أنت 4٪ قبيح تمامًا 🥺", 
+                "أنت 5٪ قبيح تمامًا 🥺", "أنت 6٪ قبيح تمامًا 🥺", "أنت 7٪ قبيح تمامًا 🥺", "أنت 8٪ قبيح تمامًا 🥺", 
+                "أنت 9٪ قبيح تمامًا 🥺", "أنت 10٪ قبيح تمامًا 🥺", "أنت 11٪ قبيح تمامًا 🥺", "أنت 12٪ قبيح تمامًا 🥺", 
+                "أنت 13٪ قبيح تمامًا 🥺", "أنت 14٪ قبيح تمامًا 🥺", "أنت 15٪ قبيح تمامًا 🥺", "أنت 16٪ قبيح تمامًا 🥺", 
+                "أنت 17٪ قبيح تمامًا 🥺", "أنت 18٪ قبيح تمامًا 🥺", "أنت 19٪ قبيح تمامًا 🥺", "أنت 20٪ قبيح تمامًا 🥺", 
+                "أنت 21٪ قبيح تمامًا 🥺", "أنت 22٪ قبيح تمامًا 🥺", "أنت 23٪ قبيح تمامًا 🥺", "أنت 24٪ قبيح تمامًا 🥺", 
+                "أنت 25٪ قبيح تمامًا 🥺", "أنت 26٪ قبيح تمامًا 🥺", "أنت 27٪ قبيح تمامًا 🥺", "أنت 28٪ قبيح تمامًا 🥺", 
+                "أنت 29٪ قبيح تمامًا 🥺", "أنت 30٪ قبيح تمامًا 🥺", "أنت 31٪ قبيح تمامًا 🥺", "أنت 32٪ قبيح تمامًا 🥺", 
+                "أنت 33٪ قبيح تمامًا 🥺", "أنت 34٪ قبيح تمامًا 🥺", "أنت 35٪ قبيح تمامًا 🥺", "أنت 36٪ قبيح تمامًا 🥺", 
+                "أنت 37٪ قبيح تمامًا 🥺", "أنت 38٪ قبيح تمامًا 🥺", "أنت 39٪ قبيح تمامًا 🥺", "أنت 40٪ قبيح تمامًا 🥺", 
+                "أنت 41٪ قبيح تمامًا 🥺", "أنت 42٪ قبيح تمامًا 🥺", "أنت 43٪ قبيح تمامًا 🥺", "أنت 44٪ قبيح تمامًا 🥺", 
+                "أنت 45٪ قبيح تمامًا 🥺", "أنت 46٪ قبيح تمامًا 🥺", "أنت 47٪ قبيح تمامًا 🥺", "أنت 48٪ قبيح تمامًا 🥺", 
+                "أنت 49٪ قبيح تمامًا 🥺", "أنت 50٪ قبيح تمامًا 🥺", "أنت 51٪ قبيح تمامًا 🥺", "أنت 52٪ قبيح تمامًا 🥺", 
+                "أنت 53٪ قبيح تمامًا 🥺", "أنت 54٪ قبيح تمامًا 🥺", "أنت 55٪ قبيح تمامًا 🥺", "أنت 56٪ قبيح تمامًا 🥺", 
+                "أنت 57٪ قبيح تمامًا 🥺", "أنت 58٪ قبيح تمامًا 🥺", "أنت 59٪ قبيح تمامًا 🥺", "أنت 60٪ قبيح تمامًا 🥺", 
+                "أنت 61٪ قبيح تمامًا 🥺", "أنت 62٪ قبيح تمامًا 🥺", "أنت 63٪ قبيح تمامًا 🥺", "أنت 64٪ قبيح تمامًا 🥺", 
+                "أنت 65٪ قبيح تمامًا 🥺", "أنت 66٪ قبيح تمامًا 🥺", "أنت 67٪ قبيح تمامًا 🥺", "أنت 68٪ قبيح تمامًا 🥺", 
+                "أنت 69٪ قبيح تمامًا 🥺", "أنت 70٪ قبيح تمامًا 🥺", "أنت 71٪ قبيح تمامًا 🥺", "أنت 72٪ قبيح تمامًا 🥺", 
+                "أنت 73٪ قبيح تمامًا 🥺", "أنت 74٪ قبيح تمامًا 🥺", "أنت 75٪ قبيح تمامًا 🥺", "أنت 76٪ قبيح تمامًا 🥺", 
+                "أنت 77٪ قبيح تمامًا 🥺", "أنت 78٪ قبيح تمامًا 🥺", "أنت 79٪ قبيح تمامًا 🥺", "أنت 80٪ قبيح تمامًا 🥺", 
+                "أنت 81٪ قبيح تمامًا 🥺", "أنت 82٪ قبيح تمامًا 🥺", "أنت 83٪ قبيح تمامًا 🥺", "أنت 84٪ قبيح تمامًا 🥺", 
+                "أنت 85٪ قبيح تمامًا 🥺", "أنت 86٪ قبيح تمامًا 🥺", "أنت 87٪ قبيح تمامًا 🥺", "أنت 88٪ قبيح تمامًا 🥺", 
+                "أنت 89٪ قبيح تمامًا 🥺", "أنت 90٪ قبيح تمامًا 🥺", "أنت 91٪ قبيح تمامًا 🥺", "أنت 92٪ قبيح تمامًا 🥺", 
+                "أنت 93٪ قبيح تمامًا 🥺", "أنت 94٪ قبيح تمامًا 🥺", "أنت 95٪ قبيح تمامًا 🥺", "أنت 96٪ قبيح تمامًا 🥺", 
+                "أنت 97٪ قبيح تمامًا 🥺", "أنت 98٪ قبيح تمامًا 🥺", "أنت 99٪ قبيح تمامًا 🥺", "أنت 100٪ قبيح تمامًا 🥺"
+            ];
+            return api.sendMessage(`${data[Math.floor(Math.random() * data.length)]}`, event.threadID, event.messageID);
+        }
 };
