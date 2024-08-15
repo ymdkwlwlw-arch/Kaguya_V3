@@ -2,6 +2,36 @@ import axios from 'axios';
 import fs from 'fs-extra';
 import path from 'path';
 
+async function downloadVideo(url) {
+  try {
+    // إرسال طلب للحصول على البيانات
+    const response = await axios.get(`https://samirxpikachuio.onrender.com/alldl?url=${encodeURIComponent(url)}`);
+    
+    if (response.data && response.data.video_url) {
+      // الحصول على رابط الفيديو من البيانات المسترجعة
+      const videoUrl = response.data.video_url;
+      
+      // تحميل الفيديو
+      const videoResponse = await axios.get(videoUrl, { responseType: 'stream' });
+      
+      // تحديد مسار التخزين
+      const videoPath = path.join(process.cwd(), 'cache', 'video.mp4');
+      
+      // كتابة الفيديو إلى الملف
+      videoResponse.data.pipe(fs.createWriteStream(videoPath));
+      
+      console.log('Video downloaded successfully!');
+      return videoPath; // إرجاع مسار الفيديو لتنفيذه لاحقًا
+    } else {
+      console.log('Video URL not found in response.');
+      throw new Error('Video URL not found in response.');
+    }
+  } catch (error) {
+    console.error('Error downloading video:', error);
+    throw error; // إعادة الخطأ لتعامل معه في مكان آخر
+  }
+}
+
 export default {
   name: "يوتيوب",
   author: "حسين يعقوبي",
@@ -38,7 +68,7 @@ export default {
         msg += `\n${index + 1}. ${video.title} - ⏱️ ${video.duration}`;
       });
 
-      msg += '\n\n📥 | الرجاء الرد برقم الظاهر اعلاه من اجل مشاهدة المقطع.';
+      msg += '\n\n📥 | الرجاء الرد برقم الفيديو الذي ترغب في تنزيله.';
 
       api.sendMessage(msg, event.threadID, (error, info) => {
         if (error) return console.error(error);
@@ -76,41 +106,27 @@ export default {
     const videoUrl = selectedVideo.link;
 
     try {
-      // جلب رابط تنزيل الفيديو باستخدام الرابط الجديد
-      const downloadUrl = `https://hiroshi-rest-api.replit.app/tools/yt?url=${encodeURIComponent(videoUrl)}`;
-      const downloadResponse = await axios.get(downloadUrl);
+      const filePath = await downloadVideo(videoUrl); // استخدام دالة تحميل الفيديو
 
-      const videoUrl = downloadResponse.data.mp4; // تعديل من audioUrl إلى videoUrl
-      if (!videoUrl) {
+      if (!filePath) {
         return api.sendMessage("⚠️ | لم يتم العثور على رابط تحميل الفيديو.", event.threadID);
       }
 
-      // تحديد مسار تخزين الملف
-      const fileName = `${event.senderID}.mp4`;
-      const filePath = path.join(process.cwd(), 'cache', fileName);
+      if (fs.statSync(filePath).size > 262144000) { // حجم الفيديو 250 ميغابايت
+        fs.unlinkSync(filePath);
+        return api.sendMessage('❌ | لا يمكن إرسال الملف لأن حجمه أكبر من 250 ميغابايت.', event.threadID);
+      }
 
-      // تنزيل الملف وحفظه
-      const writer = fs.createWriteStream(filePath);
-      const videoStream = axios.get(videoUrl, { responseType: 'stream' }).then(response => {
-        response.data.pipe(writer);
-        writer.on('finish', () => {
-          if (fs.statSync(filePath).size > 262144000) { // حجم الفيديو 250 ميغابايت
-            fs.unlinkSync(filePath);
-            return api.sendMessage('❌ | لا يمكن إرسال الملف لأن حجمه أكبر من 250 ميغابايت.', event.threadID);
-          }
+      // إرسال الرسالة مع المرفق
+      api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-          // إرسال الرسالة مع المرفق
-          api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+      const message = {
+        body: `✅ | تم العثور على الفيديو:\n❀ العنوان: ${title}\n⏱️ المدة: ${duration}`,
+        attachment: fs.createReadStream(filePath)
+      };
 
-          const message = {
-            body: `✅ | تم العثور على الفيديو:\n❀ العنوان: ${title}\n⏱️ المدة: ${duration}`,
-            attachment: fs.createReadStream(filePath)
-          };
-
-          api.sendMessage(message, event.threadID, () => {
-            fs.unlinkSync(filePath);
-          });
-        });
+      api.sendMessage(message, event.threadID, () => {
+        fs.unlinkSync(filePath);
       });
 
     } catch (error) {
