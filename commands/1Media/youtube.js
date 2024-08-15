@@ -3,28 +3,28 @@ import fs from 'fs-extra';
 import path from 'path';
 
 export default {
-  name: "مقطع",
+  name: "يوتيوب",
   author: "حسين يعقوبي",
   cooldowns: 60,
-  description: "تنزيل مقطع فيديو من YouTube",
+  description: "تنزيل فيديو من YouTube",
   role: "عضو",
-  aliases: ["فيديو", "يوتيوب", "مقطع"],
+  aliases: ["فيديو", "يوتيب", "مقطع"],
 
   async execute({ api, event }) {
     const input = event.body;
     const data = input.split(" ");
 
     if (data.length < 2) {
-      return api.sendMessage("⚠️ | أرجوك قم بإدخال اسم المقطع.", event.threadID);
+      return api.sendMessage("⚠️ | أرجوك قم بإدخال اسم الفيديو.", event.threadID);
     }
 
     data.shift();
     const videoName = data.join(" ");
 
     try {
-      api.sendMessage(`✔ | جاري البحث عن المقطع المطلوب "${videoName}". المرجو الانتظار...`, event.threadID);
+      api.sendMessage(`✔ | جاري البحث عن الفيديو المطلوب "${videoName}". المرجو الانتظار...`, event.threadID);
 
-      // البحث عن المقطع باستخدام الرابط الجديد
+      // البحث عن الفيديو باستخدام الرابط الجديد
       const searchUrl = `https://hiroshi-rest-api.replit.app/search/youtube?q=${encodeURIComponent(videoName)}`;
       const searchResponse = await axios.get(searchUrl);
 
@@ -33,12 +33,12 @@ export default {
         return api.sendMessage("⚠️ | لم يتم العثور على أي نتائج.", event.threadID);
       }
 
-      let msg = '📹 | تم العثور على المقاطع التالية:\n';
+      let msg = '🎥 | تم العثور على الفيديوهات التالية:\n';
       searchResults.forEach((video, index) => {
         msg += `\n${index + 1}. ${video.title} - ⏱️ ${video.duration}`;
       });
 
-      msg += '\n\n📥 | الرجاء الرد برقم المقطع الذي ترغب في تنزيله.';
+      msg += '\n\n📥 | الرجاء الرد برقم الظاهر اعلاه من اجل مشاهدة المقطع.';
 
       api.sendMessage(msg, event.threadID, (error, info) => {
         if (error) return console.error(error);
@@ -46,7 +46,7 @@ export default {
         global.client.handler.reply.set(info.messageID, {
           author: event.senderID,
           type: "pick",
-          name: "مقطع",
+          name: "فيديو",
           searchResults: searchResults,
           unsend: true
         });
@@ -80,7 +80,7 @@ export default {
       const downloadUrl = `https://hiroshi-rest-api.replit.app/tools/yt?url=${encodeURIComponent(videoUrl)}`;
       const downloadResponse = await axios.get(downloadUrl);
 
-      const videoUrl = downloadResponse.data.mp4;
+      const videoUrl = downloadResponse.data.mp4; // تعديل من audioUrl إلى videoUrl
       if (!videoUrl) {
         return api.sendMessage("⚠️ | لم يتم العثور على رابط تحميل الفيديو.", event.threadID);
       }
@@ -94,16 +94,16 @@ export default {
       const videoStream = axios.get(videoUrl, { responseType: 'stream' }).then(response => {
         response.data.pipe(writer);
         writer.on('finish', () => {
-          if (fs.statSync(filePath).size > 26214400) {
+          if (fs.statSync(filePath).size > 262144000) { // حجم الفيديو 250 ميغابايت
             fs.unlinkSync(filePath);
-            return api.sendMessage('❌ | لا يمكن إرسال الملف لأن حجمه أكبر من 25 ميغابايت.', event.threadID);
+            return api.sendMessage('❌ | لا يمكن إرسال الملف لأن حجمه أكبر من 250 ميغابايت.', event.threadID);
           }
 
           // إرسال الرسالة مع المرفق
           api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
           const message = {
-            body: `✅ | تم العثور على المقطع:\n❀ العنوان: ${title}\n⏱️ المدة: ${duration}`,
+            body: `✅ | تم العثور على الفيديو:\n❀ العنوان: ${title}\n⏱️ المدة: ${duration}`,
             attachment: fs.createReadStream(filePath)
           };
 
@@ -112,7 +112,7 @@ export default {
           });
         });
       });
-      
+
     } catch (error) {
       console.error('[ERROR]', error);
       api.sendMessage('🥱 ❀ حدث خطأ أثناء معالجة الأمر.', event.threadID);
