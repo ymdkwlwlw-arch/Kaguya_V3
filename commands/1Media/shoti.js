@@ -52,7 +52,13 @@ export default {
         return;
       }
 
+      // البحث عن الفيديو في قائمة الوسائط
       const videoInfo = videoData.medias.find(media => media.videoAvailable);
+      if (!videoInfo) {
+        api.sendMessage("⚠️ | لم أتمكن من العثور على فيديو صالح للتنزيل. يرجى المحاولة مرة أخرى.", event.threadID);
+        return;
+      }
+
       const videoUrl = videoInfo.url;
       const title = videoData.title;
       const duration = videoData.duration;
@@ -71,7 +77,7 @@ export default {
           api.unsendMessage(sentMessage.messageID); // حذف الرسالة التي تم التفاعل معها ب "⬇️"
           api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-          const messageBody = `╼╾─────⊹⊱⊰⊹─────╼╾\n✅ | تـم تـحـمـيـل الـفـيـديـو :\n❀ العنوان: ${title}\n⏱️ المدة: ${duration}\n╼╾─────⊹⊱⊰⊹─────╼╾`;
+          const messageBody = `╼╾─────⊹⊱⊰⊹─────╼╾\n✅ | تم تحميل الفيديو:\n❀ العنوان: ${title}\n⏱️ المدة: ${duration}\n╼╾─────⊹⊱⊰⊹─────╼╾`;
 
           api.sendMessage(
             {
