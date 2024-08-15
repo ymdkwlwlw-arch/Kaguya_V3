@@ -3,36 +3,32 @@ import fs from 'fs-extra';
 import path from 'path';
 
 export default {
-  name: "يوتيوب",
+  name: "اغنية",
   author: "حسين يعقوبي",
   cooldowns: 60,
-  description: "تنزيل مقاطع الفيديو أو الأغاني من YouTube",
+  description: "تنزيل أغنية من YouTube",
   role: "عضو",
-  aliases: ["يوتيب"],
+  aliases: ["أغنية", "غني", "موسيقى"],
 
   async execute({ api, event }) {
     const input = event.body;
     const data = input.split(" ");
-    
+
     if (data.length < 2) {
-      return api.sendMessage("⚠️ | أرجوك قم بإدخال عنوان المقطع أو الأغنية.", event.threadID);
+      return api.sendMessage("⚠️ | أرجوك قم بإدخال اسم الأغنية.", event.threadID);
     }
 
-    const type = data[0].toLowerCase(); // "يوتيوب مقطع" or "يوتيوب اغنية"
     data.shift();
-    const title = data.join(" ");
+    const musicName = data.join(" ");
 
     try {
-      api.sendMessage(`✔ | جاري البحث عن "${title}". المرجو الانتظار...`, event.threadID, (err, info) => {
-        global.client.handler.reply.set(info.messageID, {
-          author: event.senderID,
-          type: type.includes("مقطع") ? "video" : "song",
-          title: title,
-          unsend: info.messageID,
-        });
-      });
+      const searchMessageID = await api.sendMessage(
+        `✔ | جاري البحث عن الأغنية المطلوبة "${musicName}". المرجو الانتظار...`,
+        event.threadID
+      );
 
-      const searchUrl = `https://hiroshi-rest-api.replit.app/search/youtube?q=${encodeURIComponent(title)}`;
+      // البحث عن الأغنية باستخدام الرابط الجديد
+      const searchUrl = `https://hiroshi-rest-api.replit.app/search/youtube?q=${encodeURIComponent(musicName)}`;
       const searchResponse = await axios.get(searchUrl);
 
       const searchResults = searchResponse.data.results;
@@ -40,24 +36,41 @@ export default {
         return api.sendMessage("⚠️ | لم يتم العثور على أي نتائج.", event.threadID);
       }
 
-      let msg = '🎵 | تم العثور على النتائج التالية:\n';
-      searchResults.forEach((result, index) => {
-        msg += `\n${index + 1}. ${result.title} - ⏱️ ${result.duration}`;
-        msg += `\n📷 | ${result.thumbnail}`;
-      });
+      let msg = '🎵 | تم العثور على الأغاني التالية:\n';
+      const attachments = [];
 
-      msg += '\n\n📥 | الرجاء الرد ب "تم" من أجل التنزيل والمشاهدة او الإستماع.';
+      for (const [index, video] of searchResults.entries()) {
+        const thumbnailPath = path.join(process.cwd(), 'cache', `${video.videoId}.jpg`);
+        const thumbnailStream = fs.createWriteStream(thumbnailPath);
+        
+        const thumbnailResponse = await axios.get(video.thumbnail, { responseType: 'stream' });
+        thumbnailResponse.data.pipe(thumbnailStream);
 
-      api.sendMessage(msg, event.threadID, (error, info) => {
-        if (error) return console.error(error);
+        attachments.push(fs.createReadStream(thumbnailPath));
 
-        global.client.handler.reply.set(info.messageID, {
-          author: event.senderID,
-          type: type.includes("مقطع") ? "video" : "song",
-          searchResults: searchResults,
-          unsend: true
-        });
-      });
+        msg += `\n${index + 1}. ${video.title} - ⏱️ ${video.duration}`;
+      }
+
+      msg += '\n\n📥 | الرجاء التفاعل بإضافة ضفدع 🐸 على الرسالة التي تحتوي على الأغنية التي ترغب في تنزيلها.';
+
+      api.sendMessage(
+        { body: msg, attachment: attachments },
+        event.threadID,
+        (error, info) => {
+          if (error) return console.error(error);
+
+          global.client.handler.reply.set(info.messageID, {
+            author: event.senderID,
+            type: "pick",
+            name: "اغنية",
+            searchResults: searchResults,
+            unsend: true
+          });
+        }
+      );
+
+      // حذف الرسالة الأصلية بعد عرض النتائج
+      api.unsendMessage(searchMessageID);
 
     } catch (error) {
       console.error('[ERROR]', error);
@@ -66,34 +79,38 @@ export default {
   },
 
   async onReply({ api, event, reply }) {
-    if (reply.type !== 'video' && reply.type !== 'song') return;
+    if (reply.type !== 'pick') return;
 
     const { author, searchResults } = reply;
-    if (event.senderID !== author || event.body.toLowerCase() !== "تم") return;
 
-    const selectedVideo = searchResults[0];
+    if (event.senderID !== author) return;
+
+    if (event.reaction !== '🐸') {
+      return api.sendMessage("❌ | التفاعل غير صالح. الرجاء التفاعل بالضفدع 🐸 للتأكيد.", event.threadID);
+    }
+
+    const selectedVideo = searchResults[0]; // Assuming the first result is selected by default.
     const title = selectedVideo.title;
     const duration = selectedVideo.duration;
     const videoUrl = selectedVideo.link;
 
     try {
-      // Download link for either video or audio
-      const downloadUrl = reply.type === 'video' 
-        ? `https://hiroshi-rest-api.replit.app/tools/yt?url=${encodeURIComponent(videoUrl)}` 
-        : `https://hiroshi-rest-api.replit.app/tools/yt?url=${encodeURIComponent(videoUrl)}`;
-
+      // جلب رابط تنزيل الصوت باستخدام الرابط الجديد
+      const downloadUrl = `https://hiroshi-rest-api.replit.app/tools/yt?url=${encodeURIComponent(videoUrl)}`;
       const downloadResponse = await axios.get(downloadUrl);
-      const fileUrl = reply.type === 'video' ? downloadResponse.data.mp4 : downloadResponse.data.mp3;
 
-      if (!fileUrl) {
-        return api.sendMessage("⚠️ | لم يتم العثور على رابط التحميل.", event.threadID);
+      const audioUrl = downloadResponse.data.mp3;
+      if (!audioUrl) {
+        return api.sendMessage("⚠️ | لم يتم العثور على رابط تحميل الصوت.", event.threadID);
       }
 
-      const fileName = `${event.senderID}.${reply.type === 'video' ? 'mp4' : 'mp3'}`;
+      // تحديد مسار تخزين الملف
+      const fileName = `${event.senderID}.mp3`;
       const filePath = path.join(process.cwd(), 'cache', fileName);
 
+      // تنزيل الملف وحفظه
       const writer = fs.createWriteStream(filePath);
-      const fileStream = axios.get(fileUrl, { responseType: 'stream' }).then(response => {
+      const audioStream = axios.get(audioUrl, { responseType: 'stream' }).then(response => {
         response.data.pipe(writer);
         writer.on('finish', () => {
           if (fs.statSync(filePath).size > 26214400) {
@@ -101,8 +118,11 @@ export default {
             return api.sendMessage('❌ | لا يمكن إرسال الملف لأن حجمه أكبر من 25 ميغابايت.', event.threadID);
           }
 
+          // إرسال الرسالة مع المرفق
+          api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+
           const message = {
-            body: `✅ | تم العثور على ${reply.type === 'video' ? 'المقطع' : 'الأغنية'}:\n❀ العنوان: ${title}\n⏱️ المدة: ${duration}`,
+            body: `✅ | تم العثور على الأغنية:\n❀ العنوان: ${title}\n⏱️ المدة: ${duration}`,
             attachment: fs.createReadStream(filePath)
           };
 
