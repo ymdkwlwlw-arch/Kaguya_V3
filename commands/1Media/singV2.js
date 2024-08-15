@@ -46,7 +46,7 @@ export default {
         msg += `\n📷 | ${result.thumbnail}`;
       });
 
-      msg += '\n\n📥 | الرجاء الرد ب "تم" لتنزيل الاختيار.';
+      msg += '\n\n📥 | الرجاء الرد ب "تم" من أجل التنزيل والمشاهدة او الإستماع.';
 
       api.sendMessage(msg, event.threadID, (error, info) => {
         if (error) return console.error(error);
