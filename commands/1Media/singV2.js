@@ -3,29 +3,36 @@ import fs from 'fs-extra';
 import path from 'path';
 
 export default {
-  name: "اغنية",
+  name: "يوتيوب",
   author: "حسين يعقوبي",
   cooldowns: 60,
-  description: "تنزيل أغنية من YouTube",
+  description: "تنزيل مقاطع الفيديو أو الأغاني من YouTube",
   role: "عضو",
-  aliases: ["أغنية", "غني", "موسيقى"],
+  aliases: ["يوتيب"],
 
   async execute({ api, event }) {
     const input = event.body;
     const data = input.split(" ");
-
+    
     if (data.length < 2) {
-      return api.sendMessage("⚠️ | أرجوك قم بإدخال اسم الأغنية.", event.threadID);
+      return api.sendMessage("⚠️ | أرجوك قم بإدخال عنوان المقطع أو الأغنية.", event.threadID);
     }
 
+    const type = data[0].toLowerCase(); // "يوتيوب مقطع" or "يوتيوب اغنية"
     data.shift();
-    const musicName = data.join(" ");
+    const title = data.join(" ");
 
     try {
-      api.sendMessage(`✔ | جاري البحث عن الأغنية المطلوبة "${musicName}". المرجو الانتظار...`, event.threadID);
+      api.sendMessage(`✔ | جاري البحث عن "${title}". المرجو الانتظار...`, event.threadID, (err, info) => {
+        global.client.handler.reply.set(info.messageID, {
+          author: event.senderID,
+          type: type.includes("مقطع") ? "video" : "song",
+          title: title,
+          unsend: info.messageID,
+        });
+      });
 
-      // البحث عن الأغنية باستخدام الرابط الجديد
-      const searchUrl = `https://hiroshi-rest-api.replit.app/search/youtube?q=${encodeURIComponent(musicName)}`;
+      const searchUrl = `https://hiroshi-rest-api.replit.app/search/youtube?q=${encodeURIComponent(title)}`;
       const searchResponse = await axios.get(searchUrl);
 
       const searchResults = searchResponse.data.results;
@@ -33,20 +40,20 @@ export default {
         return api.sendMessage("⚠️ | لم يتم العثور على أي نتائج.", event.threadID);
       }
 
-      let msg = '🎵 | تم العثور على الأغاني التالية:\n';
-      searchResults.forEach((video, index) => {
-        msg += `\n${index + 1}. ${video.title} - ⏱️ ${video.duration}`;
+      let msg = '🎵 | تم العثور على النتائج التالية:\n';
+      searchResults.forEach((result, index) => {
+        msg += `\n${index + 1}. ${result.title} - ⏱️ ${result.duration}`;
+        msg += `\n📷 | ${result.thumbnail}`;
       });
 
-      msg += '\n\n📥 | الرجاء الرد برقم الأغنية التي ترغب في تنزيلها.';
+      msg += '\n\n📥 | الرجاء الرد ب "تم" لتنزيل الاختيار.';
 
       api.sendMessage(msg, event.threadID, (error, info) => {
         if (error) return console.error(error);
 
         global.client.handler.reply.set(info.messageID, {
           author: event.senderID,
-          type: "pick",
-          name: "اغنية",
+          type: type.includes("مقطع") ? "video" : "song",
           searchResults: searchResults,
           unsend: true
         });
@@ -59,39 +66,34 @@ export default {
   },
 
   async onReply({ api, event, reply }) {
-    if (reply.type !== 'pick') return;
+    if (reply.type !== 'video' && reply.type !== 'song') return;
 
     const { author, searchResults } = reply;
+    if (event.senderID !== author || event.body.toLowerCase() !== "تم") return;
 
-    if (event.senderID !== author) return;
-
-    const choice = parseInt(event.body);
-    if (isNaN(choice) || choice < 1 || choice > searchResults.length) {
-      return api.sendMessage("❌ | الاختيار غير صالح. الرجاء الرد برقم صحيح.", event.threadID);
-    }
-
-    const selectedVideo = searchResults[choice - 1];
+    const selectedVideo = searchResults[0];
     const title = selectedVideo.title;
     const duration = selectedVideo.duration;
     const videoUrl = selectedVideo.link;
 
     try {
-      // جلب رابط تنزيل الصوت باستخدام الرابط الجديد
-      const downloadUrl = `https://hiroshi-rest-api.replit.app/tools/yt?url=${encodeURIComponent(videoUrl)}`;
-      const downloadResponse = await axios.get(downloadUrl);
+      // Download link for either video or audio
+      const downloadUrl = reply.type === 'video' 
+        ? `https://hiroshi-rest-api.replit.app/tools/yt?url=${encodeURIComponent(videoUrl)}` 
+        : `https://hiroshi-rest-api.replit.app/tools/yt?url=${encodeURIComponent(videoUrl)}`;
 
-      const audioUrl = downloadResponse.data.mp3;
-      if (!audioUrl) {
-        return api.sendMessage("⚠️ | لم يتم العثور على رابط تحميل الصوت.", event.threadID);
+      const downloadResponse = await axios.get(downloadUrl);
+      const fileUrl = reply.type === 'video' ? downloadResponse.data.mp4 : downloadResponse.data.mp3;
+
+      if (!fileUrl) {
+        return api.sendMessage("⚠️ | لم يتم العثور على رابط التحميل.", event.threadID);
       }
 
-      // تحديد مسار تخزين الملف
-      const fileName = `${event.senderID}.mp3`;
+      const fileName = `${event.senderID}.${reply.type === 'video' ? 'mp4' : 'mp3'}`;
       const filePath = path.join(process.cwd(), 'cache', fileName);
 
-      // تنزيل الملف وحفظه
       const writer = fs.createWriteStream(filePath);
-      const audioStream = axios.get(audioUrl, { responseType: 'stream' }).then(response => {
+      const fileStream = axios.get(fileUrl, { responseType: 'stream' }).then(response => {
         response.data.pipe(writer);
         writer.on('finish', () => {
           if (fs.statSync(filePath).size > 26214400) {
@@ -99,11 +101,8 @@ export default {
             return api.sendMessage('❌ | لا يمكن إرسال الملف لأن حجمه أكبر من 25 ميغابايت.', event.threadID);
           }
 
-          // إرسال الرسالة مع المرفق
-          api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-
           const message = {
-            body: `✅ | تم العثور على الأغنية:\n❀ العنوان: ${title}\n⏱️ المدة: ${duration}`,
+            body: `✅ | تم العثور على ${reply.type === 'video' ? 'المقطع' : 'الأغنية'}:\n❀ العنوان: ${title}\n⏱️ المدة: ${duration}`,
             attachment: fs.createReadStream(filePath)
           };
 
