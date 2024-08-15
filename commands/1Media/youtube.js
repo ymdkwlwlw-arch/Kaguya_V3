@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import path from 'path';
 
 export default {
-  name: "يوتيوب",
+  name: "مقطع",
   author: "حسين يعقوبي",
   cooldowns: 60,
   description: "تنزيل مقطع فيديو من YouTube",
@@ -22,10 +22,7 @@ export default {
     const videoName = data.join(" ");
 
     try {
-      const searchMessageID = await api.sendMessage(
-        `✔ | جاري البحث عن المقطع المطلوب "${videoName}". المرجو الانتظار...`,
-        event.threadID
-      );
+      api.sendMessage(`✔ | جاري البحث عن المقطع المطلوب "${videoName}". المرجو الانتظار...`, event.threadID);
 
       // البحث عن المقطع باستخدام الرابط الجديد
       const searchUrl = `https://hiroshi-rest-api.replit.app/search/youtube?q=${encodeURIComponent(videoName)}`;
@@ -37,40 +34,23 @@ export default {
       }
 
       let msg = '📹 | تم العثور على المقاطع التالية:\n';
-      const attachments = [];
-
-      for (const [index, video] of searchResults.entries()) {
-        const thumbnailPath = path.join(process.cwd(), 'cache', `${video.videoId}.jpg`);
-        const thumbnailStream = fs.createWriteStream(thumbnailPath);
-        
-        const thumbnailResponse = await axios.get(video.thumbnail, { responseType: 'stream' });
-        thumbnailResponse.data.pipe(thumbnailStream);
-
-        attachments.push(fs.createReadStream(thumbnailPath));
-
+      searchResults.forEach((video, index) => {
         msg += `\n${index + 1}. ${video.title} - ⏱️ ${video.duration}`;
-      }
+      });
 
-      msg += '\n\n📥 | الرجاء التفاعل بإضافة ضفدع 🐸 على الرسالة التي تحتوي على المقطع الذي ترغب في تنزيله.';
+      msg += '\n\n📥 | الرجاء الرد برقم المقطع الذي ترغب في تنزيله.';
 
-      api.sendMessage(
-        { body: msg, attachment: attachments },
-        event.threadID,
-        (error, info) => {
-          if (error) return console.error(error);
+      api.sendMessage(msg, event.threadID, (error, info) => {
+        if (error) return console.error(error);
 
-          global.client.handler.reply.set(info.messageID, {
-            author: event.senderID,
-            type: "pick",
-            name: "مقطع",
-            searchResults: searchResults,
-            unsend: true
-          });
-        }
-      );
-
-      // حذف الرسالة الأصلية بعد عرض النتائج
-      api.unsendMessage(searchMessageID);
+        global.client.handler.reply.set(info.messageID, {
+          author: event.senderID,
+          type: "pick",
+          name: "مقطع",
+          searchResults: searchResults,
+          unsend: true
+        });
+      });
 
     } catch (error) {
       console.error('[ERROR]', error);
@@ -85,11 +65,12 @@ export default {
 
     if (event.senderID !== author) return;
 
-    if (event.reaction !== '🐸') {
-      return api.sendMessage("❌ | التفاعل غير صالح. الرجاء التفاعل بالضفدع 🐸 للتأكيد.", event.threadID);
+    const choice = parseInt(event.body);
+    if (isNaN(choice) || choice < 1 || choice > searchResults.length) {
+      return api.sendMessage("❌ | الاختيار غير صالح. الرجاء الرد برقم صحيح.", event.threadID);
     }
 
-    const selectedVideo = searchResults[0]; // Assuming the first result is selected by default.
+    const selectedVideo = searchResults[choice - 1];
     const title = selectedVideo.title;
     const duration = selectedVideo.duration;
     const videoUrl = selectedVideo.link;
@@ -131,7 +112,7 @@ export default {
           });
         });
       });
-
+      
     } catch (error) {
       console.error('[ERROR]', error);
       api.sendMessage('🥱 ❀ حدث خطأ أثناء معالجة الأمر.', event.threadID);
