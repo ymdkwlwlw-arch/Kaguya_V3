@@ -41,30 +41,21 @@ export default {
         event.threadID
       );
 
-      // تحديد نوع الرابط (يوتيوب أو تيك توك)
-      const isYouTube = description.includes("youtube.com") || description.includes("youtu.be");
-      const isTikTok = description.includes("tiktok.com");
-
-      const apiUrl = isYouTube
-        ? `https://king-aryanapis.onrender.com/api/ytdl?url=${encodeURIComponent(description)}`
-        : isTikTok
-        ? `https://king-aryanapis.onrender.com/api/ttdl?url=${encodeURIComponent(description)}`
-        : null;
-
-      if (!apiUrl) {
-        api.sendMessage("⚠️ | الرابط غير مدعوم. يرجى تقديم رابط يوتيوب أو تيك توك.", event.threadID);
-        return;
-      }
+      // تحديد الرابط الجديد
+      const apiUrl = `https://samirxpikachuio.onrender.com/alldl?url=${encodeURIComponent(description)}`;
 
       const response = await axios.get(apiUrl);
-      const videoData = response.data.result;
+      const videoData = response.data;
 
-      if (!videoData || !videoData.video) {
+      if (!videoData || !videoData.medias || !videoData.medias.length) {
         api.sendMessage("⚠️ | لم أتمكن من العثور على فيديو بناءً على الوصف المقدم. يرجى المحاولة مرة أخرى.", event.threadID);
         return;
       }
 
-      const videoUrl = videoData.video;
+      const videoInfo = videoData.medias.find(media => media.videoAvailable);
+      const videoUrl = videoInfo.url;
+      const title = videoData.title;
+      const duration = videoData.duration;
       const filePath = `${process.cwd()}/cache/video.mp4`;
 
       // تأكد من أن الرابط صالح بالتحقق من استجابة HTTP
@@ -80,7 +71,7 @@ export default {
           api.unsendMessage(sentMessage.messageID); // حذف الرسالة التي تم التفاعل معها ب "⬇️"
           api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-          const messageBody = `╼╾─────⊹⊱⊰⊹─────╼╾\n✅ | تم تحميل الفيديو\n╼╾─────⊹⊱⊰⊹─────╼╾`;
+          const messageBody = `╼╾─────⊹⊱⊰⊹─────╼╾\n✅ | تـم تـحـمـيـل الـفـيـديـو :\n❀ العنوان: ${title}\n⏱️ المدة: ${duration}\n╼╾─────⊹⊱⊰⊹─────╼╾`;
 
           api.sendMessage(
             {
