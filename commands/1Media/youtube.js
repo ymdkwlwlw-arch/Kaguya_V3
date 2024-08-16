@@ -36,7 +36,7 @@ export default {
       const selectedVideo = searchResults[0];
       msg += `\n❀ العنوان: ${selectedVideo.title}`;
 
-      msg += '\n\n📥 | الرجاء الرد بـ "تم" من أجل تأكيد التنزيل ومشاهدة المقطع.';
+      msg += '\n\n📥 | الرجاء الرد بـ "تم" من أجل تنزيل ومشاهدة المقطع.';
 
       api.unsendMessage(sentMessage.messageID);
 
@@ -45,8 +45,9 @@ export default {
 
         global.client.handler.reply.set(info.messageID, {
           author: event.senderID,
-          type: "download",
-          video: selectedVideo,
+          type: "pick",
+          name: "يوتيوب",
+          searchResults: searchResults,
           unsend: true
         });
       });
@@ -58,9 +59,9 @@ export default {
   },
 
   async onReply({ api, event, reply }) {
-    if (reply.type !== 'download') return;
+    if (reply.type !== 'pick') return;
 
-    const { author, video } = reply;
+    const { author, searchResults } = reply;
 
     if (event.senderID !== author) return;
 
@@ -68,6 +69,7 @@ export default {
       return api.sendMessage("❌ | الرد غير صالح. يرجى الرد بـ 'تم' لتنزيل المقطع.", event.threadID);
     }
 
+    const video = searchResults[0];
     const videoUrl = video.link;
 
     try {
