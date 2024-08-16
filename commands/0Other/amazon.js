@@ -17,11 +17,11 @@ export default {
                 return api.sendMessage("يرجى تحديد مصطلح البحث.", event.threadID);
             }
 
-            const apiUrl = `https://joshweb.click/api/playstore?search=${encodeURIComponent(searchTerm)}`;
+            const apiUrl = `https://smfahim.onrender.com/playstore?q=${encodeURIComponent(searchTerm)}`;
             const response = await axios.get(apiUrl);
 
-            if (response.data && response.data.result.length > 0) {
-                const appInfo = response.data.result[0];
+            if (response.data && response.data.length > 0) {
+                const appInfo = response.data[0];
                 const translatedTitle = appInfo.name; // Use the name directly as it's in the desired language
 
                 let message = `━━━━━━◈✿◈━━━━━━\n📝 | اسم التطبيق: ${translatedTitle}\n`;
