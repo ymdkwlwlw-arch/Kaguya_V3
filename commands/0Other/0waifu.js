@@ -9,22 +9,12 @@ export default {
   description: "أحضر صورة أنمي عشوائية.",
 
   async execute({ api, event }) {
-    const categories = [
-      'waifu', 'neko', 'shinobu', 'megumin', 'bully', 'cuddle', 'cry', 'hug', 
-      'awoo', 'kiss', 'lick', 'pat', 'smug', 'bonk', 'yeet', 'blush', 'smile', 
-      'wave', 'highfive', 'handhold', 'nom', 'bite', 'glomp', 'slap', 'kill', 
-      'kick', 'happy', 'wink', 'poke', 'dance', 'cringe'
-    ];
-
-    // اختيار فئة عشوائية
-    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-    
     try {
-      const res = await axios.get(`https://api.waifu.pics/sfw/${randomCategory}`);
+      const res = await axios.get(`https://smfahim.onrender.com/waifu`);
       const imgUrl = res.data.url;
 
       if (imgUrl) {
-        const imagePath = path.join(process.cwd(), 'cache', `${Date.now()}_${randomCategory}.png`);
+        const imagePath = path.join(process.cwd(), 'cache', `${Date.now()}.png`);
         const writer = fs.createWriteStream(imagePath);
         const response = await axios({
           url: imgUrl,
@@ -38,7 +28,7 @@ export default {
           api.setMessageReaction("😘", event.messageID, (err) => {}, true);
   
           api.sendMessage({
-            body: `࿇ ══━━━✥◈✥━━━══ ࿇\n\t\t\t\t💜☟  ω𝒶ⓘғυ  ☟💜\n\t\t\t\t${randomCategory}\n࿇ ══━━━✥◈✥━━━══ ࿇`,
+            body: `࿇ ══━━━✥◈✥━━━══ ࿇\n\t\t\t\t💜☟  ω𝒶ⓘғυ  ☟💜\n࿇ ══━━━✥◈✥━━━══ ࿇`,
             attachment: fs.createReadStream(imagePath)
           }, event.threadID, () => fs.unlinkSync(imagePath));
         });
