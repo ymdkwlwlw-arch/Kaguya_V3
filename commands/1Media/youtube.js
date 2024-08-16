@@ -36,11 +36,28 @@ export default {
       const selectedVideo = searchResults[0];
       msg += `\n❀ العنوان: ${selectedVideo.title}`;
 
+      // Download the thumbnail image
+      const thumbnailPath = path.join(process.cwd(), 'cache', `${selectedVideo.videoId}.jpg`);
+      const thumbnailWriter = fs.createWriteStream(thumbnailPath);
+      const thumbnailStream = await axios({
+        url: selectedVideo.thumbnail,
+        responseType: 'stream',
+      });
+      thumbnailStream.data.pipe(thumbnailWriter);
+
+      await new Promise((resolve, reject) => {
+        thumbnailWriter.on('finish', resolve);
+        thumbnailWriter.on('error', reject);
+      });
+
       msg += '\n\n📥 | الرجاء الرد بـ "تم" من أجل تنزيل ومشاهدة المقطع.';
 
       api.unsendMessage(sentMessage.messageID);
 
-      api.sendMessage(msg, event.threadID, (error, info) => {
+      api.sendMessage({
+        body: msg,
+        attachment: fs.createReadStream(thumbnailPath),
+      }, event.threadID, (error, info) => {
         if (error) return console.error(error);
 
         global.client.handler.reply.set(info.messageID, {
