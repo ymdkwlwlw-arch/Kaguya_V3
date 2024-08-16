@@ -25,16 +25,20 @@ export default {
       const prompt = args.join(" ") || "hello";
       const link = messageReply?.attachments?.[0]?.type === "photo" ? messageReply.attachments[0].url : null;
       const response = await gpt4(prompt, senderID, link);
+      
       api.setMessageReaction("✨", event.messageID, (err) => {}, true);
   
       // إرسال الرسالة مع تحقق من وجود response
-      const messageID = await api.sendMessage(response, threadID);
-      global.client.handler.reply.set(messageID, {
+      const sentMessage = await api.sendMessage(response, threadID);
+      global.client.handler.reply.set(sentMessage.messageID, {
         author: senderID,
         type: "reply",
         name: "ذكاء",
         unsend: false,
       });
+
+      // حذف رسالة الانتظار
+      api.unsendMessage(event.messageID);
 
     } catch (error) {
       api.sendMessage(`❌ | حدث خطأ: ${error.message}`, event.threadID);
@@ -45,8 +49,13 @@ export default {
     if (reply.type === "reply" && reply.author === event.senderID) {
       try {
         // التعامل مع الردود وإرسالها
-        const response = await gpt4(reply.message, event.senderID);
+        const response = await gpt4(event.body, event.senderID);
         api.sendMessage(response, event.threadID);
+
+        // إضافة التفاعل ب ⬇️ بعد الرد بـ تم
+        if (event.body.trim() === "تم") {
+          api.setMessageReaction("⬇️", event.messageID, (err) => {}, true);
+        }
       } catch (error) {
         api.sendMessage(`❌ | حدث خطأ أثناء معالجة ردك: ${error.message}`, event.threadID);
       }
