@@ -22,6 +22,13 @@ export default {
       return api.sendMessage("⚠️ | يرحى ادخالها بالتنسيق التالي \nتحويل كمية المال المعرف مثال : تحويل 1000 1000648477485", event.threadID, event.messageID);
     }
 
+    // التحقق مما إذا كان المرسل يحاول إرسال المال لنفسه
+    if (targetUID === event.senderID) {
+      const penalty = 1000;
+      await Economy.decrease(penalty, event.senderID);
+      return api.sendMessage(`⚠️ | لا يمكنك إرسال المال لنفسك! تم خصم ${penalty} دولار كعقوبة.`, event.threadID, event.messageID);
+    }
+
     try {
       // تنفيذ عملية التحويل
       const response = await Economy.pay(coins, targetUID);
