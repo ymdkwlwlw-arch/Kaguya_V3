@@ -1,9 +1,9 @@
-import axios from "axios";
 import request from "request";
 import fs from "fs-extra";
 import path from "path";
 
-const ZiaReinRules = `●═══════❍═══════●
+// محتوى القواعد
+const ZiaReinRules = `●═══════❍════════●
 الــصَـداقَــة هِــي أنْ تَــذهَـبْ وَتَــعُـود وَتَــجــد لِــ نَــفــسَـكْ “ مَــكـانـاً ” بِـيـنَـهُـمْ
 قواعد وشروط الجروب♥
 1- احترام آراء الآخرين وعدم التلفظ بألفاظ تخدش الحياء
@@ -26,71 +26,46 @@ const ZiaReinRules = `●═══════❍═══════●
 ولكني ألتمس من الموجودين فيها إحترام قوانينها.
 المجموعه منكم ولكم وانتم من يتصرف بمجريات الامور وكلنا تقة فيكم
 ارجوا من الجميع الالتزام ولكم خالص الشكر والتقدير على التعاون
-●═══════❍═══════●`;
+●═══════❍════════●`;
+
+// قائمة روابط الصور
+const imageUrls = [
+"https://i.imgur.com/huumLca.jpg",
+"https://i.imgur.com/EcryTGh.jpg",
+"https://i.imgur.com/tu12HrQ.jpg",
+"https://i.imgur.com/Vx25FHG.jpg",
+"https://i.imgur.com/NcbC8Pn.jpg",
+];
 
 const execute = async ({ api, event }) => {
-  const userListPath = path.join(process.cwd(), "rules.json");
-  let userList = [];
+  // اختيار صورة عشوائية من القائمة
+  const randomImageUrl = imageUrls[Math.floor(Math.random() * imageUrls.length)];
+  const imagePath = path.join(process.cwd(), "cache", "ZiaRein.jpg");
 
-  if (fs.existsSync(userListPath)) {
-    const data = fs.readFileSync(userListPath, "utf8");
-    userList = JSON.parse(data);
-  }
-
-  if (userList.includes(event.senderID)) {
-    api.setMessageReaction("🚫", event.messageID, () => {}, true);
-    return api.sendMessage("❌ | أنت بالفعل وافقت على شروط المجموعة وتم إدراج اسمك بين الأعضاء الرسميين.", event.threadID, event.messageID);
-  }
-
-  const imageUrl = process.cwd() + "/cache/ZiaRein.jpg";
-  return request(encodeURI("https://i.imgur.com/huumLca.jpg"))
-    .pipe(fs.createWriteStream(imageUrl))
+  // تحميل الصورة المختارة وحفظها مؤقتًا
+  return request(encodeURI(randomImageUrl))
+    .pipe(fs.createWriteStream(imagePath))
     .on("close", () => {
-      api.sendMessage({ body: ZiaReinRules + "\n\nيرجى التفاعل مع هذه الرسالة ب ✅ للموافقة على القواعد.", attachment: fs.createReadStream(imageUrl) }, event.threadID, (err, info) => {
-        if (!err) {
-          fs.unlinkSync(imageUrl);
-          global.client.handler.events.set(info.messageID, {
-            author: event.senderID,
-            type: "rules",
-            name: "قواعد",
-            unsend: true,
-          });
+      // إرسال القواعد مع الصورة
+      api.sendMessage(
+        {
+          body: ZiaReinRules,
+          attachment: fs.createReadStream(imagePath),
+        },
+        event.threadID,
+        (err) => {
+          if (!err) {
+            fs.unlinkSync(imagePath); // حذف الصورة بعد الإرسال
+          }
         }
-      }, event.messageID);
+      );
     });
-};
-
-const events = async ({ api, event }) => {
-  const reaction = ["✅"];
-  const userListPath = path.join(process.cwd(), "rules.json");
-  let userList = [];
-
-  if (fs.existsSync(userListPath)) {
-    const data = fs.readFileSync(userListPath, "utf8");
-    userList = JSON.parse(data);
-  }
-
-  if (event.reaction && reaction.includes(event.reaction) && event.senderID !== api.getCurrentUserID()) {
-    userList.push(event.senderID);
-    fs.writeFileSync(userListPath, JSON.stringify(userList, null, 2));
-
-    api.getUserInfo(event.senderID, (err, userInfo) => {
-      if (err) return console.error(err);
-      const userName = userInfo[event.senderID].name;
-
-      api.setMessageReaction("✅", event.messageID, () => {}, true);
-      api.sendMessage(`تهانينا يا ${userName} أنت الآن قد وافقت على شروط مجموعتنا ، أهلا بك معنا ☺️`, event.threadID, event.messageID);
-    });
-
-    global.client.handler.events.delete(event.messageID);
-  }
 };
 
 export default {
   name: "قواعد",
   author: "Hussein Yacoubi",
   role: "member",
-  description: "Sends a random image with group rules.",
+  description: "Sends group rules with a random image.",
   execute,
-  events,
 };
