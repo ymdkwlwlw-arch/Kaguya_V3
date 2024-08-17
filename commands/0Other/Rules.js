@@ -11,34 +11,30 @@ const ZiaRein3Part1 = `●═══════❍═══════●\nال
 4- المرجو التعامل مع المنشورات الجديه بكل حزم وجد والمنشورات الاخرى
 يتعامل فيها كل عضو بمايريد مع العلم ان التعليق يعبر عن شخصيتك
 5 - عدم وضع صور إباحية ومثيرة جدا وذلك تفاديا لإثارة المشاكل من قبل بعض
-الأعضاء
-\n●═══════❍═══════●`;
+الأعضاء`;
 
-const ZiaRein3Part2 = `●═══════❍═══════●\n
-6- عدم إزعاج البنات بطلبات الأضافة داخل الجروب أو الرسائل غير اللائقة.....يتم تنبيه العضو لمره واحده واذا لم يستجب العضو المعني يحذف على الفور
+const ZiaRein3Part2 = `6- عدم إزعاج البنات بطلبات الأضافة داخل الجروب أو الرسائل غير اللائقة.....يتم تنبيه العضو لمره واحده واذا لم يستجب العضو المعني يحذف على الفور
 7- عدم نشر اي صفحه في هذا للجروب
 تنبيه العضو لمره واحده واذا لم يستجب العضو المعني يحذف على الفور
 8- التشهير والتشويه لعضو ما او إنسان ما ؟ داخل الجروب يمنع منعا باتا
-ويتحمل صاحب الموضوع الجزاء وهوا الحذف النهائي
-9- يرجى عدم نشر المنشورات السياسية لكافة الدول العربية و اى عضو سينشر اى
+ويتحمل صاحب الموضوع الجزاء وهوا الحذف النهائي`;
+
+const ZiaRein3Part3 = `9- يرجى عدم نشر المنشورات السياسية لكافة الدول العربية و اى عضو سينشر اى
 منشور سياسى سيتم تحذيره مرة واحدة و بعد ذلك سيتم طرد العضو
 10- أرجو الابلاغ فوراً عن أي شيء مخالف داخل الجروب
 11- ممنوع نشر الصور الشخصيه على الجروب او كتابه ارقام الهواتف الخاصه بكم
 11_السياسه ممنوعه منعا باتا ..................... وبكرر منمنوع السياسه
-منعا باتا
-12_ اى شاب يحاول الدخول باسم بنت مصيره #الطرد
+منعا باتا`;
+
+const ZiaRein3Part4 = `12_ اى شاب يحاول الدخول باسم بنت مصيره #الطرد
 .......اي شخص يسيء للجروب سيتم حظره
 ...... ? فأتمنى أن نبقى اخوة ? .....
-\n●═══════❍═══════●`;
-
-const ZiaRein3Part3 = `●═══════❍═══════●\n
 لن نجبر أحداً على دخول المجموعة ولا على البقاء فيها !!!
 ولكني ألتمس من الموجودين فيها إحترام قوانينها.
 المجموعه منكم ولكم وانتم من يتصرف بمجريات الامور وكلنا تقة فيكم
-ارجوا من الجميع الالتزام ولكم خالص الشكر والتقدير على التعاون
-\n●═══════❍═══════●`;
+ارجوا من الجميع الالتزام ولكم خالص الشكر والتقدير على التعاون\n●═══════❍═══════●`;
 
-const ZiaRein = [
+const ZiaReinImages = [
   "https://i.imgur.com/huumLca.jpg",
   "https://i.imgur.com/EcryTGh.jpg",
   "https://i.imgur.com/tu12HrQ.jpg",
@@ -46,11 +42,11 @@ const ZiaRein = [
   "https://i.imgur.com/NcbC8Pn.jpg",
 ];
 
-const ZiaRein2 = (api, event, part, replyMessage) => {
+const sendRulesPart = (api, event, part, instruction, replyData) => {
   const imageUrl = process.cwd() + "/cache/ZiaRein1.jpg";
-  api.sendMessage({ body: part, attachment: fs.createReadStream(imageUrl) }, event.threadID, (err, info) => {
+  api.sendMessage({ body: `${part}\n\n${instruction}`, attachment: fs.createReadStream(imageUrl) }, event.threadID, (err, info) => {
     if (!err) {
-      global.client.handler.reply.set(info.messageID, replyMessage);
+      global.client.handler.reply.set(info.messageID, replyData);
       fs.unlinkSync(imageUrl);
     }
   }, event.messageID);
@@ -70,24 +66,14 @@ const execute = async ({ api, event }) => {
     return api.sendMessage("❌ | أنت بالفعل وافقت على شروط المجموعة وتم إدراج اسمك بين الأعضاء الرسميين.", event.threadID, event.messageID);
   }
 
-  return request(encodeURI(ZiaRein[Math.floor(Math.random() * ZiaRein.length)]))
+  return request(encodeURI(ZiaReinImages[Math.floor(Math.random() * ZiaReinImages.length)]))
     .pipe(fs.createWriteStream(process.cwd() + "/cache/ZiaRein1.jpg"))
     .on("close", () => {
-      ZiaRein2(api, event, ZiaRein3Part1, {
+      sendRulesPart(api, event, ZiaRein3Part1, "رد على هذه الرسالة بـ 'التالي' لمتابعة القراءة", {
         author: event.senderID,
         type: "rulesPart1",
         name: "قواعد",
         unsend: true,
-      });
-      api.sendMessage("رد على هذه الرسالة بـ 'التالي' لمتابعة القراءة", event.threadID, (err, info) => {
-        if (!err) {
-          global.client.handler.reply.set(info.messageID, {
-            author: event.senderID,
-            type: "rulesPart1",
-            name: "قواعد",
-            unsend: true,
-          });
-        }
       });
     });
 };
@@ -108,21 +94,11 @@ const onReply = async ({ api, event, reply }) => {
 
   if (reply.type === "rulesPart1") {
     if (event.body.trim().toLowerCase() === "التالي") {
-      ZiaRein2(api, event, ZiaRein3Part2, {
+      sendRulesPart(api, event, ZiaRein3Part2, "رد على هذه الرسالة بـ 'مفهوم' لمتابعة القراءة", {
         author: event.senderID,
         type: "rulesPart2",
         name: "قواعد",
         unsend: true,
-      });
-      api.sendMessage("رد على هذه الرسالة بـ 'مفهوم' لمتابعة القراءة", event.threadID, (err, info) => {
-        if (!err) {
-          global.client.handler.reply.set(info.messageID, {
-            author: event.senderID,
-            type: "rulesPart2",
-            name: "قواعد",
-            unsend: true,
-          });
-        }
       });
     } else {
       api.setMessageReaction("🚫", event.messageID, () => {}, true);
@@ -130,21 +106,11 @@ const onReply = async ({ api, event, reply }) => {
     }
   } else if (reply.type === "rulesPart2") {
     if (event.body.trim().toLowerCase() === "مفهوم") {
-      ZiaRein2(api, event, ZiaRein3Part3, {
+      sendRulesPart(api, event, ZiaRein3Part3, "رد على هذه الرسالة بـ 'تم' لتأكيد الموافقة على القواعد.", {
         author: event.senderID,
         type: "confirmRules",
         name: "قواعد",
         unsend: true,
-      });
-      api.sendMessage("رد على هذه الرسالة بـ 'تم' إذا قرأت القواعد ووافقت على شروطها.", event.threadID, (err, info) => {
-        if (!err) {
-          global.client.handler.reply.set(info.messageID, {
-            author: event.senderID,
-            type: "confirmRules",
-            name: "قواعد",
-            unsend: true,
-          });
-        }
       });
     } else {
       api.setMessageReaction("🚫", event.messageID, () => {}, true);
