@@ -40,8 +40,8 @@ export default {
       const startTime = new Date().getTime();
       const shortenedUrl = await tinyurl.shorten(imageUrl);
 
-      // Remove background using custom API with GET method
-      const apiUrl = `https://c-v1.onrender.com/api/removebg?url=${encodeURIComponent(imageUrl)}`;
+      // Remove background using the new API with direct result on browser
+      const apiUrl = `https://www.samirxpikachu.run.place/rbg?url=${encodeURIComponent(imageUrl)}`;
       const response = await axios.get(apiUrl, { responseType: 'stream' });
 
       if (response && response.data) {
