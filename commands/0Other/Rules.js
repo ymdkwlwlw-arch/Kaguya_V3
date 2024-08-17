@@ -46,7 +46,7 @@ const execute = async ({ api, event }) => {
   return request(encodeURI("https://i.imgur.com/huumLca.jpg"))
     .pipe(fs.createWriteStream(imageUrl))
     .on("close", () => {
-      api.sendMessage({ body: ZiaReinRules + "\n\nيرجى التفاعل مع هذه الرسالة ب  للموافقة على القواعد.", attachment: fs.createReadStream(imageUrl) }, event.threadID, (err, info) => {
+      api.sendMessage({ body: ZiaReinRules + "\n\nيرجى التفاعل مع هذه الرسالة ب ✅ للموافقة على القواعد.", attachment: fs.createReadStream(imageUrl) }, event.threadID, (err, info) => {
         if (!err) {
           fs.unlinkSync(imageUrl);
           global.client.handler.events.set(info.messageID, {
