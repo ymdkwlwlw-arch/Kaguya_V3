@@ -7,7 +7,7 @@ async function gpt4(prompt, customId, link) {
     const res = await axios.post(`https://cadis.onrender.com${endpoint}`, data);
     return res.data.message;
   } catch (error) {
-    throw new Error(error.message); // إلقاء خطأ بدلاً من إرجاع رسالة الخطأ
+    throw new Error(error.message);
   }
 }
 
@@ -50,7 +50,15 @@ export default {
       try {
         // التعامل مع الردود وإرسالها
         const response = await gpt4(event.body, event.senderID);
-        api.sendMessage(response, event.threadID);
+        const sentMessage = await api.sendMessage(response, event.threadID);
+
+        // تحديث الرد ليكون استمرارية
+        global.client.handler.reply.set(sentMessage.messageID, {
+          author: event.senderID,
+          type: "reply",
+          name: "ذكاء",
+          unsend: false,
+        });
 
         // إضافة التفاعل ب ⬇️ بعد الرد بـ تم
         if (event.body.trim() === "تم") {
