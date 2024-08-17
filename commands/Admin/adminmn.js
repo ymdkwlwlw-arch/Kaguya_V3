@@ -1,28 +1,55 @@
-async function handleMention({ api, event }) {
-  if (event.senderID !== "100076269693499") {
-    const mentionedIDs = Object.keys(event.mentions);
-    const myID = "100076269693499";
-
-    if (mentionedIDs.includes(myID)) {
-      const messages = [
-        "لا تقم بعمل منشن على سيدي، فهو مشغول 😗",
-        "سيدي غير متوفر حاليا 🤧",
-        "آسف ، سيدي غير متصل حاليا لكنه يكون متصلا عندما أكون أنا متصل، لذلك ليس في كل الأوقات 😪",
-        "هل يروقك سيدي لهذا قمت بعمل منشن عليه ؟ 😏",
-        "منشن أخرى على سيدي وسألكم على وجهك 🙂"
-      ];
-
-      api.setMessageReaction("⚠️", event.messageID, (err) => {}, true);
-      const randomMessage = messages[Math.floor(Math.random() * messages.length)];
-      return api.sendMessage({ body: randomMessage }, event.threadID, event.messageID);
-    }
-  }
-}
+import fs from 'fs';
+import path from 'path';
+import axios from 'axios';
 
 export default {
-  name: "رد_الآدمن",
-  author: "kaguya project",
+  name: "سجن",
+  author: "Your Name",
   role: "member",
-  description: "يتعامل مع منشن على السيدي",
-  execute: handleMention
+  description: "تحويل صورة الملف الشخصي إلى صورة مسجون.",
+  
+  execute: async ({ api, event, args }) => {
+    const { threadID, messageID, senderID } = event;
+    let id;
+
+    // التحقق من وجود إشارة إلى مستخدم في الرسالة
+    if (args.join().indexOf('@') !== -1) {
+      id = Object.keys(event.mentions)[0];
+    } else {
+      id = args[0] || senderID;
+    }
+
+    // إذا كانت الرسالة رد على رسالة أخرى، استخدم معرف المرسل الأصلي
+    if (event.type === "message_reply") {
+      id = event.messageReply.senderID;
+    }
+
+    try {
+      // Get the profile picture URL for the specified user ID
+      const profilePicUrl = `https://api-turtle.vercel.app/api/facebook/pfp?uid=${id}`;
+
+      // Call the jail API to get the "jailed" image
+      const response = await axios.get(`https://api.popcat.xyz/jail?image=${encodeURIComponent(profilePicUrl)}`, { responseType: 'stream' });
+
+      const tempFilePath = path.join(process.cwd(), 'temp.png');
+      const writer = fs.createWriteStream(tempFilePath);
+      response.data.pipe(writer);
+
+      writer.on('finish', async () => {
+        const attachment = fs.createReadStream(tempFilePath);
+        await api.sendMessage({ body: "       مسجون 🚔       ", attachment: attachment }, threadID, messageID);
+
+        // Remove the temporary file after sending
+        fs.unlinkSync(tempFilePath);
+      });
+
+      writer.on('error', (err) => {
+        console.error(err);
+        api.sendMessage("حدث خطأ أثناء معالجة الصورة.", threadID, messageID);
+      });
+    } catch (error) {
+      console.error(error);
+      api.sendMessage("حدث خطأ أثناء استدعاء API.", threadID, messageID);
+    }
+  }
 };
