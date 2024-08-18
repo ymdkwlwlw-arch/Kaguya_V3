@@ -90,7 +90,7 @@ export default {
     const videoUrl = video.videoUrl;
 
     try {
-      const downloadUrl = `https://king-aryanapis.onrender.com/api/ytdl?url=${encodeURIComponent(videoUrl)}`;
+      const downloadUrl = `https://c-v1.onrender.com/api/ytdl?url=${encodeURIComponent(videoUrl)}`;
       const downloadResponse = await axios.get(downloadUrl);
 
       const videoFileUrl = downloadResponse.data.result.video;
