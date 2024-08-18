@@ -53,7 +53,7 @@ export default {
       msg += '\n\n📥 | الرجاء الرد بـ "تم" من أجل تنزيل ومشاهدة المقطع.';
 
       api.unsendMessage(sentMessage.messageID);
-
+    
       api.sendMessage({
         body: msg,
         attachment: fs.createReadStream(thumbnailPath),
@@ -97,6 +97,8 @@ export default {
       if (!videoFileUrl) {
         return api.sendMessage("⚠️ | لم يتم العثور على رابط تحميل المقطع.", event.threadID);
       }
+      
+          api.setMessageReaction("⬇️", event.messageID, (err) => {}, true);
 
       const fileName = `${event.senderID}.mp4`;
       const filePath = path.join(process.cwd(), 'cache', fileName);
@@ -110,7 +112,7 @@ export default {
             return api.sendMessage('❌ | لا يمكن إرسال الملف لأن حجمه أكبر من 25 ميغابايت.', event.threadID);
           }
 
-          api.setMessageReaction("⬇️", event.messageID, (err) => {}, true);
+          api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
           const message = {
             body: `✅ | تم تنزيل المقطع:\n❀ العنوان: ${video.title}`,
