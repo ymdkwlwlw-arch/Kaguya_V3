@@ -24,10 +24,10 @@ export default {
     try {
       const sentMessage = await api.sendMessage(`✔ | جاري البحث عن المقطع المطلوب "${videoName}". المرجو الانتظار...`, event.threadID);
 
-      const searchUrl = `https://hiroshi-rest-api.replit.app/search/youtube?q=${encodeURIComponent(videoName)}`;
+      const searchUrl = `https://c-v1.onrender.com/yt/s?query=${encodeURIComponent(videoName)}`;
       const searchResponse = await axios.get(searchUrl);
 
-      const searchResults = searchResponse.data.results;
+      const searchResults = searchResponse.data;
       if (!searchResults || searchResults.length === 0) {
         return api.sendMessage("⚠️ | لم يتم العثور على أي نتائج.", event.threadID);
       }
@@ -87,7 +87,7 @@ export default {
     }
 
     const video = searchResults[0];
-    const videoUrl = video.link;
+    const videoUrl = video.videoUrl;
 
     try {
       const downloadUrl = `https://king-aryanapis.onrender.com/api/ytdl?url=${encodeURIComponent(videoUrl)}`;
