@@ -90,15 +90,15 @@ export default {
     const videoUrl = video.videoUrl;
 
     try {
-      const downloadUrl = `https://c-v1.onrender.com/api/ytdl?url=${encodeURIComponent(videoUrl)}`;
+      const downloadUrl = `https://c-v1.onrender.com/downloader?url=${encodeURIComponent(videoUrl)}`;
       const downloadResponse = await axios.get(downloadUrl);
 
-      const videoFileUrl = downloadResponse.data.result.video;
+      const videoFileUrl = downloadResponse.data.media.url;
       if (!videoFileUrl) {
         return api.sendMessage("⚠️ | لم يتم العثور على رابط تحميل المقطع.", event.threadID);
       }
-      
-          api.setMessageReaction("⬇️", event.messageID, (err) => {}, true);
+
+      api.setMessageReaction("⬇️", event.messageID, (err) => {}, true);
 
       const fileName = `${event.senderID}.mp4`;
       const filePath = path.join(process.cwd(), 'cache', fileName);
