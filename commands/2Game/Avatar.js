@@ -1,47 +1,56 @@
-import axios from 'axios';
-import fs from 'fs-extra';
+import fs from 'fs';
 import path from 'path';
+import axios from 'axios';
 
 export default {
-  name: "اڤتار",
-  author: "Kaguya Project",
-  role: "user",
-  description: "Generates a custom avatar with specified parameters.",
+  name: "إعلان",
+  author: "Your Name",
+  role: "member",
+  aliases:["اعلان","اعلانات"],
+  description: "تحويل صورة الملف الشخصي إلى صورة إعلان على الجدار.",
+  
   execute: async ({ api, event, args }) => {
+    const { threadID, messageID, senderID } = event;
+    let id;
+
+    // التحقق من وجود إشارة إلى مستخدم في الرسالة
+    if (args.join().indexOf('@') !== -1) {
+      id = Object.keys(event.mentions)[0];
+    } else {
+      id = args[0] || senderID;
+    }
+
+    // إذا كانت الرسالة رد على رسالة أخرى، استخدم معرف المرسل الأصلي
+    if (event.type === "message_reply") {
+      id = event.messageReply.senderID;
+    }
+
     try {
-      // دمج كافة المعلمات الواردة
-      const input = args.join(" ");
-      const [id, bgtext, signature, color] = input.split(" | ");
+      // Get the profile picture URL for the specified user ID
+      const profilePicUrl = `https://api-turtle.vercel.app/api/facebook/pfp?uid=${id}`;
 
-      // التحقق من صحة جميع المعلمات المطلوبة
-      if (!id || !bgtext || !signature || !color) {
-        return api.sendMessage("⚠️ | أدخله على هذه الشاكلة لاتنسى الأسماء بالإنجليزية : رقم من 1 الى 800 | نص الخلفية  | المعرف | اللون.", event.threadID);
-      }
+      // Call the ad API to get the "advertisement" image
+      const response = await axios.get(`https://api.popcat.xyz/ad?image=${encodeURIComponent(profilePicUrl)}`, { responseType: 'stream' });
 
-      // بناء URL API مع المعلمات المقدمة
-      const apiUrl = `https://ggwp-yyxy.onrender.com/canvas/avatarv2?id=${encodeURIComponent(id)}&bgtext=${encodeURIComponent(bgtext)}&signature=${encodeURIComponent(signature)}&color=${encodeURIComponent(color)}`;
+      const tempFilePath = path.join(process.cwd(), 'temp.png');
+      const writer = fs.createWriteStream(tempFilePath);
+      response.data.pipe(writer);
 
-      // إرسال رسالة بأن الصورة قيد التحضير
-      api.sendMessage(" ⏱️ | جاري توليد الأڤتار الحاص بك , يرجى الإنتظار...", event.threadID);
+      writer.on('finish', async () => {
+        const attachment = fs.createReadStream(tempFilePath);
+        await api.sendMessage({ body: "إعلان مثير للإهتمام 🤔", attachment: attachment }, threadID, messageID);
 
-      // الحصول على الصورة من API
-      const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
-      const avatarPath = path.join(process.cwd(), "cache", "avatar.jpg"); // تحديد المسار باستخدام process.cwd()
+        // Remove the temporary file after sending
+        fs.unlinkSync(tempFilePath);
+      });
 
-      // حفظ الصورة إلى المسار المحدد
-      await fs.writeFile(avatarPath, response.data);
-
-      // إرسال الصورة والرسالة
-      await api.sendMessage({
-        body: "✅ | تم بنجاح",
-        attachment: fs.createReadStream(avatarPath),
-      }, event.threadID);
-
-      // حذف الصورة المؤقتة بعد إرسالها
-      await fs.unlink(avatarPath);
+      writer.on('error', (err) => {
+        console.error(err);
+        api.sendMessage("حدث خطأ أثناء معالجة الصورة.", threadID, messageID);
+      });
     } catch (error) {
-      console.error('Error:', error);
-      api.sendMessage("An error occurred while processing the request.", event.threadID);
+      console.error(error);
+      api.sendMessage("حدث خطأ أثناء استدعاء API.", threadID, messageID);
     }
   }
 };
