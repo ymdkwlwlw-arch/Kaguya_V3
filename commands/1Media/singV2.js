@@ -8,7 +8,7 @@ export default {
   cooldowns: 60,
   description: "تنزيل أغنية من Spotify",
   role: "عضو",
-  aliases: ["اغنية", "غني", "موسيقى"],
+  aliases: ["اغنية", "غني", "موسيقى", "أغنية"],
 
   async execute({ api, event }) {
     const input = event.body;
@@ -24,7 +24,7 @@ export default {
     try {
       const sentMessage = await api.sendMessage(`✔ | جاري البحث عن الأغنية المطلوبة "${songName}". المرجو الانتظار...`, event.threadID);
 
-      const searchUrl = `https://hiroshi-rest-api.replit.app/search/spotify?search=${encodeURIComponent(songName)}`;
+      const searchUrl = `https://www.samirxpikachu.run.place/spotifysearch?q=${encodeURIComponent(songName)}`;
       const searchResponse = await axios.get(searchUrl);
 
       const searchResults = searchResponse.data;
@@ -34,13 +34,15 @@ export default {
 
       let msg = '🎶 | تم العثور على الأغنية التالية:\n';
       const selectedSong = searchResults[0];
-      msg += `\n❀ العنوان: ${selectedSong.name}`;
+      msg += `\n❀ العنوان: ${selectedSong.title}`;
+      msg += `\n❀ الفنان: ${selectedSong.artist}`;
+      msg += `\n❀ الألبوم: ${selectedSong.album}`;
 
       // Download the album cover image
-      const imagePath = path.join(process.cwd(), 'cache', `${selectedSong.name.replace(/\s+/g, '_')}.jpg`);
+      const imagePath = path.join(process.cwd(), 'cache', `${selectedSong.title.replace(/\s+/g, '_')}.jpg`);
       const imageWriter = fs.createWriteStream(imagePath);
       const imageStream = await axios({
-        url: selectedSong.image,
+        url: selectedSong.thumbnail,
         responseType: 'stream',
       });
       imageStream.data.pipe(imageWriter);
@@ -87,7 +89,11 @@ export default {
     }
 
     const song = searchResults[0];
-    const downloadUrl = song.download;
+    const downloadUrl = song.preview_mp3;
+
+    if (!downloadUrl) {
+      return api.sendMessage("❌ | لا تتوفر معاينة لهذه الأغنية.", event.threadID);
+    }
 
     try {
       const fileName = `${event.senderID}.mp3`;
@@ -105,7 +111,7 @@ export default {
           api.setMessageReaction("⬇️", event.messageID, (err) => {}, true);
 
           const message = {
-            body: `✅ | تم تنزيل الأغنية:\n❀ العنوان: ${song.name}`,
+            body: `✅ | تم تنزيل الأغنية:\n❀ العنوان: ${song.title}`,
             attachment: fs.createReadStream(filePath)
           };
 
