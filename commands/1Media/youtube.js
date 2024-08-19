@@ -32,18 +32,37 @@ export default {
         return api.sendMessage("⚠️ | لم يتم العثور على أي نتائج.", event.threadID);
       }
 
-      let msg = '🎥 | تم العثور على المقاطع التالية:\n';
+      let msg = '🎥 | تم العثور على المقاطع الأربعة التالية :\n';
       const selectedResults = searchResults.slice(0, 4); // Get only the first 4 results
+      const attachments = [];
 
-      selectedResults.forEach((video, index) => {
-        msg += `\n${index + 1}. ❀ العنوان: ${video.title}`;
-      });
+      for (let i = 0; i < selectedResults.length; i++) {
+        const video = selectedResults[i];
+        const videoIndex = i + 1;
+        msg += `\n${videoIndex}. ❀ العنوان: ${video.title}`;
+        
+        // تنزيل الصورة وإضافتها إلى المرفقات
+        const imagePath = path.join(process.cwd(), 'cache', `video_thumb_${videoIndex}.jpg`);
+        const imageStream = await axios({
+          url: video.thumbnail,
+          responseType: 'stream',
+        });
+
+        const writer = fs.createWriteStream(imagePath);
+        imageStream.data.pipe(writer);
+        
+        await new Promise((resolve) => {
+          writer.on('finish', resolve);
+        });
+
+        attachments.push(fs.createReadStream(imagePath));
+      }
 
       msg += '\n\n📥 | الرجاء الرد برقم المقطع الذي تود تنزيله.';
 
       api.unsendMessage(sentMessage.messageID);
 
-      api.sendMessage(msg, event.threadID, (error, info) => {
+      api.sendMessage({ body: msg, attachment: attachments }, event.threadID, (error, info) => {
         if (error) return console.error(error);
 
         global.client.handler.reply.set(info.messageID, {
@@ -53,6 +72,9 @@ export default {
           searchResults: selectedResults,
           unsend: true
         });
+
+        // حذف الصور المؤقتة بعد إرسال الرسالة
+        attachments.forEach((file) => fs.unlinkSync(file.path));
       });
 
     } catch (error) {
@@ -103,7 +125,7 @@ export default {
           api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
           const message = {
-            body: `✅ | تم تنزيل المقطع:\n❀ العنوان: ${video.title}`,
+            body: `━━━━━━━◈✿◈━━━━━━━\n✅ | تـم تـحـمـيـل الـفـيـديو:\n❀ الـعـنـوان : ${video.title}\n━━━━━━━◈✿◈━━━━━━━`,
             attachment: fs.createReadStream(filePath)
           };
 
