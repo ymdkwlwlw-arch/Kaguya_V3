@@ -113,26 +113,31 @@ export default {
           return api.sendMessage('❌ | لا يمكن إرسال الملف لأن حجمه أكبر من 25 ميغابايت.', event.threadID);
         }
 
+        // Send the audio file
         api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-        const message = {
+        api.sendMessage({
           body: `✅ | تم تنزيل الأغنية:\n❀ العنوان: ${video.title}`,
-          attachment: fs.createReadStream(filePath)
-        };
-
-        api.sendMessage(message, event.threadID, () => {
+          attachment: fs.createReadStream(filePath),
+        }, event.threadID, () => {
           fs.unlinkSync(filePath);
         });
       });
-
-      writer.on('error', (err) => {
-        console.error('[ERROR]', err);
+      writer.on('error', (error) => {
+        console.error('[ERROR]', error);
         api.sendMessage('🥱 ❀ حدث خطأ أثناء تنزيل الأغنية.', event.threadID);
       });
 
     } catch (error) {
       console.error('[ERROR]', error);
-      api.sendMessage('🥱 ❀ حدث خطأ أثناء معالجة الأمر.', event.threadID);
+      api.sendMessage('🥱 ❀ حدث خطأ أثناء معالجة طلب التنزيل.', event.threadID);
     }
-  }
+
+    // تنظيف البيانات المؤقتة بعد انتهاء العملية
+    if (reply.unsend) {
+      api.unsendMessage(reply.messageID);
+    }
+
+    global.client.handler.reply.delete(event.messageID);
+  },
 };
