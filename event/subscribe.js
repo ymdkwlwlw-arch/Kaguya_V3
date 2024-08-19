@@ -28,7 +28,8 @@ export default {
           await Threads.update(event.threadID, {
             members: +threads.members - 1,
           });
-          kaguya.reply(event.logMessageBody);
+          // تعليق أو حذف السطر التالي لإزالة رسالة المغادرة
+          // kaguya.reply(event.logMessageBody);
           break;
         }
       case "log:subscribe": {
@@ -86,8 +87,8 @@ export default {
             members: +threads.members + +event.logMessageData.addedParticipants.length,
           });
 
-          // إرسال رسالة الدخول
-          return kaguya.send(event.logMessageBody);
+          // تعليق أو حذف السطر التالي لإزالة رسالة الدخول
+          // return kaguya.send(event.logMessageBody);
         }
       }
     }
