@@ -32,31 +32,40 @@ export default {
         return api.sendMessage("⚠️ | لم يتم العثور على أي نتائج.", event.threadID);
       }
 
-      let msg = '🎶 | تم العثور على الأغنية التالية:\n';
-      const selectedVideo = searchResults[0];
-      msg += `\n❀ العنوان: ${selectedVideo.title}`;
+      let msg = '🎶 | تم العثور على الأغاني التالية:\n';
+      const selectedResults = searchResults.slice(0, 4); // Get only the first 4 results
 
-      // Download the thumbnail image
-      const thumbnailPath = path.join(process.cwd(), 'cache', `${selectedVideo.videoId}.jpg`);
-      const thumbnailWriter = fs.createWriteStream(thumbnailPath);
-      const thumbnailStream = await axios({
-        url: selectedVideo.thumbnail,
-        responseType: 'stream',
-      });
-      thumbnailStream.data.pipe(thumbnailWriter);
+      const attachments = [];
 
-      await new Promise((resolve, reject) => {
-        thumbnailWriter.on('finish', resolve);
-        thumbnailWriter.on('error', reject);
-      });
+      // Process each result
+      for (let i = 0; i < selectedResults.length; i++) {
+        const video = selectedResults[i];
+        msg += `\n${i + 1}. ❀ العنوان: ${video.title}`;
 
-      msg += '\n\n📥 | الرجاء الرد بـ "تم" من أجل تنزيل الأغنية بصيغة MP3.';
+        // Download the thumbnail image for each result
+        const thumbnailPath = path.join(process.cwd(), 'cache', `${video.videoId}.jpg`);
+        const thumbnailWriter = fs.createWriteStream(thumbnailPath);
+        const thumbnailStream = await axios({
+          url: video.thumbnail,
+          responseType: 'stream',
+        });
+        thumbnailStream.data.pipe(thumbnailWriter);
+
+        await new Promise((resolve, reject) => {
+          thumbnailWriter.on('finish', resolve);
+          thumbnailWriter.on('error', reject);
+        });
+
+        attachments.push(fs.createReadStream(thumbnailPath));
+      }
+
+      msg += '\n\n📥 | الرجاء الرد برقم الأغنية التي تود تنزيلها بصيغة MP3.';
 
       api.unsendMessage(sentMessage.messageID);
-    
+
       api.sendMessage({
         body: msg,
-        attachment: fs.createReadStream(thumbnailPath),
+        attachment: attachments
       }, event.threadID, (error, info) => {
         if (error) return console.error(error);
 
@@ -64,7 +73,7 @@ export default {
           author: event.senderID,
           type: "pick",
           name: "يوتيوب",
-          searchResults: searchResults,
+          searchResults: selectedResults,
           unsend: true
         });
       });
@@ -82,11 +91,13 @@ export default {
 
     if (event.senderID !== author) return;
 
-    if (event.body.toLowerCase() !== "تم") {
-      return api.sendMessage("❌ | الرد غير صالح. يرجى الرد بـ 'تم' لتنزيل الأغنية.", event.threadID);
+    const selectedIndex = parseInt(event.body, 10) - 1;
+
+    if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= searchResults.length) {
+      return api.sendMessage("❌ | الرد غير صالح. يرجى الرد برقم صحيح.", event.threadID);
     }
 
-    const video = searchResults[0];
+    const video = searchResults[selectedIndex];
     const videoUrl = video.videoUrl;
 
     try {
