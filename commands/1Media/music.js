@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs-extra";
 
 export default {
-  name: "تخيلي3",
+  name: "تخيلي2",
   author: "مشروع كاغويا",
   role: "member",
   description: "توليد صورة بناءً على النص المدخل.",
