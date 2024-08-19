@@ -2,36 +2,36 @@ import fs from 'fs';
 import path from 'path';
 import FormData from 'form-data';
 import axios from 'axios';
- // Assuming this import is correct
 
-const regCheckURL = /^(http|https):\/\/[^ "]+$/;
-
-async function uploadImgbb(filePath) {
+/**
+ * رفع صورة إلى imgBB والحصول على URL الخاص بها.
+ * @param {string} filePath - مسار الصورة.
+ * @returns {Promise<string>} - رابط الصورة على imgBB.
+ */
+const uploadImgbb = async (filePath) => {
   try {
     const formData = new FormData();
     formData.append('source', fs.createReadStream(filePath));
     formData.append('action', 'upload');
-    
-    const res_ = await axios({
-      method: 'GET',
-      url: 'https://imgbb.com',
-    });
 
-    const auth_token = res_.data.match(/auth_token="([^"]+)"/)[1];
+    // إرسال طلب GET للحصول على auth_token
+    const response = await axios.get('https://imgbb.com');
+    const auth_token = response.data.match(/auth_token="([^"]+)"/)[1];
     const timestamp = Date.now();
 
     formData.append('timestamp', timestamp);
     formData.append('auth_token', auth_token);
 
-    const res = await axios.post('https://imgbb.com/json', formData, {
+    // إرسال طلب POST لرفع الصورة
+    const uploadResponse = await axios.post('https://imgbb.com/json', formData, {
       headers: formData.getHeaders(),
     });
 
-    return res.data.image.url;
+    return uploadResponse.data.image.url;
   } catch (err) {
-    throw new Error(err.response ? err.response.data : err);
+    throw new Error(err.response ? err.response.data : err.message);
   }
-}
+};
 
 class AntiboxImage {
   constructor() {
@@ -43,37 +43,42 @@ class AntiboxImage {
     this.aliases = [];
   }
 
+  /**
+   * تنفيذ الأمر للحماية من تغيير صورة المجموعة.
+   * @param {object} params - المعلمات التي تحتوي على api وevent وThreads.
+   */
   async execute({ event, Threads, api }) {
     try {
-      const threadID = event.threadID;
-      const threads = (await Threads.find(threadID))?.data?.data;
-      const status = threads?.anti?.imageBox ? false : true;
-      
-      // Get the current image of the group
+      const { threadID } = event;
+      const threadData = (await Threads.find(threadID))?.data?.data;
+      const status = threadData?.anti?.imageBox ? false : true;
+
+      // الحصول على صورة المجموعة الحالية
       const currentImage = await api.getGroupImage(threadID);
       const tempImagePath = path.join(process.cwd(), 'cache', 'currentImage.jpg');
 
-      // Save the image to the cache directory
+      // حفظ الصورة في المجلد المؤقت
       fs.writeFileSync(tempImagePath, currentImage);
 
-      // Upload the image and get the URL
+      // رفع الصورة إلى imgBB والحصول على URL
       const newImageUrl = await uploadImgbb(tempImagePath);
 
-      // Update thread data
+      // تحديث بيانات المجموعة
       await Threads.update(threadID, {
         anti: {
           imageBox: status,
+          imageUrl: newImageUrl,
         },
       });
 
-      // Notify the user
-      api.sendMessage(`تم ${status ? 'تشغيل' : '❌ إطفاء ✅'} ميزة الحماية من تغيير صورة المجموعة`, threadID);
+      // إرسال رسالة تأكيد
+      await api.sendMessage(`تم ${status ? 'تشغيل' : '❌ إطفاء ✅'} ميزة الحماية من تغيير صورة المجموعة`, threadID);
 
-      // Remove temporary file
+      // حذف الصورة المؤقتة
       fs.unlinkSync(tempImagePath);
     } catch (err) {
-      console.error(err);
-      api.sendMessage('❌ | لقد حدث خطأ غير متوقع!', event.threadID);
+      console.error('خطأ أثناء تنفيذ الأمر:', err);
+      await api.sendMessage('❌ | لقد حدث خطأ غير متوقع!', event.threadID);
     }
   }
 }
