@@ -22,7 +22,7 @@ export default {
       const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
       prompt = translationResponse?.data?.[0]?.[0]?.[0];
 
-      const apiUrl = `https://samirxpikachu.onrender.com/sd3-medium?prompt=${encodeURIComponent(prompt)}`;
+      const apiUrl = `https://www.samirxpikachu.run.place/sd3-medium?prompt=${encodeURIComponent(prompt)}`;
 
       const response = await axios.get(apiUrl, { responseType: 'stream' });
 
