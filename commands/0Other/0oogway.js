@@ -17,11 +17,11 @@ async function oogwayAlert({ api, event, args }) {
     api.setMessageReaction("⏱️", event.messageID, () => {}, true);
     const response = await axios.get(`https://api.popcat.xyz/oogway?text=${encodeURIComponent(query)}`, { responseType: 'arraybuffer' });
     fs.writeFileSync(imagePath, Buffer.from(response.data, "utf-8"));
-    api.setMessageReaction("👌", event.messageID, () => {}, true);
+    api.setMessageReaction("📜", event.messageID, () => {}, true);
 
     setTimeout(function () {
       api.sendMessage({
-        body: "📜 OOGWAY'S WISDOM ⚠️",
+        body: "📜 OOGWAY'S WISDOM 📜",
         attachment: fs.createReadStream(imagePath)
       }, threadID, () => {
         setTimeout(() => {
