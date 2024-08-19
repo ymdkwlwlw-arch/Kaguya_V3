@@ -17,14 +17,16 @@ export default {
       const query = args.join(" ");
       if (!query) return api.sendMessage("⚠️ | يرجى إدخال استعلام البحث.", event.threadID, event.messageID);
 
-      const apiUrl = `https://markdevs-last-api-as2j.onrender.com/api/tiksearch?search=${encodeURIComponent(query)}`;
+      const apiUrl = `https://c-v1.onrender.com/tiksearch?query=${encodeURIComponent(query)}`;
       const response = await axios.get(apiUrl);
 
       if (response.data.code === 0 && response.data.data.videos.length > 0) {
         const videoData = response.data.data.videos[0];
         const videoUrl = videoData.play;
         const title = videoData.title;
-        const duration = videoData.duration;
+        const views = videoData.play_count; // عدد التشغيلات
+        const downloads = videoData.download_count; // عدد التحميلات
+        const shares = videoData.share_count; // عدد المشاركات
 
         const videoFileName = `${videoData.video_id}.mp4`;
         const tempVideoPath = path.join(process.cwd(), 'cache', videoFileName);
@@ -37,7 +39,7 @@ export default {
 
         writer.on('finish', () => {
           api.sendMessage({
-            body: `📹 | العنوان: ${title}\n⏱️ | المدة: ${duration} ث`,
+            body: `📹 | العنوان: ${title}\n👁️ | عدد التشغيلات: ${views}\n⬇️ | عدد التحميلات: ${downloads}\n🔄 | عدد المشاركات: ${shares}`,
             attachment: fs.createReadStream(tempVideoPath)
           }, event.threadID, () => {
             fs.unlinkSync(tempVideoPath); // تنظيف الملف بعد الإرسال
