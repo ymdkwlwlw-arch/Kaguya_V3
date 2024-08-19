@@ -23,7 +23,7 @@ export default {
       const translatedPrompt = await translateToEnglish(prompt);
 
       // رابط الأساسي للخدمة مع المعاملات
-      const apiUrl = `https://samirxpikachuio.onrender.com/niji?prompt=${encodeURIComponent(translatedPrompt)}&resolution=${encodeURIComponent(resolution)}`;
+      const apiUrl = `https://www.samirxpikachu.run.place/niji?prompt=${encodeURIComponent(translatedPrompt)}&resolution=${encodeURIComponent(resolution)}`;
       const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
       const imageData = Buffer.from(response.data, 'binary');
 
