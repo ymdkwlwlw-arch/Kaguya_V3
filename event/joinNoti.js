@@ -19,7 +19,7 @@ async function execute({ api, event, Users, Threads }) {
         console.error('Error getting members count:', error);
         return "Unknown";
       });
-      const farewellMessage = `❏ إسم العضو 👤 : 『${profileName}』 \n❏ السبب 📝 : 『${type} - ${farewellReason}』\n❏ عدد الأعضاء الآن في المجموعة: ${membersCount}`;
+      const farewellMessage = `❏ الإســم 👤 : 『${profileName}』 \n❏ الـسـبـب 📝 : 『${type} \n ${farewellReason}』\n❏ المـتـبـقـيـيـن : ${membersCount} عـضـو`;
       const profilePicturePath = await getProfilePicture(leftParticipantFbId);
       await sendWelcomeOrFarewellMessage(api, event.threadID, farewellMessage, profilePicturePath);
       break;
@@ -53,9 +53,9 @@ async function execute({ api, event, Users, Threads }) {
         const profileName = userInfo[participant.userFbId]?.name || "Unknown";
         participantNames.push(`『${profileName}』`);
       }
-      const welcomeMessage = `✿━━━━━━━━━━━━━━━✿\n❏ أعضاء جدد إنضموا إلى المجموعة 🎉:\n${participantNames.join("\n")}\n❏ ترتيبك 🔢 : 『${membersCount}』\n❏ إسم المجموعة 🧭 : 『${threadName}』\n❏ 📅 | تاريخ الإنضمام : ${moment().tz("Africa/Casablanca").format("YYYY-MM-DD")}
-❏ ⏰ | وقت الإنضمام : ${moment().tz("Africa/Casablanca").format("HH:mm:ss")}\n🔖 | لا تسئ اللفظ وإن ضاق بك الرد\n✿━━━━━━━━━━━━━━━✿`;
-      await sendWelcomeOrFarewellMessage(api, event.threadID, welcomeMessage, "cache12/hello.gif");
+      const welcomeMessage = `◆❯━━━━━▣✦▣━━━━━━❮◆\n≪⚠️ إشــعــار بــالإنــضــمــام ⚠️≫\n👥 | الإســم : ${participantNames.join("\n")}\n❏ الـتـرتـيـب 🔢 : 『${membersCount}』\n❏ إسـم الـمـجـمـوعـة 🧭 : 『${threadName}』\n❏ 📅 | بـ تـاريـخ : ${moment().tz("Africa/Casablanca").format("YYYY-MM-DD")}
+❏ ⏰ | عـلـى الـوقـت : ${moment().tz("Africa/Casablanca").format("HH:mm:ss")}\n『🔖لا تـسـئ الـلـفـظ وإن ضـاق بـك الـرد🔖』\n◆❯━━━━━▣✦▣━━━━━━❮◆`;
+      await sendWelcomeOrFarewellMessage(api, event.threadID, welcomeMessage, "cache12/hello.jpg");
       break;
     }
   }
