@@ -32,39 +32,25 @@ export default {
         return api.sendMessage("⚠️ | لم يتم العثور على أي نتائج.", event.threadID);
       }
 
-      let msg = '🎥 | تم العثور على المقطع التالي:\n';
-      const selectedVideo = searchResults[0];
-      msg += `\n❀ العنوان: ${selectedVideo.title}`;
+      let msg = '🎥 | تم العثور على المقاطع التالية:\n';
+      const selectedResults = searchResults.slice(0, 4); // Get only the first 4 results
 
-      // Download the thumbnail image
-      const thumbnailPath = path.join(process.cwd(), 'cache', `${selectedVideo.videoId}.jpg`);
-      const thumbnailWriter = fs.createWriteStream(thumbnailPath);
-      const thumbnailStream = await axios({
-        url: selectedVideo.thumbnail,
-        responseType: 'stream',
-      });
-      thumbnailStream.data.pipe(thumbnailWriter);
-
-      await new Promise((resolve, reject) => {
-        thumbnailWriter.on('finish', resolve);
-        thumbnailWriter.on('error', reject);
+      selectedResults.forEach((video, index) => {
+        msg += `\n${index + 1}. ❀ العنوان: ${video.title}`;
       });
 
-      msg += '\n\n📥 | الرجاء الرد بـ "تم" من أجل تنزيل ومشاهدة المقطع.';
+      msg += '\n\n📥 | الرجاء الرد برقم المقطع الذي تود تنزيله.';
 
       api.unsendMessage(sentMessage.messageID);
-    
-      api.sendMessage({
-        body: msg,
-        attachment: fs.createReadStream(thumbnailPath),
-      }, event.threadID, (error, info) => {
+
+      api.sendMessage(msg, event.threadID, (error, info) => {
         if (error) return console.error(error);
 
         global.client.handler.reply.set(info.messageID, {
           author: event.senderID,
           type: "pick",
           name: "يوتيوب",
-          searchResults: searchResults,
+          searchResults: selectedResults,
           unsend: true
         });
       });
@@ -82,11 +68,13 @@ export default {
 
     if (event.senderID !== author) return;
 
-    if (event.body.toLowerCase() !== "تم") {
-      return api.sendMessage("❌ | الرد غير صالح. يرجى الرد بـ 'تم' لتنزيل المقطع.", event.threadID);
+    const selectedIndex = parseInt(event.body, 10) - 1;
+
+    if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= searchResults.length) {
+      return api.sendMessage("❌ | الرد غير صالح. يرجى الرد برقم صحيح.", event.threadID);
     }
 
-    const video = searchResults[0];
+    const video = searchResults[selectedIndex];
     const videoUrl = video.videoUrl;
 
     try {
