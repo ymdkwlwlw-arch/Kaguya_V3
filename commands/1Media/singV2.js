@@ -68,7 +68,7 @@ export default {
         global.client.handler.reply.set(info.messageID, {
           author: event.senderID,
           type: "pick",
-          name: "يوتيوب",
+          name: "اغنية",
           searchResults: selectedResults,
           unsend: true
         });
