@@ -7,12 +7,17 @@ export default {
   name: "تخيلي",
   author: "kaguya project",
   cooldowns: 50,
-  description: "فم بتوليد ثور بإستخدام الذكاء الإصطناعي dalle",
+  description: "قم بتوليد صور باستخدام الذكاء الاصطناعي DALL·E",
   role: "member",
   aliases: ["dalle", "دايل"],
   execute: async ({ api, event, args, Economy }) => {
 
     api.setMessageReaction("⚙️", event.messageID, (err) => {}, true);
+
+    // التحقق من وجود برومبت
+    if (args.length === 0) {
+      return api.sendMessage("⚠️ | من فضلك أدخل البرومبت الذي تود استخدامه لتوليد الصورة.", event.threadID, event.messageID);
+    }
 
     const userMoney = (await Economy.getBalance(event.senderID)).data;
     const cost = 100;
@@ -58,7 +63,8 @@ export default {
 
         await api.sendMessage({
           attachment: imgData,
-          body: `࿇ ══━━✥◈✥━━══ ࿇\n [ تـم تـولـيـد الـصورة بـنجـاح ] \n 👥 | مـن طـرف : ${userName}\n⏰ | ❏ الـتـوقـيـت : ${timeString}\n📅 | ❏ الـتـاريـخ: ${dateString}\n⏳ | ❏ الوقـت الـمـسـتـغـرق: ${executionTime} ثانية\n📝 | ❏ الـبـرومـبـت : ${prompt}\n࿇ ══━━✥◈✥━━══ ࿇`
+          body: `\t\t\t\t\t࿇ ══━━✥◈✥━━══ ࿇\n\t\t\t\t 〘تـم تـولـيـد الـصورة بـنجـاح〙  \n 👥 | مـن طـرف : ${userName}\n⏰ | ❏الـتـوقـيـت : ${timeString}\n📅 | ❏الـتـاريـخ: ${dateString}\n⏳ | ❏الوقـت الـمـسـتـغـرق: ${executionTime} ثانية\n📝 | ❏ الـبـرومـبـت : ${prompt}\n 🔖 | تم خصم 
+〘${cost}〙دولار 💵\n\t\t\t\t࿇ ══━━✥◈✥━━══ ࿇`
         }, event.threadID, event.messageID);
       });
 
