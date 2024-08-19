@@ -12,53 +12,35 @@ export default {
     try {
       api.setMessageReaction('⏱️', event.messageID, (err) => {}, true);
 
+      // ترجمة النص المدخل من العربية إلى الإنجليزية
       const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(args.join(' '))}`);
       const translatedText = translationResponse.data[0][0][0];
 
-      const keySearch = translatedText;
-      const numberSearch = 9; // تحديد عدد الصور ليكون 9
-
-      const apiUrl = `https://c-v1.onrender.com/api/pint?search=${encodeURIComponent(keySearch)}&count=${numberSearch}`;
+      // بناء رابط API الجديد مع النص المترجم
+      const apiUrl = `https://c-v1.onrender.com/api/pint?search=${encodeURIComponent(translatedText)}&count=9`;
 
       const res = await axios.get(apiUrl);
-      const data = res.data;
-
-      if (!data || !data.data || !data.data.length) {
-        return api.sendMessage('لم يتم العثور على صور.', event.threadID, event.messageID);
-      }
-
-      const cacheDir = path.join(process.cwd(), 'cache');
-      await fs.ensureDir(cacheDir); // تأكد من وجود مجلد cache
-
+      const data = res.data.data;
       const imgData = [];
-      const imageCount = Math.min(numberSearch, data.count); // استخدم data.count لتحديد عدد الصور الفعلي
 
-      for (let i = 0; i < imageCount; i++) {
-        const imgResponse = await axios.get(data.data[i], { responseType: 'arraybuffer' });
-        const imgPath = path.join(cacheDir, `${i + 1}.jpg`);
+      for (let i = 0; i < data.length; i++) {
+        const imgResponse = await axios.get(data[i], { responseType: 'arraybuffer' });
+        const imgPath = path.join(process.cwd(), 'cache', `${i + 1}.jpg`);
         await fs.outputFile(imgPath, imgResponse.data);
 
+        api.setMessageReaction('✅', event.messageID, (err) => {}, true);
         imgData.push(fs.createReadStream(imgPath));
       }
 
-      // إرسال الرسالة النصية مع الصور كمرفقات
       await api.sendMessage({
-        body: ` 🔖 | الــعــدد : ${imgData.length} \n📋 | الــبــرومــبــت : ${args.join(' ')}`,
-        attachment: imgData
-      }, event.threadID, (err) => {
-        if (err) {
-          console.error(err);
-          return api.sendMessage('حدث خطأ أثناء محاولة إرسال الرسالة.', event.threadID, event.messageID);
-        }
+        attachment: imgData,
+      }, event.threadID, event.messageID);
 
-        api.setMessageReaction('✅', event.messageID, (err) => {}, true);
-
-        // إزالة مجلد cache بعد إرسال الصور
-        fs.remove(cacheDir).catch(console.error);
-      });
+      // حذف الصور المؤقتة بعد إرسالها
+      await fs.remove(path.join(process.cwd(), 'cache'));
     } catch (error) {
       console.error(error);
-      return api.sendMessage('حدث خطأ أثناء محاولة جلب الصور.', event.threadID, event.messageID);
+      return api.sendMessage('حدث خطأ.', event.threadID, event.messageID);
     }
   },
 };
