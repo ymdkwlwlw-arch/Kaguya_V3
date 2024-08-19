@@ -3,12 +3,12 @@ import fs from 'fs-extra';
 import path from 'path';
 
 export default {
-  name: "يوتيوب",
+  name: "اغنية",
   author: "حسين يعقوبي",
   cooldowns: 60,
   description: "تنزيل أغنية من YouTube بصيغة MP3",
   role: "عضو",
-  aliases: ["يوتيب", "فيديو", "مقطع"],
+  aliases: ["غني", "أغنية", "غني"],
 
   async execute({ api, event }) {
     const input = event.body;
