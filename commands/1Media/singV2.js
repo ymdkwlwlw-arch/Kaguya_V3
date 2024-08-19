@@ -6,25 +6,25 @@ export default {
   name: "اغنية",
   author: "حسين يعقوبي",
   cooldowns: 60,
-  description: "تنزيل أغنية من YouTube بصيغة MP3",
+  description: "تنزيل مقطع من YouTube",
   role: "عضو",
-  aliases: ["غني", "أغنية", "غني"],
+  aliases: ["غني", "أغنية", "موسيقى"],
 
   async execute({ api, event }) {
     const input = event.body;
     const data = input.split(" ");
 
     if (data.length < 2) {
-      return api.sendMessage("⚠️ | أرجوك قم بإدخال اسم الأغنية.", event.threadID);
+      return api.sendMessage("⚠️ | أرجوك قم بإدخال اسم المقطع.", event.threadID);
     }
 
     data.shift();
-    const songName = data.join(" ");
+    const videoName = data.join(" ");
 
     try {
-      const sentMessage = await api.sendMessage(`✔ | جاري البحث عن الأغنية المطلوبة "${songName}". المرجو الانتظار...`, event.threadID);
+      const sentMessage = await api.sendMessage(`✔ | جاري البحث عن المقطع المطلوب "${videoName}". المرجو الانتظار...`, event.threadID);
 
-      const searchUrl = `https://c-v1.onrender.com/yt/s?query=${encodeURIComponent(songName)}`;
+      const searchUrl = `https://c-v1.onrender.com/yt/s?query=${encodeURIComponent(videoName)}`;
       const searchResponse = await axios.get(searchUrl);
 
       const searchResults = searchResponse.data;
@@ -32,41 +32,37 @@ export default {
         return api.sendMessage("⚠️ | لم يتم العثور على أي نتائج.", event.threadID);
       }
 
-      let msg = '🎶 | تم العثور على الأغاني التالية:\n';
+      let msg = '🎵 | تم العثور على النتائج التالية:\n';
       const selectedResults = searchResults.slice(0, 4); // Get only the first 4 results
-
       const attachments = [];
 
-      // Process each result
       for (let i = 0; i < selectedResults.length; i++) {
         const video = selectedResults[i];
-        msg += `\n${i + 1}. ❀ العنوان: ${video.title}`;
-
-        // Download the thumbnail image for each result
-        const thumbnailPath = path.join(process.cwd(), 'cache', `${video.videoId}.jpg`);
-        const thumbnailWriter = fs.createWriteStream(thumbnailPath);
-        const thumbnailStream = await axios({
+        const videoIndex = i + 1;
+        msg += `\n${videoIndex}. ❀ العنوان: ${video.title}`;
+        
+        // تنزيل الصورة وإضافتها إلى المرفقات
+        const imagePath = path.join(process.cwd(), 'cache', `video_thumb_${videoIndex}.jpg`);
+        const imageStream = await axios({
           url: video.thumbnail,
           responseType: 'stream',
         });
-        thumbnailStream.data.pipe(thumbnailWriter);
 
-        await new Promise((resolve, reject) => {
-          thumbnailWriter.on('finish', resolve);
-          thumbnailWriter.on('error', reject);
+        const writer = fs.createWriteStream(imagePath);
+        imageStream.data.pipe(writer);
+        
+        await new Promise((resolve) => {
+          writer.on('finish', resolve);
         });
 
-        attachments.push(fs.createReadStream(thumbnailPath));
+        attachments.push(fs.createReadStream(imagePath));
       }
 
-      msg += '\n\n📥 | الرجاء الرد برقم الأغنية التي تود تنزيلها بصيغة MP3.';
+      msg += '\n\n📥 | الرجاء الرد برقم من اجل تنزيل وسماع الأغنية.';
 
       api.unsendMessage(sentMessage.messageID);
 
-      api.sendMessage({
-        body: msg,
-        attachment: attachments
-      }, event.threadID, (error, info) => {
+      api.sendMessage({ body: msg, attachment: attachments }, event.threadID, (error, info) => {
         if (error) return console.error(error);
 
         global.client.handler.reply.set(info.messageID, {
@@ -76,6 +72,9 @@ export default {
           searchResults: selectedResults,
           unsend: true
         });
+
+        // حذف الصور المؤقتة بعد إرسال الرسالة
+        attachments.forEach((file) => fs.unlinkSync(file.path));
       });
 
     } catch (error) {
@@ -115,40 +114,30 @@ export default {
       const filePath = path.join(process.cwd(), 'cache', fileName);
 
       const writer = fs.createWriteStream(filePath);
-      const audioStream = await axios.get(audioFileUrl, { responseType: 'stream' });
-      audioStream.data.pipe(writer);
+      const audioStream = axios.get(audioFileUrl, { responseType: 'stream' }).then(response => {
+        response.data.pipe(writer);
+        writer.on('finish', () => {
+          if (fs.statSync(filePath).size > 26214400) {
+            fs.unlinkSync(filePath);
+            return api.sendMessage('❌ | لا يمكن إرسال الملف لأن حجمه أكبر من 25 ميغابايت.', event.threadID);
+          }
 
-      writer.on('finish', () => {
-        if (fs.statSync(filePath).size > 26214400) {
-          fs.unlinkSync(filePath);
-          return api.sendMessage('❌ | لا يمكن إرسال الملف لأن حجمه أكبر من 25 ميغابايت.', event.threadID);
-        }
+          api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
-        // Send the audio file
-        api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+          const message = {
+            body: `✅ | تم تنزيل الأغنية:\n❀ العنوان: ${video.title}`,
+            attachment: fs.createReadStream(filePath)
+          };
 
-        api.sendMessage({
-          body: `✅ | تم تنزيل الأغنية:\n❀ العنوان: ${video.title}`,
-          attachment: fs.createReadStream(filePath),
-        }, event.threadID, () => {
-          fs.unlinkSync(filePath);
+          api.sendMessage(message, event.threadID, () => {
+            fs.unlinkSync(filePath);
+          });
         });
-      });
-      writer.on('error', (error) => {
-        console.error('[ERROR]', error);
-        api.sendMessage('🥱 ❀ حدث خطأ أثناء تنزيل الأغنية.', event.threadID);
       });
 
     } catch (error) {
       console.error('[ERROR]', error);
-      api.sendMessage('🥱 ❀ حدث خطأ أثناء معالجة طلب التنزيل.', event.threadID);
+      api.sendMessage('🥱 ❀ حدث خطأ أثناء معالجة الأمر.', event.threadID);
     }
-
-    // تنظيف البيانات المؤقتة بعد انتهاء العملية
-    if (reply.unsend) {
-      api.unsendMessage(reply.messageID);
-    }
-
-    global.client.handler.reply.delete(event.messageID);
-  },
+  }
 };
