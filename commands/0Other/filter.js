@@ -1,30 +1,19 @@
-import path from 'path';
-import fs from 'fs';
-
-async function getGreetingImage() {
-  // تحديد المسار إلى مجلد 'cache12'
-  const imagePath = path.join(process.cwd(), 'cache12', 'nani.mp3'); // تحديث اسم الصورة إذا كان مختلفًا
-  return fs.createReadStream(imagePath);
-}
-
 export default {
-  name: "ناني",
+  name: "تحية",
   author: "البوت",
   role: "member",
-  description: "يرسل رسالة ترحيبية مع صورة.",
+  aliases:["السلام عليكم","سلام","السلام عليكم ورحمة الله وبركاته"],
+  description: "رد السلام",
   execute: async function({ api, event }) {
     try {
-      const greetingImageStream = await getGreetingImage();
-        
-        api.setMessageReaction("😨", event.messageID, (err) => {}, true);
-  
+      api.setMessageReaction("💖", event.messageID, (err) => {}, true);
+
       api.sendMessage({
-        body: "[ ناني 😗 ]",
-        attachment: greetingImageStream
+        body: "〘وعــلـ(✋)ـيــكـم الــ(💜)ـســلام وݛحـٍّْـٍّْ⁽😘ــمــة الًـًٍۖـٍـٍۖ(☝)ٍۖـًٍٍٍّـًٍلۖهًٍۖۂ وبـۗـۗـۗـۗـۗـۗركۧۧــۧۧۧۧۧـۗـۗ(ۗ😇)ـۗـۗاتهۂ〙"
       }, event.threadID, event.messageID);
     } catch (error) {
-      console.error('Error sending greeting message:', error);
-      api.sendMessage('❌ | حدث خطأ أثناء إرسال الرسالة الترحيبية.', event.threadID, event.messageID);
+      console.error('Error sending message:', error);
+      api.sendMessage('❌ | حدث خطأ أثناء إرسال الرسالة.', event.threadID, event.messageID);
     }
   }
 };
