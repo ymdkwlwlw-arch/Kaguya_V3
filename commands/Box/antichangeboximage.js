@@ -33,6 +33,28 @@ const uploadImgbb = async (filePath) => {
   }
 };
 
+/**
+ * جلب صورة المجموعة باستخدام api.getThreadInfo.
+ * @param {object} api - واجهة برمجة التطبيقات.
+ * @param {string} threadID - معرف المجموعة.
+ * @returns {Promise<Buffer>} - بيانات الصورة كـ Buffer.
+ */
+const fetchGroupImage = async (api, threadID) => {
+  try {
+    const threadInfo = await api.getThreadInfo(threadID);
+    const imageSrc = threadInfo.imageSrc;
+
+    // التحقق مما إذا كانت الصورة موجودة
+    if (!imageSrc) throw new Error('لا توجد صورة حالية للمجموعة.');
+
+    // جلب الصورة كـ Buffer
+    const response = await axios.get(imageSrc, { responseType: 'arraybuffer' });
+    return Buffer.from(response.data, 'binary');
+  } catch (error) {
+    throw new Error('خطأ أثناء جلب صورة المجموعة: ' + error.message);
+  }
+};
+
 class AntiboxImage {
   constructor() {
     this.name = 'حماية_الصورة';
@@ -54,7 +76,7 @@ class AntiboxImage {
       const status = threadData?.anti?.imageBox ? false : true;
 
       // الحصول على صورة المجموعة الحالية باستخدام fetchGroupImage
-      const currentImage = await api.fetchGroupImage(threadID);
+      const currentImage = await fetchGroupImage(api, threadID);
       const tempImagePath = path.join(process.cwd(), 'cache', 'currentImage.jpg');
 
       // حفظ الصورة في المجلد المؤقت
