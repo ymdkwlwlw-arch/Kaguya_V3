@@ -1,46 +1,47 @@
 import axios from 'axios';
-import fs from 'fs-extra';
+import fs from 'fs';
 import path from 'path';
 
 export default {
-  name: 'صور',
-  author: 'kaguya project',
-  role: 0,
-  description: 'البحث عن صور بالنص المدخل وإرسالها.',
+    name: "صور",
+    author: "HUSSEIN YACOUBI",
+    role: "member",
+    aliases:["بنتريست"],
+    description: "Searches Pinterest and returns related images based on the keyword.",
+    execute: async function({ api, event, args }) {
+        const keySearch = args.join(" ");
+        
+        // React with ⏱️ to indicate the search has started
+        api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
 
-  execute: async function ({ api, event, args }) {
-    try {
-      api.setMessageReaction('⏱️', event.messageID, (err) => {}, true);
+        // API request to fetch Pinterest images
+        const pinterestResponse = await axios.get(`https://c-v1.onrender.com/api/pint?search=${encodeURIComponent(keySearch)}&count=9`);
+        const data = pinterestResponse.data.data;
 
-      // ترجمة النص المدخل من العربية إلى الإنجليزية
-      const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(args.join(' '))}`);
-      const translatedText = translationResponse.data[0][0][0];
+        const imgData = [];
+        const cacheDir = path.join(process.cwd(), 'cache');
 
-      // بناء رابط API الجديد مع النص المترجم
-      const apiUrl = `https://c-v1.onrender.com/api/pint?search=${encodeURIComponent(translatedText)}&count=9`;
+        for (let i = 0; i < data.length; i++) {
+            const imgPath = path.join(cacheDir, `jj${i + 1}.jpg`);
+            const imageResponse = await axios.get(data[i], { responseType: 'arraybuffer' });
+            fs.writeFileSync(imgPath, Buffer.from(imageResponse.data, 'binary'));
+            imgData.push(fs.createReadStream(imgPath));
+        }
 
-      const res = await axios.get(apiUrl);
-      const data = res.data.data;
-      const imgData = [];
+        // Send the images in the chat
+        api.sendMessage({
+            attachment: imgData,
+            body: '[⚜️] هذه عمليات البحث ذات الصلة'
+        }, event.threadID, (err, info) => {
+            if (err) console.error(err);
 
-      for (let i = 0; i < data.length; i++) {
-        const imgResponse = await axios.get(data[i], { responseType: 'arraybuffer' });
-        const imgPath = path.join(process.cwd(), 'cache', `${i + 1}.jpg`);
-        await fs.outputFile(imgPath, imgResponse.data);
+            // Clean up the cache by removing the downloaded images
+            for (let i = 0; i < data.length; i++) {
+                fs.unlinkSync(path.join(cacheDir, `jj${i + 1}.jpg`));
+            }
 
-        api.setMessageReaction('✅', event.messageID, (err) => {}, true);
-        imgData.push(fs.createReadStream(imgPath));
-      }
-
-      await api.sendMessage({
-        attachment: imgData,
-      }, event.threadID, event.messageID);
-
-      // حذف الصور المؤقتة بعد إرسالها
-      await fs.remove(path.join(process.cwd(), 'cache'));
-    } catch (error) {
-      console.error(error);
-      return api.sendMessage('حدث خطأ.', event.threadID, event.messageID);
+            // React with ✅ to indicate the operation was successful
+            api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+        });
     }
-  },
 };
