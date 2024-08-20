@@ -50,6 +50,7 @@ async function execute({ api, event, args, Threads, Users, Economy }) {
 export default {
   name: "تجربة",
   auther:"owner",
+  aliases:["eval"],
   description: "يقوم بتقييم الكود المُدخل وإظهار الناتج.",
   execute,
 };
