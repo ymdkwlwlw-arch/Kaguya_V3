@@ -4,7 +4,7 @@ import path from "path";
 
 async function getImage(searchText) {
   try {
-    const apiUrl = `https://samirxpikachuio.onrender.com/google/imagesearch?q=${encodeURIComponent(searchText)}`;
+    const apiUrl = `https://www.samirxpikachu.run.place/google/imagesearch?q=${encodeURIComponent(searchText)}`;
     const response = await axios.get(apiUrl);
     const imageUrl = response.data.data[0];
     const imageBuffer = await axios.get(imageUrl, { responseType: 'arraybuffer' });
