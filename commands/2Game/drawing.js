@@ -9,7 +9,7 @@ export default {
   cooldowns: 50,
   description: "قم بتوليد صور باستخدام الذكاء الاصطناعي DALL·E",
   role: "member",
-  aliases: ["dalle", "دايل"],
+  aliases: ["تخيل", "imagine"],
   execute: async ({ api, event, args, Economy }) => {
 
     api.setMessageReaction("⚙️", event.messageID, (err) => {}, true);
@@ -63,7 +63,7 @@ export default {
 
         await api.sendMessage({
           attachment: imgData,
-          body: `\t\t\t\t\t࿇ ══━━✥◈✥━━══ ࿇\n\t\t\t\t 〘تـم تـولـيـد الـصورة بـنجـاح〙  \n 👥 | مـن طـرف : ${userName}\n⏰ | ❏الـتـوقـيـت : ${timeString}\n📅 | ❏الـتـاريـخ: ${dateString}\n⏳ | ❏الوقـت الـمـسـتـغـرق: ${executionTime} ثانية\n📝 | ❏ الـبـرومـبـت : ${prompt}\n 🔖 | تم خصم 
+          body: `\t\t\t࿇ ══━━✥◈✥━━══ ࿇\n\t\t 〘تـم تـولـيـد الـصورة بـنجـاح〙  \n 👥 | مـن طـرف : ${userName}\n⏰ | ❏الـتـوقـيـت : ${timeString}\n📅 | ❏الـتـاريـخ: ${dateString}\n⏳ | ❏الوقـت الـمـسـتـغـرق: ${executionTime} ثانية\n📝 | ❏ الـبـرومـبـت : ${prompt}\n 🔖 | تم خصم 
 〘${cost}〙دولار 💵\n\t\t\t\t࿇ ══━━✥◈✥━━══ ࿇`
         }, event.threadID, event.messageID);
       });
