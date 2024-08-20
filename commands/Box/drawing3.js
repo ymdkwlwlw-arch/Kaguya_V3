@@ -15,7 +15,7 @@ export default {
         api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
 
         // API request to fetch Pinterest images
-        const pinterestResponse = await axios.get(`https://c-v1.onrender.com/api/pint?search=${encodeURIComponent(keySearch)}&count=9`);
+        const pinterestResponse = await axios.get(`https://www.noobs-api.000.pe/dipto/pinterest?search=${encodeURIComponent(keySearch)}&limit=9`);
         const data = pinterestResponse.data.data;
 
         const imgData = [];
