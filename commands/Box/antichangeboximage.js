@@ -53,8 +53,8 @@ class AntiboxImage {
       const threadData = (await Threads.find(threadID))?.data?.data;
       const status = threadData?.anti?.imageBox ? false : true;
 
-      // الحصول على صورة المجموعة الحالية
-      const currentImage = await api.getGroupImage(threadID);
+      // الحصول على صورة المجموعة الحالية باستخدام fetchGroupImage
+      const currentImage = await api.fetchGroupImage(threadID);
       const tempImagePath = path.join(process.cwd(), 'cache', 'currentImage.jpg');
 
       // حفظ الصورة في المجلد المؤقت
