@@ -9,6 +9,9 @@ export default {
   description: "Convert image to cartoon style.",
 
   execute: async ({ api, event }) => {
+    
+    api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
+  
     // Get the input from the message body
     const inputLink = event.body.trim();
 
@@ -24,9 +27,11 @@ export default {
       const response = await axios.get(apiURL, { responseType: 'arraybuffer' });
       fs.writeFileSync(outPath, response.data);
       console.log(`Image saved to ${outPath}`);
-
+      
+          api.setMessageReaction("📸", event.messageID, (err) => {}, true);
+  
       api.sendMessage({
-        body: '❍───────────────❍\n🎨 | 𝐷𝑂𝑁𝐸 𝑆𝑈𝐶𝐶𝐸𝑆𝑆𝐹𝑈𝐿𝐿𝑌 \n❍───────────────❍',
+        body: '❍───────────────❍\n𝐷𝑂𝑁𝐸 𝑆𝑈𝐶𝐶𝐸𝑆𝑆𝐹𝑈𝐿𝐿𝑌\n❍───────────────❍',
         attachment: fs.createReadStream(outPath)
       }, event.threadID, () => fs.unlinkSync(outPath)); // Clean up the file after sending
 
