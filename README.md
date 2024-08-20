@@ -1,5 +1,5 @@
 <p align="center">
-<img src="(https://i.ibb.co/74m2BvB/Picsart-24-08-20-12-21-07-698.jpg)"/>
+<img src="[https://i.ibb.co/74m2BvB/Picsart-24-08-20-12-21-07-698.jpg]"/>
 </p>
 <h1 align="center">كاغويا البوت</h1>
 
