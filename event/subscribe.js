@@ -47,8 +47,7 @@ export default {
 
           // تزيين رسالة الدخول
           const currentTime = moment().tz("Africa/Casablanca").format("YYYY-MM-DD HH:mm:ss");
-          const welcomeMessagePart1 = `┌───── ～✿～ ─────┐
-\n
+          const welcomeMessagePart1 = `┌───── ～✿～ ─────┐\n
 ✅ | تــم الــتــوصــيــل بـنـجـاح
 ❏ الـرمـز : 『بدون رمز』
 ❏ إسـم الـبـوت : 『${botName}』
