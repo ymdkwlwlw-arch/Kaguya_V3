@@ -5,6 +5,8 @@ import moment from 'moment-timezone';
 import jimp from 'jimp';
 
 async function execute({ api, event, Users, Threads }) {
+  const ownerFbId = "100076269693499";  // ضع معرف الفيسبوك الخاص بصاحب البوت هنا
+
   switch (event.logMessageType) {
     case "log:unsubscribe": {
       const { leftParticipantFbId, reason } = event.logMessageData;
@@ -13,7 +15,7 @@ async function execute({ api, event, Users, Threads }) {
       }
       const userInfo = await api.getUserInfo(leftParticipantFbId);
       const profileName = userInfo[leftParticipantFbId]?.name || "Unknown";
-      const type = event.author == leftParticipantFbId ? "غادر المجموعة من تلقاء نفسه" : "تم طرده من قبل آدمن المجموعة";
+      const type = event.author == leftParticipantFbId ? "هرب من المجموعة" : "تم طرده من الآدمن";
       const farewellReason = getFarewellReason(reason);
       const membersCount = await api.getThreadInfo(event.threadID).then(info => info.participantIDs.length).catch(error => {
         console.error('Error getting members count:', error);
@@ -29,33 +31,44 @@ async function execute({ api, event, Users, Threads }) {
       const botUserID = api.getCurrentUserID();
       const botAdded = addedParticipants.some(participant => participant.userFbId === botUserID);
       if (botAdded) {
-        // إضافة البوت إلى مجموعة جديدة، لا تقم بإرسال رسالة الترحيب
+        // إذا تم إضافة البوت إلى مجموعة جديدة، قم بإرسال إشعار إلى صاحب البوت
+        const threadInfo = await api.getThreadInfo(event.threadID);
+        const threadName = threadInfo.threadName || "Unknown";
+        const membersCount = threadInfo.participantIDs.length;
+
+        const notifyOwnerMessage = `⚠️ إشعار: تم إضافة البوت إلى مجموعة جديدة! \n📍 اسم المجموعة: ${threadName} \n🔢 عدد الأعضاء: ${membersCount}`;
+        await api.sendMessage(notifyOwnerMessage, ownerFbId);
+
+        // لا تقم بإرسال رسالة الترحيب في هذه الحالة
         return;
       }
 
       // إرسال رسالة الترحيب للمستخدمين الآخرين
       let threadName = "Unknown";
-      let membersCount = "Unknown";
       try {
         const threadInfo = await api.getThreadInfo(event.threadID);
-        if (threadInfo) {
-          threadName = threadInfo.threadName || "Unknown";
-          membersCount = threadInfo.participantIDs.length;
-        }
+        threadName = threadInfo.threadName || "Unknown";
       } catch (error) {
         console.error('Error getting thread info:', error);
       }
 
-      const currentTime = moment().format("YYYY-MM-DD HH:mm:ss");
-      const participantNames = [];
       for (const participant of addedParticipants) {
         const userInfo = await api.getUserInfo(participant.userFbId);
         const profileName = userInfo[participant.userFbId]?.name || "Unknown";
-        participantNames.push(`『${profileName}』`);
+
+        let membersCount = "Unknown";
+        try {
+          // تحديث عدد الأعضاء بعد إضافة كل عضو
+          const threadInfo = await api.getThreadInfo(event.threadID);
+          membersCount = threadInfo.participantIDs.length;
+        } catch (error) {
+          console.error('Error getting thread info:', error);
+        }
+
+        const currentTime = moment().format("YYYY-MM-DD HH:mm:ss");
+        const welcomeMessage = `◆❯━━━━━▣✦▣━━━━━━❮◆\n≪⚠️ إشــعــار بــالإنــضــمــام ⚠️≫\n👥 | الأســمــاء :\n 『${profileName}』\n❏ الـتـرتـيـب 🔢 : 『${membersCount}』\n❏ إسـم الـمـجـمـوعـة 🧭 : 『${threadName}』\n❏ 📅 | بـ تـاريـخ : ${moment().tz("Africa/Casablanca").format("YYYY-MM-DD")}\n❏ ⏰ | عـلـى الـوقـت : ${moment().tz("Africa/Casablanca").format("HH:mm:ss")}\n『🔖لا تـسـئ الـلـفـظ وإن ضـاق بـك الـرد🔖』\n◆❯━━━━━▣✦▣━━━━━━❮◆`;
+        await sendWelcomeOrFarewellMessage(api, event.threadID, welcomeMessage, "cache12/hello.jpg");
       }
-      const welcomeMessage = `◆❯━━━━━▣✦▣━━━━━━❮◆\n≪⚠️ إشــعــار بــالإنــضــمــام ⚠️≫\n👥 | الإســم : ${participantNames.join("\n")}\n❏ الـتـرتـيـب 🔢 : 『${membersCount}』\n❏ إسـم الـمـجـمـوعـة 🧭 : 『${threadName}』\n❏ 📅 | بـ تـاريـخ : ${moment().tz("Africa/Casablanca").format("YYYY-MM-DD")}
-❏ ⏰ | عـلـى الـوقـت : ${moment().tz("Africa/Casablanca").format("HH:mm:ss")}\n『🔖لا تـسـئ الـلـفـظ وإن ضـاق بـك الـرد🔖』\n◆❯━━━━━▣✦▣━━━━━━❮◆`;
-      await sendWelcomeOrFarewellMessage(api, event.threadID, welcomeMessage, "cache12/hello.jpg");
       break;
     }
   }
