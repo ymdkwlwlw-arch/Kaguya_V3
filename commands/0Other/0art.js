@@ -4,11 +4,14 @@ import path from 'path';
 
 export default {
   name: "ارت",
-  author: "Samir Œ",
+  author: "HUSSEIN",
   role: "member",
   description: "Convert image to cartoon style.",
 
   execute: async ({ api, event }) => {
+    
+api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
+  
     const imageLink = event.messageReply?.attachments?.[0]?.url;
 
     if (!imageLink) {
@@ -22,7 +25,8 @@ export default {
       const response = await axios.get(apiURL, { responseType: 'arraybuffer' });
       fs.writeFileSync(outPath, response.data);
       console.log(`Image saved to ${outPath}`);
-
+         api.setMessageReaction("🌟", event.messageID, (err) => {}, true);
+  
       api.sendMessage({
         body: '❍───────────────❍\n🎨 | 𝐷𝑂𝑁𝐸 𝑆𝑈𝐶𝐶𝐸𝑆𝑆𝐹𝑈𝐿𝐿𝑌 \n❍───────────────❍',
         attachment: fs.createReadStream(outPath)
