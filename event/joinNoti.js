@@ -15,7 +15,7 @@ async function execute({ api, event, Users, Threads }) {
       }
       const userInfo = await api.getUserInfo(leftParticipantFbId);
       const profileName = userInfo[leftParticipantFbId]?.name || "Unknown";
-      const type = event.author == leftParticipantFbId ? "هرب من المجموعة" : "تم طرده من الآدمن";
+      const type = event.author == leftParticipantFbId ? "غادر المجموعة من تلقاء نفسه" : "تم طرده من قبل آدمن المجموعة";
       const farewellReason = getFarewellReason(reason);
       const membersCount = await api.getThreadInfo(event.threadID).then(info => info.participantIDs.length).catch(error => {
         console.error('Error getting members count:', error);
@@ -43,32 +43,21 @@ async function execute({ api, event, Users, Threads }) {
         return;
       }
 
-      // إرسال رسالة الترحيب للمستخدمين الآخرين
-      let threadName = "Unknown";
-      try {
-        const threadInfo = await api.getThreadInfo(event.threadID);
-        threadName = threadInfo.threadName || "Unknown";
-      } catch (error) {
-        console.error('Error getting thread info:', error);
-      }
-
+      // إرسال رسالة ترحيب للمستخدمين الآخرين
+      const threadInfo = await api.getThreadInfo(event.threadID);
+      const threadName = threadInfo.threadName || "Unknown";
+      let welcomeMessages = [];
+      let membersCount = threadInfo.participantIDs.length;
+      
       for (const participant of addedParticipants) {
         const userInfo = await api.getUserInfo(participant.userFbId);
         const profileName = userInfo[participant.userFbId]?.name || "Unknown";
-
-        let membersCount = "Unknown";
-        try {
-          // تحديث عدد الأعضاء بعد إضافة كل عضو
-          const threadInfo = await api.getThreadInfo(event.threadID);
-          membersCount = threadInfo.participantIDs.length;
-        } catch (error) {
-          console.error('Error getting thread info:', error);
-        }
-
         const currentTime = moment().format("YYYY-MM-DD HH:mm:ss");
-        const welcomeMessage = `◆❯━━━━━▣✦▣━━━━━━❮◆\n≪⚠️ إشــعــار بــالإنــضــمــام ⚠️≫\n👥 | الأســمــاء :\n 『${profileName}』\n❏ الـتـرتـيـب 🔢 : 『${membersCount}』\n❏ إسـم الـمـجـمـوعـة 🧭 : 『${threadName}』\n❏ 📅 | بـ تـاريـخ : ${moment().tz("Africa/Casablanca").format("YYYY-MM-DD")}\n❏ ⏰ | عـلـى الـوقـت : ${moment().tz("Africa/Casablanca").format("HH:mm:ss")}\n『🔖لا تـسـئ الـلـفـظ وإن ضـاق بـك الـرد🔖』\n◆❯━━━━━▣✦▣━━━━━━❮◆`;
-        await sendWelcomeOrFarewellMessage(api, event.threadID, welcomeMessage, "cache12/hello.jpg");
+        welcomeMessages.push(`👥 | الإســم : 『${profileName}』\n❏ الـتـرتـيـب 🔢 : 『${membersCount}』\n❏ إسـم الـمـجـمـوعـة 🧭 : 『${threadName}』\n❏ 📅 | بـ تـاريـخ : ${moment().tz("Africa/Casablanca").format("YYYY-MM-DD")}\n❏ ⏰ | عـلـى الـوقـت : ${moment().tz("Africa/Casablanca").format("HH:mm:ss")}\n\n`);
       }
+      
+      const welcomeMessage = `◆❯━━━━━▣✦▣━━━━━━❮◆\n≪⚠️ إشــعــار بــالإنــضــمــام ⚠️≫\n${welcomeMessages.join("\n")}\n『🔖لا تـسـئ الـلـفـظ وإن ضـاق بـك الـرد🔖』\n◆❯━━━━━▣✦▣━━━━━━❮◆`;
+      await sendWelcomeOrFarewellMessage(api, event.threadID, welcomeMessage, "cache12/hello.jpg");
       break;
     }
   }
