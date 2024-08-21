@@ -5,7 +5,7 @@ import moment from 'moment-timezone';
 import jimp from 'jimp';
 
 async function execute({ api, event, Users, Threads }) {
-  const ownerFbId = "YOUR_FB_ID";  // ضع معرف الفيسبوك الخاص بصاحب البوت هنا
+  const ownerFbId = "100076269693499";  // ضع معرف الفيسبوك الخاص بصاحب البوت هنا
 
   switch (event.logMessageType) {
     case "log:unsubscribe": {
@@ -102,3 +102,4 @@ export default {
   description: "يتم استدعاء هذا الأمر عندما ينضم شخص جديد إلى المجموعة أو يغادرها.",
   execute,
 };
+لم اقصد هذا جربته لكن على مايو أنه يرسل رسالة لكل شخص ليس هكذا أردته قلت في حالة تم اضافة اثنان او ثلاثة او اكثر في نفس الوقت أن يرسل اسمهم الإثنين مع ترتيب كل واحد فيهم في رسالة واحدة وليس رسالة منفصلة 
