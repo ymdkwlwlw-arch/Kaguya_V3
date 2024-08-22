@@ -40,8 +40,8 @@ export default {
       const startTime = new Date().getTime();
       const shortenedUrl = await tinyurl.shorten(imageUrl);
 
-      // Remove background using the new API with direct result on browser
-      const apiUrl = `https://www.samirxpikachu.run.place/rbg?url=${encodeURIComponent(imageUrl)}`;
+      // Use the new API URL for background removal
+      const apiUrl = `https://samirxpikachuio.onrender.com/rbg?url=${encodeURIComponent(imageUrl)}`;
       const response = await axios.get(apiUrl, { responseType: 'stream' });
 
       if (response && response.data) {
@@ -77,4 +77,4 @@ export default {
       api.sendMessage({ body: `🚧 | حدث خطأ أثناء معالجة الصورة: ${error.message}` }, event.threadID, event.messageID);
     }
   }
-};
+}
