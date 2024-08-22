@@ -6,38 +6,38 @@ export default {
   name: "لقطة",
   author: "HUSSEIN",
   role: "member",
-  description: "Convert image to cartoon style.",
+  description: "احصل على لقطة شاشة من الموقع باستخدام رابط.",
 
-  execute: async ({ api, event }) => {
-    
-    api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
-  
-    // Get the input from the message body
-    const inputLink = event.body.trim();
-
-    // Check if the input starts with 'http' indicating it is a URL
-    if (!inputLink.startsWith('http')) {
-      return api.sendMessage('🛡️ | أرجوك أدخل رابط صورة صحيح.', event.threadID, event.messageID);
+  execute: async ({ api, event, args }) => {
+    const url = args.join(" ");
+    if (!url) {
+      return api.sendMessage('⚠️ | أرجوك قم بإدخال رابط الموقع !', event.threadID, event.messageID);
     }
 
-    const apiURL = `https://www.noobs-api.000.pe/dipto/ss?url=${encodeURIComponent(inputLink)}`;
-    const outPath = path.join(process.cwd(), 'generated_image.jpg');
+    const BASE_URL = `https://www.noobs-api.000.pe/dipto/ss?url=${encodeURIComponent(url)}`;
+    const outPath = path.join(process.cwd(), 'cache', 'screenshot.jpg');
 
     try {
-      const response = await axios.get(apiURL, { responseType: 'arraybuffer' });
-      fs.writeFileSync(outPath, response.data);
-      console.log(`Image saved to ${outPath}`);
       
-          api.setMessageReaction("📸", event.messageID, (err) => {}, true);
+      api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
   
+      // تنزيل الصورة وحفظها في مجلد cache
+      const response = await axios.get(BASE_URL, { responseType: 'arraybuffer' });
+      fs.writeFileSync(outPath, response.data);
+        api.setMessageReaction("📸", event.messageID, (err) => {}, true);
+  
+      // إرسال الصورة كملف مرفق
       api.sendMessage({
-        body: '❍───────────────❍\n𝐷𝑂𝑁𝐸 𝑆𝑈𝐶𝐶𝐸𝑆𝑆𝐹𝑈𝐿𝐿𝑌\n❍───────────────❍',
-        attachment: fs.createReadStream(outPath)
-      }, event.threadID, () => fs.unlinkSync(outPath)); // Clean up the file after sending
+        attachment: fs.createReadStream(outPath),
+        body: ''
+      }, event.threadID, () => {
+        // حذف الصورة بعد إرسالها
+        fs.unlinkSync(outPath);
+      });
 
-    } catch (error) {
-      console.error('Error processing image:', error.message);
-      api.sendMessage('🚧 | حدث خطأ أثناء معالجة الصورة. يرجى المحاولة مرة أخرى.', event.threadID, event.messageID);
+    } catch (e) {
+      console.error('Error:', e.message);
+      api.sendMessage('🚧 | حدث خطأ أثناء معالجة الرابط. يرجى المحاولة مرة أخرى.', event.threadID, event.messageID);
     }
   }
 };
