@@ -10,34 +10,12 @@ async function getProfilePicture(userID) {
     return profilePath;
 }
 
-async function getUserMessageCount(api, threadId, userId) {
-  try {
-    const messages = await api.getThreadHistory(threadId, 10000);
-    if (!messages || !Array.isArray(messages)) {
-      console.error('Error fetching messages:', messages);
-      return 0;
-    }
-
-    let messageCount = 0;
-    messages.forEach(message => {
-      if (message.senderID === userId) {
-        messageCount++;
-      }
-    });
-
-    return messageCount;
-  } catch (err) {
-    console.error('Error:', err);
-    return 0;
-  }
-}
-
 export default {
   name: "ايدي",
   author: "Kaguya Project",
   role: "member",
   description: "جلب معلومات العضو.",
-  execute: async function({ api, event, args, Economy }) {
+  execute: async function({ api, event, args, Economy, Exp }) {
     try {
       const uid = event?.messageReply?.senderID || (Object.keys(event.mentions).length > 0 ? Object.keys(event.mentions)[0] : event.senderID);
       const userInfo = await api.getUserInfo(parseInt(uid));
@@ -54,20 +32,18 @@ export default {
 
       // استخدام Economy.getBalance لجلب الرصيد
       const balanceResult = await Economy.getBalance(uid);
-      const money = balanceResult.data; // افتراض أن البيانات تُرجع بصيغة { data: amount }
-      const userDataFile = path.join(process.cwd(), 'pontsData.json');
+      const money = balanceResult.data;
 
-      const userData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
-      const userPoints = userData[event.senderID]?.points || 0; 
+      // استخدام Exp.check لجلب نقاط الخبرة والمستوى
+      const expResult = await Exp.check(uid);
+      const userLevel = expResult.data.currentLevel;
+      const userExp = expResult.data.exp;
 
-      // جلب عدد الرسائل المرسلة من قبل المستخدم
-      const userMessageCount = await getUserMessageCount(api, event.threadID, uid);
-
-      // تصنيف المستخدم باستخدام عدد الرسائل
-      const rank = getRank(userMessageCount);
+      // تحديد التصنيف بناءً على مستوى الخبرة
+      const rank = getRank(userLevel);
 
       const message = `
-•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${money}』 دولار\n❏🎖️ نقاطك : 『${userPoints}』 نقطة\n❏📩 عدد الرسائل : 『${userMessageCount}』\n❏صديق؟: 『${userIsFriend}』\n❏عيد ميلاد اليوم؟: 『${isBirthdayToday}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』\n🔖 | العب الالعاب من أجل ان تكسب نقاط تجعلك في القمة\n`;
+•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${money}』 دولار\n❏🎖️ نقاط الخبرة : 『${userExp}』 نقطة\n❏📈 المستوى الحالي : 『${userLevel}』\n❏صديق؟: 『${userIsFriend}』\n❏عيد ميلاد اليوم؟: 『${isBirthdayToday}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』`;
 
       api.sendMessage({
         body: message,
@@ -81,18 +57,18 @@ export default {
   }
 }
 
-// دالة لتحديد تصنيف المستخدم بناءً على عدد الرسائل
-function getRank(messageCount) {
-  if (messageCount >= 10000) return 'خارق🥇';
-  if (messageCount >= 7000) return '🥈عظيم';
-  if (messageCount >= 6000) return '👑أسطوري';
-  if (messageCount >= 5000) return 'نشط🔥 قوي';
-  if (messageCount >= 4000) return '🌠نشط';
-  if (messageCount >= 3000) return 'متفاعل🏅 قوي';
-  if (messageCount >= 2000) return '🎖️متفاعل جيد';
-  if (messageCount >= 1000) return '🌟متفاعل';
-  if (messageCount >= 800) return '✨لا بأس';
-  if (messageCount >= 600) return '👾مبتدأ';
-  if (messageCount >= 300) return '🗿صنم';
+// دالة لتحديد تصنيف المستخدم بناءً على مستوى الخبرة
+function getRank(level) {
+  if (level >= 50) return 'خارق🥇';
+  if (level >= 40) return '🥈عظيم';
+  if (level >= 35) return '👑أسطوري';
+  if (level >= 30) return 'نشط🔥 قوي';
+  if (level >= 25) return '🌠نشط';
+  if (level >= 20) return 'متفاعل🏅 قوي';
+  if (level >= 15) return '🎖️متفاعل جيد';
+  if (level >= 10) return '🌟متفاعل';
+  if (level >= 8) return '✨لا بأس';
+  if (level >= 6) return '👾مبتدأ';
+  if (level >= 3) return '🗿صنم';
   return 'ميت⚰️';
 }
