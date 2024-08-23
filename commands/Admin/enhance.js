@@ -8,6 +8,7 @@ export default {
   author: "Kaguya Project",
   role: "member",
   description: "يقوم بتحسين الصور باستخدام API خارجية.",
+  
   async execute({ message, event, api }) {
     api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
     const { type, messageReply } = event;
@@ -26,13 +27,9 @@ export default {
         const shortenedUrl = await tinyurl.shorten(url);
 
         // طلب تحسين الصورة من الـ API
-        const { data } = await axios.get(`https://c-v1.onrender.com/api/4k?url=${encodeURIComponent(shortenedUrl)}`, {
-          responseType: "json"
+        const { data } = await axios.get(`https://c-v1.onrender.com/remini?url=${encodeURIComponent(shortenedUrl)}`, {
+          responseType: "arraybuffer"
         });
-
-        // الحصول على رابط الصورة المحسنة
-        const imageUrl = data.resultUrl;
-        const imageResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
 
         // إعداد مجلد الكاش وحفظ الصورة
         const cacheFolder = path.join(process.cwd(), "cache");
@@ -41,7 +38,7 @@ export default {
         }
 
         const imagePath = path.join(cacheFolder, "remi_image.png");
-        fs.writeFileSync(imagePath, imageResponse.data);
+        fs.writeFileSync(imagePath, data);
 
         // إرسال الصورة المحسنة مع نص
         api.setMessageReaction("✅", event.messageID, (err) => {}, true);
