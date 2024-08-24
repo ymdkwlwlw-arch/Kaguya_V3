@@ -100,10 +100,12 @@ export default {
     const videoUrl = video.videoUrl;
 
     try {
-      const downloadUrl = `https://c-v1.onrender.com/yt/d?url=${encodeURIComponent(videoUrl)}`;
+      const downloadUrl = `https://ccproject10-df3227f754.onlitegix.com/api/music?url=${encodeURIComponent(videoUrl)}`;
       const downloadResponse = await axios.get(downloadUrl);
 
-      const audioFileUrl = downloadResponse.data.result.audio;
+      const audioFileUrl = downloadResponse.data.data.link;
+      const audioTitle = downloadResponse.data.data.title;
+
       if (!audioFileUrl) {
         return api.sendMessage("⚠️ | لم يتم العثور على رابط تحميل الأغنية.", event.threadID);
       }
@@ -114,24 +116,28 @@ export default {
       const filePath = path.join(process.cwd(), 'cache', fileName);
 
       const writer = fs.createWriteStream(filePath);
-      const audioStream = axios.get(audioFileUrl, { responseType: 'stream' }).then(response => {
-        response.data.pipe(writer);
-        writer.on('finish', () => {
-          if (fs.statSync(filePath).size > 26214400) {
-            fs.unlinkSync(filePath);
-            return api.sendMessage('❌ | لا يمكن إرسال الملف لأن حجمه أكبر من 25 ميغابايت.', event.threadID);
-          }
+      const audioStream = await axios({
+        url: audioFileUrl,
+        responseType: 'stream'
+      });
 
-          api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+      audioStream.data.pipe(writer);
 
-          const message = {
-            body: `✅ | تم تنزيل الأغنية:\n❀ العنوان: ${video.title}`,
-            attachment: fs.createReadStream(filePath)
-          };
+      writer.on('finish', () => {
+        if (fs.statSync(filePath).size > 26214400) {
+          fs.unlinkSync(filePath);
+          return api.sendMessage('❌ | لا يمكن إرسال الملف لأن حجمه أكبر من 25 ميغابايت.', event.threadID);
+        }
 
-          api.sendMessage(message, event.threadID, () => {
-            fs.unlinkSync(filePath);
-          });
+        api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+
+        const message = {
+          body: `✅ | تم تنزيل الأغنية:\n❀ العنوان: ${audioTitle}`,
+          attachment: fs.createReadStream(filePath)
+        };
+
+        api.sendMessage(message, event.threadID, () => {
+          fs.unlinkSync(filePath);
         });
       });
 
