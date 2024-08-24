@@ -47,7 +47,7 @@ export default {
           );
 
           // رسالة التحميل المئوية
-          const pro = await api.sendMessage("⚙️ | جاري توصيل كاغويا في المجموعة...", event.threadID);
+          let pro = await api.sendMessage("⚙️ | جاري توصيل كاغويا في المجموعة...", event.threadID);
 
           const loadMessages = [
             "█ 10%",
@@ -64,7 +64,10 @@ export default {
 
           for (let i = 0; i < loadMessages.length; i++) {
             await sleep(1000);
-            await api.editMessage(loadMessages[i], pro.messageID);
+            // حذف الرسالة السابقة
+            await api.unsendMessage(pro.messageID);
+            // إرسال رسالة جديدة
+            pro = await api.sendMessage(loadMessages[i], event.threadID);
           }
 
           // إزالة رسالة التحميل بعد الانتهاء
