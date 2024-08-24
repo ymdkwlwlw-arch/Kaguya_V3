@@ -50,10 +50,6 @@ export default {
         return;
       }
 
-      const { firstName, name, gender, profileUrl } = userInfo[uid];
-      const userIsFriend = userInfo[uid].isFriend ? "✅ نعم" : "❌ لا";
-      const isBirthdayToday = userInfo[uid].isBirthdayToday ? "✅ نعم" : "❌ لا";
-      const profilePath = await getProfilePicture(uid);
 
       // استخدام Economy.getBalance لجلب الرصيد
       const balanceResult = await Economy.getBalance(uid);
@@ -72,7 +68,7 @@ export default {
       const rank = getRank(userMessageCount);
 
       const message = `
-•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏اسمك👤: 『${name}』\n❏جنسك♋: 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصيدك : 『${money}』 دولار\n❏🎖️ نقاطك : 『${userPoints}』 نقطة\n❏📩 عدد الرسائل : 『${userMessageCount}』\n❏صديق؟: 『${userIsFriend}』\n❏عيد ميلاد اليوم؟: 『${isBirthdayToday}』\n❏🌟 المعرف  : 『${uid}』\n❏رابط البروفايل🔮: ${profileUrl}\n❏تصنيفك🧿: 『${rank}』
+•——[معلومات]——•\n\n✨ مــﻋــڷــﯡمــاٺ ؏ــن : 『${firstName}』\n❏👤 إسـمـك: 『${name}』\n❏♋ جـنـسـيـتـك : 『${gender === 1 ? "أنثى" : "ذكر"}』\n❏💰 رصـيـدك :『${money}』 دولار\n❏🎖️نـقـاطـك : 『${userPoints}』 نقطة\n❏📩 رسـائـلـك : 『${userMessageCount}』\n❏🧿 تـصـنـيـفـك : 『${rank}』
 `;
 
       api.sendMessage({
@@ -89,16 +85,16 @@ export default {
 
 // دالة لتحديد تصنيف المستخدم بناءً على عدد الرسائل
 function getRank(messageCount) {
-  if (messageCount >= 10000) return 'خارق🥇';
-  if (messageCount >= 7000) return '🥈عظيم';
-  if (messageCount >= 6000) return '👑أسطوري';
-  if (messageCount >= 5000) return 'نشط🔥 قوي';
-  if (messageCount >= 4000) return '🌠نشط';
-  if (messageCount >= 3000) return 'متفاعل🏅 قوي';
-  if (messageCount >= 2000) return '🎖️متفاعل جيد';
-  if (messageCount >= 1000) return '🌟متفاعل';
-  if (messageCount >= 800) return '✨لا بأس';
-  if (messageCount >= 600) return '👾مبتدأ';
-  if (messageCount >= 300) return '🗿صنم';
+  if (messageCount >= 2000) return 'خارق🥇';
+  if (messageCount >= 1000) return '🥈عظيم';
+  if (messageCount >= 900) return '👑أسطوري';
+  if (messageCount >= 800) return 'نشط🔥 قوي';
+  if (messageCount >= 700) return '🌠نشط';
+  if (messageCount >= 600) return 'متفاعل🏅 قوي';
+  if (messageCount >= 500) return '🎖️متفاعل جيد';
+  if (messageCount >= 400) return '🌟متفاعل';
+  if (messageCount >= 300) return '✨لا بأس';
+  if (messageCount >= 200) return '👾مبتدأ';
+  if (messageCount >= 100) return '🗿صنم';
   return 'ميت⚰️';
 }
