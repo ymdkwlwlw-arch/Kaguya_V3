@@ -7,7 +7,7 @@ export default {
   author: "حسين يعقوبي",
   cooldowns: 60,
   description: "تنزيل مقطع من YouTube",
-  role: "عضو",
+  role: "member",
   aliases: ["غني", "أغنية", "موسيقى"],
 
   async execute({ api, event }) {
@@ -100,11 +100,11 @@ export default {
     const videoUrl = video.videoUrl;
 
     try {
-      const downloadUrl = `https://ccproject10-df3227f754.onlitegix.com/api/music?url=${encodeURIComponent(videoUrl)}`;
+      const downloadUrl = `https://ccproject10-df3227f754.onlitegix.com/api/yt/audio?url=${encodeURIComponent(videoUrl)}`;
       const downloadResponse = await axios.get(downloadUrl);
 
-      const audioFileUrl = downloadResponse.data.data.link;
-      const audioTitle = downloadResponse.data.data.title;
+      const audioFileUrl = downloadResponse.data.data.url;
+      
 
       if (!audioFileUrl) {
         return api.sendMessage("⚠️ | لم يتم العثور على رابط تحميل الأغنية.", event.threadID);
