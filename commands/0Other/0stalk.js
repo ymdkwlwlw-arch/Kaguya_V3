@@ -38,7 +38,7 @@ export default {
   name: "معلوماتي",
   author: "Kaguya Project",
   role: "member",
-  aliases:["ايدي"],
+  aliases: ["ايدي"],
   description: "جلب معلومات العضو.",
   execute: async function({ api, event, args, Economy, Exp }) {
     try {
@@ -50,6 +50,10 @@ export default {
         return;
       }
 
+      const { firstName, name, gender, profileUrl } = userInfo[uid];
+      const userIsFriend = userInfo[uid].isFriend ? "✅ نعم" : "❌ لا";
+      const isBirthdayToday = userInfo[uid].isBirthdayToday ? "✅ نعم" : "❌ لا";
+      const profilePath = await getProfilePicture(uid);
 
       // استخدام Economy.getBalance لجلب الرصيد
       const balanceResult = await Economy.getBalance(uid);
@@ -60,10 +64,10 @@ export default {
       const userMessageCount = messageCounts[uid] || 0;
 
       // استخدام Exp.check لجلب نقاط الخبرة
-     const userDataFile = path.join(process.cwd(), 'pontsData.json');
-     const userData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
-    const userPoints = userData[event.senderID]?.points || 0; 
-      // جلب تاريخ المحادثة
+      const userDataFile = path.join(process.cwd(), 'pontsData.json');
+      const userData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
+      const userPoints = userData[uid]?.points || 0; // جلب نقاط المستخدم المحدد
+
       // تصنيف المستخدم باستخدام عدد الرسائل
       const rank = getRank(userMessageCount);
 
