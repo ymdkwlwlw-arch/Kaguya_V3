@@ -7,7 +7,7 @@ export default {
     name: "نقاط",
     author: "Your Name",
     role: "member",
-    description: "عرض نقاطك.",
+    description: "عرض نقاطك أو نقاط عضو محدد.",
     aliases : ["نقاطي"],
     execute: async function ({ api, event }) {
         try {
@@ -16,10 +16,20 @@ export default {
                 throw new Error("ملف البيانات غير موجود");
             }
 
+            // تحديد العضو المستهدف
+            let targetID = event.senderID;
+
+            if (event.messageReply) {
+                targetID = event.messageReply.senderID;
+            } else if (event.mentions && Object.keys(event.mentions).length > 0) {
+                // التحقق مما إذا تم ذكر شخص آخر في الرسالة
+                targetID = Object.keys(event.mentions)[0];
+            }
+
             // قراءة بيانات المستخدم من ملف البيانات
             const userData = JSON.parse(fs.readFileSync(userDataFile, 'utf8'));
-            const userPoints = userData[event.senderID]?.points || 0; // احصل على نقاط المستخدم إذا كانت متوفرة
-            const userName = userData[event.senderID]?.name || "المستخدم"; // احصل على اسم المستخدم إذا كان متوفرًا
+            const userPoints = userData[targetID]?.points || 0; // احصل على نقاط المستخدم إذا كانت متوفرة
+            const userName = userData[targetID]?.name || "المستخدم"; // احصل على اسم المستخدم إذا كان متوفرًا
 
             api.sendMessage(`👥 | الإسم ${userName} \n🔖 | الرصيد ${userPoints} نقطة.`, event.threadID);
         } catch (error) {
