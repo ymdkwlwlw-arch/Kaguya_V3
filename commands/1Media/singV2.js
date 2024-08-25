@@ -103,8 +103,7 @@ export default {
       const downloadUrl = `https://ccproject10-df3227f754.onlitegix.com/api/yt/audio?url=${encodeURIComponent(videoUrl)}`;
       const downloadResponse = await axios.get(downloadUrl);
 
-      const audioFileUrl = downloadResponse.data.data.url;
-      
+      const audioFileUrl = downloadResponse.data.url; // Correctly handling the new API response format
 
       if (!audioFileUrl) {
         return api.sendMessage("⚠️ | لم يتم العثور على رابط تحميل الأغنية.", event.threadID);
@@ -132,7 +131,7 @@ export default {
         api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
         const message = {
-          body: `✅ | تم تنزيل الأغنية:\n❀ العنوان: ${audioTitle}`,
+          body: `✅ | تم تنزيل الأغنية:\n❀ العنوان: ${video.title}`,
           attachment: fs.createReadStream(filePath)
         };
 
