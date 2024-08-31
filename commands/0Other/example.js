@@ -7,7 +7,7 @@ export default {
   name: "نيجي",
   author: "kaguya project",
   role: "member",
-  description: "توليد صورة أنمي بناء على النص المعطى.",
+  description: "توليد صورة أنمي بناءً على النص المعطى.",
   async execute({ message, event, args, api }) {
     api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
 
@@ -23,7 +23,7 @@ export default {
       const translatedPrompt = await translateToEnglish(prompt);
 
       // رابط الأساسي للخدمة مع المعاملات
-      const apiUrl = `https://www.samirxpikachu.run.place/niji?prompt=${encodeURIComponent(translatedPrompt)}&resolution=${encodeURIComponent(resolution)}`;
+      const apiUrl = `https://smfahim.onrender.com/animagine?prompt=${encodeURIComponent(translatedPrompt)}`;
       const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
       const imageData = Buffer.from(response.data, 'binary');
 
