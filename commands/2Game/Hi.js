@@ -32,7 +32,7 @@ export default {
       fs.unlinkSync(audioPath);
     } catch (error) {
       console.error(error);
-      await api.sendMessage("🐸 حدث خطأ أثناء تحويل النص إلى كلام.", event.threadID);
+      await api.sendMessage("🐸 حدث خطأ أثناء تحويل النص إلى كلام ربما يجب ان تدخل نصا او انه هناك خطا في ال api", event.threadID);
     }
   }
 };
