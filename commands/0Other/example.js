@@ -61,7 +61,4 @@ async function translateToEnglish(text) {
     return text; // إرجاع النص كما هو في حالة وجود خطأ في الترجمة
   }
 }
-غير الرابط بهذا 
-https://smfahim.onrender.com/animagine?prompt=
-هو يعطي نتاىج مباشرة أيضا
-على المتصفح 
+
