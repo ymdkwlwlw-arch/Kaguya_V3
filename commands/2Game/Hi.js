@@ -4,35 +4,42 @@ import axios from "axios";
 
 export default {
   name: "قولي",
-  author: "Thiệu Trung Kiên",
-  role: "member",
+  author: "حسين يعقوبي",
   aliases:["قل"],
+  role: "member",
   description: "تحويل النص إلى كلام بواسطة خدمة Google Text-to-Speech.",
   execute: async ({ api, message, args, event }) => {
+    if (args.length === 0) {
+      // إذا لم يتم إدخال أي نص
+      return api.sendMessage("⚠️ من فضلك أدخل شيئًا لأقوله.", event.threadID);
+    }
+
+    let lng = "ar";
     let say = args.join(" ");
-    let url = `https://www.noobs-api.000.pe/dipto/text2voiceV2?text=${encodeURIComponent(say)}&format=mp3&voiceModel=Nova`;
+
+    if (lng.includes(args[0])) {
+      lng = args[0];
+      args.shift();
+      say = encodeURIComponent(args.join(" "));
+    }
 
     try {
-      // طلب من API والحصول على ملف الصوت
-      const response = await axios.get(url);
-      const audioUrl = response.data.voiceUrl;
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${say}`;
+      const audioResponse = await axios.get(url, { responseType: "arraybuffer" });
 
-      // تنزيل الملف الصوتي من الرابط
-      const audioResponse = await axios.get(audioUrl, { responseType: "arraybuffer" });
       const audioPath = path.join(process.cwd(), "cache", "audio.mp3");
       fs.writeFileSync(audioPath, Buffer.from(audioResponse.data));
 
-      // إرسال الملف الصوتي
       await api.sendMessage({
         body: "",
         attachment: fs.createReadStream(audioPath)
       }, event.threadID);
 
-      // حذف الملف المؤقت بعد إرساله
+      // ربما يجب عليك إزالة الملف المؤقت بعد إرساله
       fs.unlinkSync(audioPath);
     } catch (error) {
       console.error(error);
-      await api.sendMessage("🐸 حدث خطأ أثناء تحويل النص إلى كلام ربما يجب ان تدخل نصا او انه هناك خطا في ال api", event.threadID);
+      await api.sendMessage("🐸 حدث خطأ أثناء تحويل النص إلى كلام.", event.threadID);
     }
   }
 };
