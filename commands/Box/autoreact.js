@@ -1,11 +1,10 @@
 import axios from 'axios';
 
-async function gpt4(prompt, customId, link) {
+async function gpt4(prompt, customId) {
   try {
-    const endpoint = prompt.toLowerCase() === "تنظيف" ? '/clear' : '/chat';
-    const data = prompt.toLowerCase() === "تنظيف" ? { id: customId } : { prompt, customId, ...(link && { link }) };
-    const res = await axios.post(`https://cadis.onrender.com${endpoint}`, data);
-    return res.data.message;
+    const apiUrl = `https://smfahim.onrender.com/hercai?ask=${encodeURIComponent(prompt)}`;
+    const res = await axios.get(apiUrl);
+    return res.data.answer;
   } catch (error) {
     throw new Error(error.message);
   }
@@ -23,8 +22,7 @@ export default {
   
       const { threadID, senderID } = event;
       const prompt = args.join(" ") || "hello";
-      const link = messageReply?.attachments?.[0]?.type === "photo" ? messageReply.attachments[0].url : null;
-      const response = await gpt4(prompt, senderID, link);
+      const response = await gpt4(prompt, senderID);
       
       api.setMessageReaction("✨", event.messageID, (err) => {}, true);
   
@@ -61,7 +59,7 @@ export default {
         });
 
         // إضافة التفاعل ب ⬇️ بعد الرد بـ تم
-        if (event.body.trim() === "تم") {
+        if (event.body.trim().toLowerCase() === "تم") {
           api.setMessageReaction("⬇️", event.messageID, (err) => {}, true);
         }
       } catch (error) {
