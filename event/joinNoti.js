@@ -65,7 +65,7 @@ async function execute({ api, event, Users, Threads }) {
           console.error('Error getting thread info:', error);
         }
 
-        const currentTime = moment().tz("Africa/Casablanca").format("YYYY-MM-DD hh:mm A");
+        const currentTime = moment().tz("Africa/Casablanca").format("hh:mm A");
         const formattedTime = currentTime.replace('AM', 'صباحًا').replace('PM', 'مساءً');
         const welcomeMessage = `◆❯━━━━━▣✦▣━━━━━━❮◆\n≪⚠️ إشــعــار بــالإنــضــمــام ⚠️≫\n👥 | الإســم : 『${profileName}』\n❏ الـتـرتـيـب 🔢 : 『${membersCount}』\n❏ إسـم الـمـجـمـوعـة 🧭 : 『${threadName}』\n❏ 📅 | بـ تـاريـخ : ${moment().tz("Africa/Casablanca").format("YYYY-MM-DD")}\n❏ ⏰ | عـلـى الـوقـت : ${formattedTime}\n『🔖لا تـسـئ الـلـفـظ وإن ضـاق بـك الـرد🔖』\n◆❯━━━━━▣✦▣━━━━━━❮◆`;
         await sendWelcomeOrFarewellMessage(api, event.threadID, welcomeMessage, "cache12/hello.jpg");
