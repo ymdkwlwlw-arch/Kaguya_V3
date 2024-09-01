@@ -4,19 +4,20 @@ import path from 'path';
 import { shorten } from 'tinyurl';
 
 export default {
-  name: "نيجي",
+  name: "ارسمي2",
   author: "kaguya project",
   role: "member",
-  description: "توليد صورة أنمي بناء على النص المعطى.",
+ aliases:["بروديا","prodia"],
+  description: "توليد صورة أنمي بناء على النص المعطى باستخدام موديل محدد بين 1 و 10.",
   
   async execute({ message, event, args, api }) {
     api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
 
     const input = args.join(' ');
-    const [prompt, resolution = '1:1'] = input.split('|').map(s => s.trim());
+    const [prompt, model = '1'] = input.split('|').map(s => s.trim());
 
-    if (!prompt) {
-      return api.sendMessage("❌ | الرجاء إدخال النص.", event.threadID, event.messageID);
+    if (!prompt || isNaN(model) || model < 1 || model > 55) {
+      return api.sendMessage("❌ | الرجاء إدخال نص ووضع موديل صحيح بين 1 و 55 مفصول بــ | .", event.threadID, event.messageID);
     }
 
     try {
@@ -28,7 +29,7 @@ export default {
 
       // إرسال أربعة طلبات لتوليد الصور
       for (let i = 0; i < 4; i++) {
-        const apiUrl = `https://www.samirxpikachu.run.place/niji?prompt=${encodeURIComponent(translatedPrompt)}&resolution=${encodeURIComponent(resolution)}`;
+        const apiUrl = `https://smfahim.onrender.com/prodia?prompt=${encodeURIComponent(translatedPrompt)}&model=${model}`;
         const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
         const imageData = Buffer.from(response.data, 'binary');
 
