@@ -24,8 +24,9 @@ export default {
       // ترجمة النص إلى الإنجليزية
       const translatedPrompt = await translateToEnglish(prompt);
 
-      // تخزين المسارات المؤقتة للصور
+      // تخزين المسارات المؤقتة والروابط القصيرة للصور
       const imagePaths = [];
+      const shortUrls = [];
 
       // إرسال أربعة طلبات لتوليد الصور بشكل منفصل
       for (let i = 0; i < 4; i++) {
@@ -37,6 +38,10 @@ export default {
         const imagePath = path.join(process.cwd(), "cache", `${Date.now()}_generated_image_${i}.png`);
         await fs.outputFile(imagePath, imageData);
         imagePaths.push(imagePath);
+
+        // تقصير رابط الصورة باستخدام tinyurl
+        const shortUrl = await shorten(imagePath);
+        shortUrls.push(shortUrl);
       }
 
       // قراءة الصور المولدة وإرسالها
@@ -55,6 +60,7 @@ export default {
         type: "pick",
         name: "ارسمي2",
         searchResults: imagePaths,
+        shortUrls: shortUrls,
         unsend: true
       });
 
@@ -69,7 +75,7 @@ export default {
   async onReply({ api, event, reply }) {
     if (reply.type !== 'pick') return;
 
-    const { author, searchResults } = reply;
+    const { author, searchResults, shortUrls } = reply;
 
     if (event.senderID !== author) return;
 
@@ -80,19 +86,17 @@ export default {
     }
 
     const selectedImagePath = searchResults[index];
+    const selectedShortUrl = shortUrls[index];
     const stream = fs.createReadStream(selectedImagePath);
 
-    // تقصير رابط الصورة باستخدام tinyurl
-    shorten(selectedImagePath, async function (shortUrl) {
-      api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-      await api.sendMessage({
-        body: `✅ | تـم تـحـمـيـل الـصـورة بـنـجـاح\n📎 | رابـط خـارجـي : ${shortUrl}`,
-        attachment: stream
-      }, event.threadID, event.messageID);
-      
-      // حذف الصور المؤقتة بعد الإرسال
-      await Promise.all(searchResults.map(fs.remove));
-    });
+    api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+    await api.sendMessage({
+      body: `✅ | تـم تـحـمـيـل الـصـورة بـنـجـاح\n📎 | رابـط خـارجـي : ${selectedShortUrl}`,
+      attachment: stream
+    }, event.threadID, event.messageID);
+
+    // حذف الصورة المؤقتة بعد الإرسال
+    await fs.remove(selectedImagePath);
   }
 };
 
