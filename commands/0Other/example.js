@@ -7,8 +7,8 @@ export default {
   name: "ارسمي2",
   author: "kaguya project",
   role: "member",
- aliases:["بروديا","prodia"],
-  description: "توليد صورة أنمي بناء على النص المعطى باستخدام موديل محدد بين 1 و 10.",
+  aliases: ["بروديا", "prodia"],
+  description: "توليد صورة أنمي بناء على النص المعطى باستخدام موديل محدد بين 1 و 55.",
   
   async execute({ message, event, args, api }) {
     api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
@@ -27,7 +27,7 @@ export default {
       // تخزين المسارات المؤقتة للصور
       const imagePaths = [];
 
-      // إرسال أربعة طلبات لتوليد الصور
+      // إرسال أربعة طلبات لتوليد الصور بشكل منفصل
       for (let i = 0; i < 4; i++) {
         const apiUrl = `https://smfahim.onrender.com/prodia?prompt=${encodeURIComponent(translatedPrompt)}&model=${model}`;
         const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
@@ -53,7 +53,7 @@ export default {
       global.client.handler.reply.set(info.messageID, {
         author: event.senderID,
         type: "pick",
-        name: "نيجي",
+        name: "ارسمي2",
         searchResults: imagePaths,
         unsend: true
       });
