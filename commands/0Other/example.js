@@ -4,99 +4,52 @@ import path from 'path';
 import { shorten } from 'tinyurl';
 
 export default {
-  name: "ارسمي2",
+  name: "نيجي",
   author: "kaguya project",
   role: "member",
-  aliases: ["بروديا", "prodia"],
-  description: "توليد صورة أنمي بناء على النص المعطى باستخدام موديل محدد بين 1 و 55.",
-  
+  aliases: ["niji"],
+  description: "توليد صورة أنمي بناء على النص المعطى.",
   async execute({ message, event, args, api }) {
     api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
 
     const input = args.join(' ');
-    const [prompt, model = '1'] = input.split('|').map(s => s.trim());
+    const [prompt, resolution = '1:1'] = input.split('|').map(s => s.trim());
 
-    if (!prompt || isNaN(model) || model < 1 || model > 55) {
-      return api.sendMessage("❌ | الرجاء إدخال نص ووضع موديل صحيح بين 1 و 55 مفصول بــ | .", event.threadID, event.messageID);
+    if (!prompt) {
+      return api.sendMessage("❌ | الرجاء إدخال النص.", event.threadID, event.messageID);
     }
 
     try {
       // ترجمة النص إلى الإنجليزية
       const translatedPrompt = await translateToEnglish(prompt);
 
-      // تخزين المسارات المؤقتة والروابط القصيرة للصور
-      const imagePaths = [];
-      const shortUrls = [];
+      // رابط الأساسي للخدمة مع المعاملات
+      const apiUrl = `https://www.samirxpikachu.run.place/niji?prompt=${encodeURIComponent(translatedPrompt)}&resolution=${encodeURIComponent(resolution)}`;
+      const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
+      const imageData = Buffer.from(response.data, 'binary');
 
-      // إرسال أربعة طلبات لتوليد الصور بشكل منفصل
-      for (let i = 0; i < 4; i++) {
-        const apiUrl = `https://smfahim.onrender.com/prodia?prompt=${encodeURIComponent(translatedPrompt)}&model=${model}`;
-        const response = await axios.get(apiUrl, { responseType: 'arraybuffer' });
-        const imageData = Buffer.from(response.data, 'binary');
+      // تحديد المسار لحفظ الصورة مؤقتاً
+      const imagePath = path.join(process.cwd(), "cache", `${Date.now()}_generated_image.png`);
+      await fs.outputFile(imagePath, imageData);
 
-        // تحديد المسار لحفظ الصورة مؤقتاً
-        const imagePath = path.join(process.cwd(), "cache", `${Date.now()}_generated_image_${i}.png`);
-        await fs.outputFile(imagePath, imageData);
-        imagePaths.push(imagePath);
+      // قراءة الصورة المولدة وإرسالها
+      const stream = fs.createReadStream(imagePath);
 
-        // تقصير رابط الصورة باستخدام tinyurl
-        const shortUrl = await shorten(imagePath);
-        shortUrls.push(shortUrl);
-      }
-
-      // قراءة الصور المولدة وإرسالها
-      const streams = imagePaths.map(imagePath => fs.createReadStream(imagePath));
-      const attachments = streams.map((stream, index) => ({ stream, filename: `image_${index + 1}.png` }));
-      
-      // إرسال الرسالة مع الصور
-      const info = await api.sendMessage({
-        body: `✅ | تـم تـولـيـد أربـع صـور \n🔖 | رد بـ 1 ، 2 , 3 ، 4 مـن أجـل تـحـمـيل الصـورة الـمـحـددة`,
-        attachment: attachments
-      }, event.threadID, event.messageID);
-
-      // حفظ بيانات الرد للمتابعة
-      global.client.handler.reply.set(info.messageID, {
-        author: event.senderID,
-        type: "pick",
-        name: "ارسمي2",
-        searchResults: imagePaths,
-        shortUrls: shortUrls,
-        unsend: true
+      // تقصير رابط الصورة باستخدام tinyurl
+      shorten(apiUrl, async function (shortUrl) {
+        api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+        await api.sendMessage({
+          body: `◆❯━━━━━▣✦▣━━━━━━❮◆\n✅ |تــــم تـــولـــيــد الــصــورة بــنــجــاح\n📎 | رابط الصورة : ${shortUrl}\n◆❯━━━━━▣✦▣━━━━━━❮◆`,
+          attachment: stream
+        }, event.threadID, event.messageID);
       });
-
     } catch (error) {
-      console.error('خطأ في إرسال الصور:', error);
+      console.error('خطأ في إرسال الصورة:', error);
       api.sendMessage("❌ | حدث خطأ. الرجاء المحاولة مرة أخرى لاحقًا.", event.threadID, event.messageID);
     } finally {
       api.setMessageReaction("", event.messageID, (err) => {}, true);
+      await fs.remove(imagePath); // حذف الصورة المؤقتة بعد الإرسال
     }
-  },
-
-  async onReply({ api, event, reply }) {
-    if (reply.type !== 'pick') return;
-
-    const { author, searchResults, shortUrls } = reply;
-
-    if (event.senderID !== author) return;
-
-    const index = parseInt(event.body.trim()) - 1;
-    
-    if (isNaN(index) || index < 0 || index >= searchResults.length) {
-      return api.sendMessage("❌ | الرقم غير صحيح. الرجاء الرد برقم من 1 إلى 4.", event.threadID, event.messageID);
-    }
-
-    const selectedImagePath = searchResults[index];
-    const selectedShortUrl = shortUrls[index];
-    const stream = fs.createReadStream(selectedImagePath);
-
-    api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-    await api.sendMessage({
-      body: `✅ | تـم تـحـمـيـل الـصـورة بـنـجـاح\n📎 | رابـط خـارجـي : ${selectedShortUrl}`,
-      attachment: stream
-    }, event.threadID, event.messageID);
-
-    // حذف الصورة المؤقتة بعد الإرسال
-    await fs.remove(selectedImagePath);
   }
 };
 
