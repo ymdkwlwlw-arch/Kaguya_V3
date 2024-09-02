@@ -10,6 +10,11 @@ export default {
   async execute({ api, event, client }) {
     const { threadID, messageID, body, senderID } = event;
 
+    // إذا لم يتم إدخال أي نص
+    if (!body || body.trim() === "") {
+      return api.sendMessage("🗨️ | رد على هذه الرسالة لبدء الدردشة مع البوت.", threadID, messageID);
+    }
+
     try {
       const response = await axios.get(`https://simsimi.site/api/v2/?mode=talk&lang=ar&message=${encodeURIComponent(body)}&filter=true`);
       const replyMessage = response.data.success || "عذرا، لم أتمكن من فهم رسالتك.";
@@ -35,6 +40,11 @@ export default {
     const { threadID, messageID, body, senderID } = event;
 
     if (reply.type === "reply") {
+      // إذا لم يتم إدخال أي نص
+      if (!body || body.trim() === "") {
+        return api.sendMessage("🗨️ | رد على هذه الرسالة لبدء الدردشة مع البوت.", threadID, messageID);
+      }
+
       try {
         const response = await axios.get(`https://simsimi.site/api/v2/?mode=talk&lang=ar&message=${encodeURIComponent(body)}&filter=true`);
         const replyMessage = response.data.success || "عذرا، لم أتمكن من فهم رسالتك.";
