@@ -1,63 +1,69 @@
 import axios from 'axios';
-import fs from 'fs-extra';
+import fs from 'fs';
 import path from 'path';
-import request from 'request';
 
 export default {
   name: "شوتي",
-  author: "kaguya project",
+  author: "Joshua Apostol",
   role: "member",
-  description: "تحميل فيديوهات من TikTok باستخدام شوتي API.",
-
+  aliases:["shoti"],
+  description: "Fetches a girl edit video from the API and sends it to the chat.",
+  
   async execute({ api, event }) {
-    // Set the initial reaction to indicate that the process has started
-    api.setMessageReaction("🕐", event.messageID, (err) => {}, true);
+    const { threadID, messageID } = event;
 
     try {
-      // Define the API URL
-      const apiUrl = "https://c-v1.onrender.com/shoti?apikey=$c-v1-7bejgsue6@iygv";
+      // إرسال رسالة الإنتظار
+      api.sendMessage("⏱️ | جاري البحث و إرسال مقطع شوتي ، يرجى الانتظار...", threadID, (err, waitMessageID) => {
+        if (err) return console.error("Error sending wait message:", err);
 
-      // Fetch the data from the API
-      const response = await axios.get(apiUrl);
-      const { data } = response;
+        // طلب الفيديو من API
+        axios.post("https://girledit-api-version-2-production-e493.up.railway.app/api/request/f", { credits: "joshua apostol" })
+          .then(response => {
+            const { url: videoUrl, username, nickname } = response.data;
 
-      if (data.code !== 200 || !data.data) {
-        throw new Error('Failed to fetch video data from API.');
-      }
+            // تحديد مسار تخزين الفيديو مؤقتًا
+            const videoPath = path.resolve(process.cwd(), 'girledit_video.mp4');
+            const writer = fs.createWriteStream(videoPath);
 
-      // Extract video information from the API response
-      const { url: videoUrl, user: { username, nickname }, duration } = data.data;
+            // تحميل الفيديو
+            axios({
+              url: videoUrl,
+              method: 'GET',
+              responseType: 'stream'
+            }).then(responseStream => {
+              responseStream.data.pipe(writer);
 
-      // Define the cache folder and video file path
-      const cacheFolderPath = path.join(process.cwd(), 'cache');
-      if (!fs.existsSync(cacheFolderPath)) {
-        fs.mkdirSync(cacheFolderPath);
-      }
-      const videoPath = path.join(cacheFolderPath, 'shoti.mp4');
+              writer.on('finish', () => {
+                // حذف رسالة الإنتظار
+                api.unsendMessage(waitMessageID);
 
-      // Download the video
-      const videoStream = fs.createWriteStream(videoPath);
-      await new Promise((resolve, reject) => {
-        const rqs = request(encodeURI(videoUrl));
-        rqs.pipe(videoStream);
-        rqs.on('end', resolve);
-        rqs.on('error', reject);
+                // إرسال الفيديو مع معلومات المستخدم والنك نيم
+                api.setMessageReaction("✅", event.messageID, (err) => {}, true); 
+                api.sendMessage({
+                  body: `✅ | تـم تـحـمـيـل مـقـطـع شـوتـي \n👤 | الـإسـم : ${username}\n💬 | الـلـقـب : ${nickname}`,
+                  attachment: fs.createReadStream(videoPath)
+                }, threadID, () => fs.unlinkSync(videoPath), messageID);
+              });
+
+              writer.on('error', (err) => {
+                console.error('Error writing video file:', err);
+                api.sendMessage("⚠️ | حدث خطأ أثناء كتابة ملف الفيديو.", threadID, messageID);
+              });
+            }).catch(err => {
+              console.error('Error downloading video:', err.message);
+              api.unsendMessage(waitMessageID);
+              api.sendMessage("⚠️ | حدث خطأ أثناء تحميل الفيديو.", threadID, messageID);
+            });
+          }).catch(error => {
+            console.error('Error fetching girl edit API:', error.message);
+            api.unsendMessage(waitMessageID);
+            api.sendMessage(`⚠️ | حدث خطأ أثناء استدعاء API!\n${error.message}`, threadID, messageID);
+          });
       });
-
-      // Prepare the message to send
-      const msg1 = {
-        body: `✅ | تم تحميل مقطع شوتي بنجاح\n👥 اسم المستخدم: ${username}\n👤 اللقب: ${nickname}\n⏳ المدة: ${duration}`,
-        attachment: fs.createReadStream(videoPath)
-      };
-
-      // Send the success message and update the reaction
-      api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-      api.sendMessage(msg1, event.threadID, event.messageID);
-
     } catch (error) {
-      console.error(error);
-      api.setMessageReaction("❌", event.messageID, (err) => {}, true);
-      api.sendMessage(`❌ | حدث خطأ: ${error.message}`, event.threadID, event.messageID);
+      console.error('Error executing girledit command:', error.message);
+      api.sendMessage(`⚠️ | حدث خطأ أثناء التنفيذ!\n${error.message}`, threadID, messageID);
     }
   }
 };
