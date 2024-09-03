@@ -24,7 +24,7 @@ async function circle(url) {
 }
 
 export default {
-    name: "حضن",
+    name: "حضن2",
     author: "Anonymous",
     role: "member",
     description: "إرسال صورة عناق بين شخصين ممنوحين.",
