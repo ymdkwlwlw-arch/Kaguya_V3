@@ -13,7 +13,7 @@ export default {
 
   async onLoad() {
     const dirMaterial = `${process.cwd()}/cache/`;
-    const imagePath = path.resolve(dirMaterial, 'pairing.png'); // استخدم مكتبة path هنا
+    const imagePath = path.resolve(dirMaterial, 'pairing.png');
 
     if (!fs.existsSync(dirMaterial)) {
       fs.mkdirSync(dirMaterial, { recursive: true });
@@ -21,7 +21,12 @@ export default {
 
     if (!fs.existsSync(imagePath)) {
       try {
-        await global.utils.downloadFile("https://i.postimg.cc/X7R3CLmb/267378493-3075346446127866-4722502659615516429-n.png", imagePath);
+        // استخدام axios لتنزيل الصورة وحفظها في المسار المحدد
+        const response = await axios({
+          url: "https://i.postimg.cc/X7R3CLmb/267378493-3075346446127866-4722502659615516429-n.png",
+          responseType: 'arraybuffer'
+        });
+        fs.writeFileSync(imagePath, response.data);
         console.log("Image downloaded successfully.");
       } catch (error) {
         console.error("Failed to download image:", error);
