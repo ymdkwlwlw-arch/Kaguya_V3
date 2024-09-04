@@ -58,11 +58,12 @@ export default {
     const imagePath = await makeImage({ one, two });
     
     const message = {
-      body: `✅ | تـم الإقـتـران بـنـجـاح\n〘💖〙 تـم الإقـتـران بـ ${senderName} مـع ${targetName} 〘💖〙\n〘📎〙 الإحـتـمـالات : ${matchPercentage} 〘📎〙`,
+      body: `✅ | تـم الإقـتـران بـنـجـاح\n〘💖〙تـم إقـتـران ${senderName} مـع ${targetName} 〘💖〙\n〘📎〙الإحـتـمـالات : ${matchPercentage}〘📎〙`,
       mentions: [{ id: senderID, tag: senderName }, { id: randomID, tag: targetName }],
       attachment: fs.createReadStream(imagePath)
     };
-
+     api.setMessageReaction("💌", event.messageID, (err) => {}, true);
+  
     api.sendMessage(message, threadID, () => fs.unlinkSync(imagePath), messageID);
   }
 };
