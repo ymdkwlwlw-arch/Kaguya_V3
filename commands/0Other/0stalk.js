@@ -13,19 +13,29 @@ async function getProfilePicture(userID) {
 async function getMessageCounts(api, threadId) {
   try {
     const participants = await api.getThreadInfo(threadId, { participantIDs: true });
-    const messageCounts = {};
+    if (!participants || !participants.participantIDs) {
+        throw new Error('Failed to fetch participant IDs.');
+    }
 
+    const messageCounts = {};
     participants.participantIDs.forEach(participantId => {
       messageCounts[participantId] = 0;
     });
 
     const messages = await api.getThreadHistory(threadId, 1000);
+    if (!messages || !Array.isArray(messages)) {
+        throw new Error('Failed to fetch thread history.');
+    }
+
     messages.forEach(message => {
-      const messageSender = message.senderID;
-      if (messageCounts[messageSender] !== undefined) {
-        messageCounts[messageSender]++;
+      if (message.senderID && messageCounts[message.senderID] !== undefined) {
+        messageCounts[message.senderID]++;
       }
     });
+
+    if (Object.keys(messageCounts).length === 0) {
+      console.warn('No messages found for this thread.');
+    }
 
     return messageCounts;
   } catch (err) {
