@@ -1,6 +1,7 @@
-import axios from "axios";
-import fs from "fs-extra";
-import jimp from "jimp";
+import path from 'path';
+import axios from 'axios';
+import fs from 'fs-extra';
+import jimp from 'jimp';
 
 export default {
   name: "زواج2",
@@ -11,15 +12,22 @@ export default {
   cooldowns: 5,
 
   async onLoad() {
-    const { resolve } = global.nodemodule["path"];
-    const { existsSync, mkdirSync } = fs;
-    const { downloadFile } = global.utils;
     const dirMaterial = `${process.cwd()}/cache/`;
-    const path = resolve(dirMaterial, 'pairing.png');
+    const imagePath = path.resolve(dirMaterial, 'pairing.png'); // استخدم مكتبة path هنا
 
-    if (!existsSync(dirMaterial)) mkdirSync(dirMaterial, { recursive: true });
-    if (!existsSync(path)) {
-      await downloadFile("https://i.postimg.cc/X7R3CLmb/267378493-3075346446127866-4722502659615516429-n.png", path);
+    if (!fs.existsSync(dirMaterial)) {
+      fs.mkdirSync(dirMaterial, { recursive: true });
+    }
+
+    if (!fs.existsSync(imagePath)) {
+      try {
+        await global.utils.downloadFile("https://i.postimg.cc/X7R3CLmb/267378493-3075346446127866-4722502659615516429-n.png", imagePath);
+        console.log("Image downloaded successfully.");
+      } catch (error) {
+        console.error("Failed to download image:", error);
+      }
+    } else {
+      console.log("Image already exists.");
     }
   },
 
@@ -38,7 +46,7 @@ export default {
     const targetInfo = await api.getUserInfo(randomID);
     const targetName = targetInfo[randomID].name;
 
-    const gender = targetInfo[randomID].gender == 2 ? "Male🧑" : targetInfo[randomID].gender == 1 ? "Female👩" : "Tran Duc Bo";
+    const gender = targetInfo[randomID].gender === 2 ? "Male🧑" : targetInfo[randomID].gender === 1 ? "Female👩" : "Tran Duc Bo";
 
     const one = senderID, two = randomID;
     
@@ -55,15 +63,15 @@ export default {
 };
 
 async function makeImage({ one, two }) {
-  const pathImg = `${process.cwd()}/cache/pairing_${one}_${two}.png`;
-  const avatarOne = `${process.cwd()}/cache/avt_${one}.png`;
-  const avatarTwo = `${process.cwd()}/cache/avt_${two}.png`;
-  const pairingImg = await jimp.read(`${process.cwd()}/cache/pairing.png`);
+  const pathImg = path.resolve(process.cwd(), 'cache', `pairing_${one}_${two}.png`);
+  const avatarOne = path.resolve(process.cwd(), 'cache', `avt_${one}.png`);
+  const avatarTwo = path.resolve(process.cwd(), 'cache', `avt_${two}.png`);
+  const pairingImg = await jimp.read(path.resolve(process.cwd(), 'cache', 'pairing.png'));
 
-  const getAvatarOne = (await axios.get(`https://graph.facebook.com/${one}/picture?width=512&height=512&access_token=YOUR_ACCESS_TOKEN`, { responseType: 'arraybuffer' })).data;
+  const getAvatarOne = (await axios.get(`https://graph.facebook.com/${one}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`, { responseType: 'arraybuffer' })).data;
   fs.writeFileSync(avatarOne, Buffer.from(getAvatarOne, 'utf-8'));
 
-  const getAvatarTwo = (await axios.get(`https://graph.facebook.com/${two}/picture?width=512&height=512&access_token=YOUR_ACCESS_TOKEN`, { responseType: 'arraybuffer' })).data;
+  const getAvatarTwo = (await axios.get(`https://graph.facebook.com/${two}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`, { responseType: 'arraybuffer' })).data;
   fs.writeFileSync(avatarTwo, Buffer.from(getAvatarTwo, 'utf-8'));
 
   const circleOne = await jimp.read(await circle(avatarOne));
@@ -80,8 +88,8 @@ async function makeImage({ one, two }) {
   return pathImg;
 }
 
-async function circle(image) {
-  image = await jimp.read(image);
+async function circle(imagePath) {
+  const image = await jimp.read(imagePath);
   image.circle();
   return await image.getBufferAsync("image/png");
 }
