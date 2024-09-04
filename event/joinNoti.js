@@ -31,15 +31,34 @@ async function execute({ api, event, Users, Threads }) {
       const botUserID = api.getCurrentUserID();
       const botAdded = addedParticipants.some(participant => participant.userFbId === botUserID);
       if (botAdded) {
-        // إذا تم إضافة البوت إلى مجموعة جديدة، قم بإرسال إشعار إلى صاحب البوت
         const threadInfo = await api.getThreadInfo(event.threadID);
         const threadName = threadInfo.threadName || "Unknown";
         const membersCount = threadInfo.participantIDs.length;
+        const addedBy = event.author;  // معرف الشخص الذي أضاف البوت
+        const addedByInfo = await api.getUserInfo(addedBy);
+        const addedByName = addedByInfo[addedBy]?.name || "Unknown";
 
-        const notifyOwnerMessage = `⚠️ إشعار: تم إضافة البوت إلى مجموعة جديدة! \n📍 اسم المجموعة: ${threadName} \n🔢 عدد الأعضاء: ${membersCount}`;
-        await api.sendMessage(notifyOwnerMessage, ownerFbId);
+        // إذا لم يكن الشخص الذي أضاف البوت هو صاحب البوت
+        if (addedBy !== ownerFbId) {
+          const notifyOwnerMessage = `⚠️ إشعار: تم إضافة البوت إلى مجموعة جديدة! \n📍 اسم المجموعة: ${threadName} \n🔢 عدد الأعضاء: ${membersCount} \n🧑‍💼 بواسطة: ${addedByName}`;
+          await api.sendMessage(notifyOwnerMessage, ownerFbId);
 
-        // لا تقم بإرسال رسالة الترحيب في هذه الحالة
+          const exitMessage = `⚠️ | إضافة البوت بدون إذن غير مسموح يرجى التواصل مع المطور من أجل الحصول على الموافقة \n📞 | رابـط الـمـطـور :\nhttps://www.facebook.com/profile.php?id=100076269693499`;
+          const exitImagePath = path.join(process.cwd(), 'cache12', 'alert.jpg'); // يمكنك وضع صورة مخصصة هنا
+
+          // إرسال الرسالة مع صورة
+          await api.sendMessage({
+            body: exitMessage,
+            attachment: fs.createReadStream(exitImagePath),
+          }, event.threadID);
+
+          // الخروج من المجموعة
+          await api.removeUserFromGroup(botUserID, event.threadID);
+        } else {
+          // إذا كان صاحب البوت هو من أضافه، فقط أرسل إشعارًا له
+          const notifyOwnerMessage = `⚠️ إشعار: تم إضافة البوت إلى مجموعة جديدة! \n📍 اسم المجموعة: ${threadName} \n🔢 عدد الأعضاء: ${membersCount}`;
+          await api.sendMessage(notifyOwnerMessage, ownerFbId);
+        }
         return;
       }
 
