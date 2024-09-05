@@ -43,7 +43,7 @@ async function execute({ api, event, Users, Threads }) {
           const notifyOwnerMessage = `⚠️ إشعار: تم إضافة البوت إلى مجموعة جديدة! \n📍 اسم المجموعة: ${threadName} \n🔢 عدد الأعضاء: ${membersCount} \n🧑‍💼 بواسطة: ${addedByName}`;
           await api.sendMessage(notifyOwnerMessage, ownerFbId);
 
-          const exitMessage = `⚠️ | إضافة البوت بدون إذن غير مسموح يرجى التواصل مع المطور من أجل الحصول على الموافقة \n📞 | رابـط الـمـطـور :\nhttps://www.facebook.com/profile.php?id=100076269693499`;
+          const exitMessage = `⚠️ | إضافة البوت بدون إذن غير مسموح يرجى التواصل مع المطور من أجل الحصول على الموافقة \n 📞 | رابـط الـمـطـور :   https://www.facebook.com/profile.php?id=100076269693499`;
           const exitImagePath = path.join(process.cwd(), 'cache12', 'alert.jpg'); // يمكنك وضع صورة مخصصة هنا
 
           // إرسال الرسالة مع صورة
