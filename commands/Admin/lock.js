@@ -3,12 +3,12 @@ async function execute({ api, event, args }) {
   
   if (command === "تشغيل") {
     autoReAddEnabled = true;
-    api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+    api.setMessageReaction("🔒", event.messageID, (err) => {}, true);
   
     await api.sendMessage(" ✅ | تم تفعيل ميزة عدم المغادرة", event.threadID);
   } else if (command === "إيقاف") {
     autoReAddEnabled = false;
-    api.setMessageReaction("🚫", event.messageID, (err) => {}, true);
+    api.setMessageReaction("🔓", event.messageID, (err) => {}, true);
   
     await api.sendMessage(" 🚫 | تم تعطيل ميزة عدم مغادرة المجموعة", event.threadID);
   } else {
