@@ -31,29 +31,29 @@ export default {
     const senderID = event.senderID;
 
     try {
-      // ترجمة البرومبت إلى الإنجليزية
       const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
       const translatedText = translationResponse?.data?.[0]?.[0]?.[0];
 
-      // استدعاء الـ API الجديد مع البرومبت المترجم
-      const res = await axios.get(`https://samirxpikachuio.onrender.com/bflux?prompt=${encodeURIComponent(translatedText)}`);
-      const imageUrl = res.data.imageUrl;
+      const res = await axios.get(`https://c-v1.onrender.com/flux/v1?prompt=${encodeURIComponent(translatedText)}`);
+      const data = res.data.data.output;
 
-      if (!imageUrl) {
+      if (!data || data.length === 0) {
         return api.sendMessage("⚠️ | لم يتم توليد أي صور بناءً على المدخلات التي قدمتها.", event.threadID, event.messageID);
       }
 
-      // تحميل الصورة وحفظها محليًا
-      const imgResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-      const imgPath = path.join(process.cwd(), 'cache', `generated_image_${Date.now()}.png`);
-      await fs.outputFile(imgPath, imgResponse.data);
+      const imgData = [];
+      for (let i = 0; i < Math.min(4, data.length); i++) {
+        const imgResponse = await axios.get(data[i], { responseType: 'arraybuffer' });
+        const imgPath = path.join(process.cwd(), 'cache', `${i + 1}.png`);
+        await fs.outputFile(imgPath, imgResponse.data);
+        imgData.push(fs.createReadStream(imgPath));
+      }
 
       const now = moment().tz("Africa/Casablanca");
       const timeString = now.format("HH:mm:ss");
       const dateString = now.format("YYYY-MM-DD");
       const executionTime = ((Date.now() - event.timestamp) / 1000).toFixed(2);
 
-      // الحصول على معلومات المستخدم
       api.getUserInfo(senderID, async (err, userInfo) => {
         if (err) {
           console.log(err);
@@ -61,19 +61,12 @@ export default {
         }
         const userName = userInfo[senderID].name;
 
-        // إرسال الرسالة مع الصورة
         await api.sendMessage({
-          attachment: fs.createReadStream(imgPath),
+          attachment: imgData,
           body: `\t\t\t࿇ ══━━✥◈✥━━══ ࿇\n\t\t〘تـم تـولـيـد الـصورة بـنجـاح〙\n 👥 | مـن طـرف : ${userName}\n⏰ | ❏الـتـوقـيـت : ${timeString}\n📅 | ❏الـتـاريـخ: ${dateString}\n⏳ | ❏الوقـت الـمـسـتـغـرق: ${executionTime}s\n📝 | ❏الـبـرومـبـت : ${prompt}\n\t\t࿇ ══━━✥◈✥━━══ ࿇`
         }, event.threadID, event.messageID);
-
-        // حذف الصورة المؤقتة بعد الإرسال
-        fs.unlink(imgPath, (err) => {
-          if (err) console.error('Error deleting the file:', err);
-        });
       });
 
-      // تفاعل النجاح
       api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
     } catch (error) {
@@ -82,3 +75,7 @@ export default {
     }
   }
 };
+غير الرابط بهذا 
+https://samirxpikachuio.onrender.com/bflux?prompt=
+حسب نتاىج المتصفح 
+"imageUrl":"https://storage.googleapis.com/a1aa/image/bDtxKCkTM1LnBVhPI57cNtAGAwf68WTse6uSnZyTYk2Z4JaTA.jpg"}
