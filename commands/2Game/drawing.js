@@ -75,7 +75,3 @@ export default {
     }
   }
 };
-غير الرابط بهذا 
-https://samirxpikachuio.onrender.com/bflux?prompt=
-حسب نتاىج المتصفح 
-"imageUrl":"https://storage.googleapis.com/a1aa/image/bDtxKCkTM1LnBVhPI57cNtAGAwf68WTse6uSnZyTYk2Z4JaTA.jpg"}
