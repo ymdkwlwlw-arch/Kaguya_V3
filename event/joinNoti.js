@@ -5,7 +5,7 @@ import moment from 'moment-timezone';
 import jimp from 'jimp';
 
 async function execute({ api, event, Users, Threads }) {
-  const ownerFbIds = ["100076269693499", "61562132813405"];  // قائمة بمعرفات الفيسبوك لأصحاب البوت المصرح لهم
+  const ownerFbIds = ["100076269693499"];  // قائمة بمعرفات الفيسبوك لأصحاب البوت المصرح لهم
 
   switch (event.logMessageType) {
     case "log:unsubscribe": {
