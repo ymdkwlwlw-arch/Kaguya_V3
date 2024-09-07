@@ -4,18 +4,21 @@ import path from "path";
 
 async function randomImageAndUptime({ api, event }) {
     try {
-        const searchQueries = ["zoro", "madara", "obito", "luffy", "boa", "kaguya", "hinata",  "itashi", "nizko", "mikasa Ackerman", "nami"]; // إضافة استعلامات البحث عن الصور هنا
+        const searchQueries = ["zoro", "madara", "obito", "luffy", "boa Hancock", "kaguya sama", "hinata hyuga",  "itashi", "nizko", "rim rezero", "nami"]; // إضافة استعلامات البحث عن الصور هنا
 
         const randomQueryIndex = Math.floor(Math.random() * searchQueries.length);
         const searchQuery = searchQueries[randomQueryIndex];
 
-        const apiUrl = `https://pin-two.vercel.app/pin?search=${encodeURIComponent(searchQuery)}`;
+        const apiUrl = `https://deku-rest-api.gleeze.com/api/pinterest?q=${encodeURIComponent(searchQuery)}`;
 
         const response = await axios.get(apiUrl);
         const imageLinks = response.data.result;
 
-        const randomImageIndex = Math.floor(Math.random() * imageLinks.length);
-        const imageUrl = imageLinks[randomImageIndex];
+        if (imageLinks.length === 0) {
+            return api.sendMessage(`لم يتم العثور على صور للاستعلام: ${searchQuery}`, event.threadID, event.messageID);
+        }
+
+        const imageUrl = imageLinks[0]; // جلب الصورة الأولى فقط
 
         const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
         const imagePath = path.join(process.cwd(), 'cache', `uptime_image.jpg`);
@@ -41,8 +44,7 @@ async function randomImageAndUptime({ api, event }) {
         const message = `✿━━━━━━━━━━━━━━━✿\n 🔖 | تحياتي ! كاغويا البوت\nكانت شغالة منذ :\n${uptimeString}\n✿━━━━━━━━━━━━━━━✿`;
         const imageStream = fs.createReadStream(imagePath);
 
-      api.setMessageReaction("🚀", event.messageID, (err) => {}, true);
-      
+        api.setMessageReaction("🚀", event.messageID, (err) => {}, true);
 
         await api.sendMessage({
             body: message,
@@ -52,7 +54,7 @@ async function randomImageAndUptime({ api, event }) {
         await fs.promises.unlink(imagePath);
     } catch (error) {
         console.error(error);
-        return api.sendMessage(`An error occurred.`, event.threadID, event.messageID);
+        return api.sendMessage(`حدث خطأ أثناء جلب الصورة أو حساب مدة التشغيل.`, event.threadID, event.messageID);
     }
 }
 
