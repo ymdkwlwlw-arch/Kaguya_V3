@@ -1,42 +1,22 @@
 import fs from 'fs';
 import path from 'path';
-import FormData from 'form-data';
 import axios from 'axios';
 
-const regCheckURL = /^(http|https):\/\/[^ "]+$/;
+const AntiPath = "./cache/data/anti";
+const antiDir = path.join(AntiPath, "anti");
 
-/**
- * رفع صورة إلى imgBB والحصول على URL الخاص بها.
- * @param {string|stream} file - مسار الصورة أو Stream.
- * @returns {Promise<string>} - رابط الصورة على imgBB.
- */
-const uploadImgbb = async (file) => {
-  try {
-    let type = regCheckURL.test(file) ? 'url' : 'file';
-    if (type === 'file' && !fs.existsSync(file)) {
-      throw new Error('The file path does not exist.');
+if (!fs.existsSync(antiDir)) fs.mkdirSync(antiDir, { recursive: true });
+
+const antiIMG = path.join(antiDir, "antiIMG.json");
+
+const crFile = (f, i) => {
+    if (!fs.existsSync(f)) {
+        const data = i !== undefined ? JSON.stringify(i, null, 2) : JSON.stringify([]);
+        fs.writeFileSync(f, data);
     }
-
-    const response = await axios.get('https://imgbb.com');
-    const auth_token = response.data.match(/auth_token="([^"]+)"/)[1];
-    const timestamp = Date.now();
-
-    const formData = new FormData();
-    formData.append('source', type === 'file' ? fs.createReadStream(file) : file);
-    formData.append('type', type);
-    formData.append('action', 'upload');
-    formData.append('timestamp', timestamp);
-    formData.append('auth_token', auth_token);
-
-    const uploadResponse = await axios.post('https://imgbb.com/json', formData, {
-      headers: formData.getHeaders(),
-    });
-
-    return uploadResponse.data.image.url;
-  } catch (err) {
-    throw new Error(err.response ? err.response.data : err.message);
-  }
 };
+
+crFile(antiIMG);
 
 class AntiboxImage {
   constructor() {
@@ -51,31 +31,52 @@ class AntiboxImage {
    * تنفيذ الأمر للحماية من تغيير صورة المجموعة.
    * @param {object} params - المعلمات التي تحتوي على api وevent وThreads.
    */
-  async execute({ event, Threads, api }) {
+  async execute({ api, event, args, Threads }) {
     try {
       const { threadID } = event;
-      const threadData = (await Threads.find(threadID))?.data?.data;
-      const status = threadData?.anti?.imageBox ? false : true;
+      let antiData = [];
+      
+      // قراءة البيانات من ملف antiIMG
+      if (fs.existsSync(antiIMG)) {
+        const read = await fs.promises.readFile(antiIMG, 'utf-8');
+        antiData = read ? JSON.parse(read) : [];
+      }
 
-      // الحصول على صورة المجموعة الحالية
-      const { imageSrc } = await api.getThreadInfo(threadID);
+      let threadEntry = antiData.find(entry => entry.threadID === threadID);
 
-      // رفع الصورة إلى imgBB والحصول على URL
-      const newImageUrl = await uploadImgbb(imageSrc);
+      if (threadEntry) {
+        // إيقاف وضع الحماية
+        antiData = antiData.filter(entry => entry.threadID !== threadID);
+        await fs.promises.writeFile(antiIMG, JSON.stringify(antiData, null, 4), 'utf-8'); 
+        api.sendMessage("✅ تم إيقاف وضع الحماية لصورة المجموعة", threadID);
+      } else {
+        // تفعيل وضع الحماية
+        let url;
+        let msg = await api.sendMessage("🔨 جارٍ تفعيل وضع الحماية، يرجى الانتظار", threadID);
 
-      // تحديث بيانات المجموعة
-      await Threads.update(threadID, {
-        anti: {
-          imageBox: status,
-          imageUrl: newImageUrl,
-        },
-      });
+        const thread = (await Threads.find(threadID)).data;
+        const imageSrc = thread.threadThumbnail;
 
-      // إرسال رسالة تأكيد
-      await api.sendMessage(`تم ${status ? 'تشغيل' : '❌ إطفاء ✅'} ميزة الحماية من تغيير صورة المجموعة`, threadID);
-    } catch (err) {
-      console.error('خطأ أثناء تنفيذ الأمر:', err);
-      await api.sendMessage('❌ | لقد حدث خطأ غير متوقع!', event.threadID);
+        try {
+          const response = await axios.get(`https://catbox-mnib.onrender.com/upload?url=${encodeURIComponent(imageSrc)}`);
+          url = response.data.url;
+
+          const Data = { 
+            threadID: threadID, 
+            url: url,
+            report: {} 
+          };
+          antiData.push(Data);
+          await fs.promises.writeFile(antiIMG, JSON.stringify(antiData, null, 4), 'utf-8'); 
+          api.unsendMessage(msg.messageID);
+          api.sendMessage("✅ تم تفعيل وضع الحماية لصورة المجموعة", threadID);
+        } catch (error) {
+          api.sendMessage("⚠️ حدث خطأ", threadID);
+        }
+      }
+    } catch (error) {
+      console.error('خطأ أثناء تنفيذ الأمر:', error);
+      api.sendMessage("❌ | لقد حدث خطأ غير متوقع!", event.threadID);
     }
   }
 }
