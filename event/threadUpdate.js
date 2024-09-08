@@ -137,24 +137,21 @@ async function handleApprovalModeChange(api, event, Threads, threads) {
 
 // التعامل مع تغيير أيقونة المجموعة
 async function handleThreadIconChange(api, event, Threads, threads) {
-  const { thread_icon: newIcon } = event.logMessageData;
-  const oldIcon = threads.emoji; // افترض أن هذا هو رمز الأيقونة القديم
+  const { threadThumbnail: newIcon } = event.logMessageData;
+  const oldIcon = threads.data.threadThumbnail || null; // افترض أن هذا هو رمز الأيقونة القديم
+  const adminName = await getUserName(api, event.author);
 
-  if (threads.anti?.imageBox) {
-    // إعادة تعيين الأيقونة إلى الحالة القديمة
-    await api.setThreadIcon(oldIcon, event.threadID);
-    return api.sendMessage(
-      `❌ | ميزة حماية الصورة مفعلة، لذا لم يتم تغيير أيقونة المجموعة 🔖 |<${event.threadID}> - ${threads.name}`,
-      event.threadID
-    );
-  }
-
+  // تحديث بيانات المجموعة لتخزين الصورة القديمة
   await Threads.update(event.threadID, {
-    emoji: newIcon,
+    data: {
+      ...threads.data,
+      threadThumbnail: newIcon, // تحديث الصورة الرمزية الجديدة
+    },
   });
 
+  // إرسال إشعار بتغيير الصورة
   api.sendMessage(
-    `تم تغيير أيقونة المجموعة إلى: ${newIcon} 🔖 | \n بالنسبة للمجموعة: ${threads.name}`,
+    `تم تغيير صورة المجموعة بواسطة: ${adminName}`,
     event.threadID
   );
 }
