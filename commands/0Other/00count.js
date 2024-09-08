@@ -48,6 +48,7 @@ export default {
             global.client.handler.reply.set(info.messageID, {
               author: senderID,
               type: "pick",
+              name: "شوتي", // اسم الكود
               videoUrl,
               title,
               duration,
@@ -81,52 +82,50 @@ export default {
   },
 
   async onReply({ api, event, reply }) {
-    if (reply.type !== 'pick') return;
-    const { author, videoUrl, title, duration, username, nickname } = reply;
+    const { author, videoUrl, title, duration, username, nickname, name } = reply;
 
-    // تحقق أن المستخدم هو نفسه من بدأ الطلب
-    if (event.senderID !== author) return;
+    // التحقق من أن الشخص الذي يرد هو نفس الشخص الذي أرسل الأمر الأصلي
+    if (reply.type === "pick" && event.senderID === author && name === "شوتي") {
+      if (event.body.trim().toLowerCase() === "تم") {
+        const { threadID, messageID } = event;
 
-    // تحقق أن المستخدم رد بكلمة "تم"
-    if (event.body.toLowerCase() !== "تم") {
-      api.sendMessage("⚠️ | يرجى الرد بكلمة 'تم' لتحميل الفيديو.", event.threadID, event.messageID);
-      return;
-    }
+        try {
+          // مسار تخزين الفيديو مؤقتًا
+          const videoPath = path.resolve(process.cwd(), 'shoti_video.mp4');
+          const writer = fs.createWriteStream(videoPath);
 
-    const { threadID, messageID } = event;
+          // تحميل الفيديو
+          const response = await axios({
+            url: videoUrl,
+            method: 'GET',
+            responseType: 'stream'
+          });
 
-    try {
-      // مسار تخزين الفيديو مؤقتًا
-      const videoPath = path.resolve(process.cwd(), 'shoti_video.mp4');
-      const writer = fs.createWriteStream(videoPath);
+          response.data.pipe(writer);
 
-      // تحميل الفيديو
-      const response = await axios({
-        url: videoUrl,
-        method: 'GET',
-        responseType: 'stream'
-      });
+          writer.on('finish', () => {
+            // إرسال الفيديو مع المعلومات
+            api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+      
+            api.sendMessage({
+              body: `✅ | تـم تـحـمـيـل مـقـطـع شـوتـي \n🎬 | الـعـنـوان: ${title}\n⏳ | الـمـدة: ${duration}\n👤 | الـإسـم: ${username}\n💬 | الـلـقـب: ${nickname}`,
+              attachment: fs.createReadStream(videoPath)
+            }, threadID, () => fs.unlinkSync(videoPath), messageID);
+          });
 
-      response.data.pipe(writer);
+          writer.on('error', (err) => {
+            console.error('Error writing video file:', err);
+            api.sendMessage("⚠️ | حدث خطأ أثناء كتابة ملف الفيديو.", threadID, messageID);
+          });
 
-      writer.on('finish', () => {
-        // إرسال الفيديو مع المعلومات
-        api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-  
-        api.sendMessage({
-          body: `✅ | تـم تـحـمـيـل مـقـطـع شـوتـي \n🎬 | الـعـنـوان: ${title}\n⏳ | الـمـدة: ${duration}\n👤 | الـإسـم: ${username}\n💬 | الـلـقـب: ${nickname}`,
-          attachment: fs.createReadStream(videoPath)
-        }, threadID, () => fs.unlinkSync(videoPath), messageID);
-      });
+        } catch (error) {
+          console.error('Error downloading video:', error.message);
+          api.sendMessage("⚠️ | حدث خطأ أثناء تحميل الفيديو.", threadID, messageID);
+        }
 
-      writer.on('error', (err) => {
-        console.error('Error writing video file:', err);
-        api.sendMessage("⚠️ | حدث خطأ أثناء كتابة ملف الفيديو.", threadID, messageID);
-      });
-
-    } catch (error) {
-      console.error('Error downloading video:', error.message);
-      api.sendMessage("⚠️ | حدث خطأ أثناء تحميل الفيديو.", threadID, messageID);
+      } else {
+        api.sendMessage("⚠️ | يرجى الرد بكلمة 'تم' لتحميل الفيديو.", event.threadID, event.messageID);
+      }
     }
   }
 };
