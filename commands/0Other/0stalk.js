@@ -10,37 +10,24 @@ async function getProfilePicture(userID) {
     return profilePath;
 }
 
-async function getMessageCounts(api, threadId) {
+async function getMessageCount(api, threadId, userID) {
   try {
-    const participants = await api.getThreadInfo(threadId, { participantIDs: true });
-    if (!participants || !participants.participantIDs) {
-        throw new Error('Failed to fetch participant IDs.');
-    }
-
-    const messageCounts = {};
-    participants.participantIDs.forEach(participantId => {
-      messageCounts[participantId] = 0;
-    });
-
     const messages = await api.getThreadHistory(threadId, 1000);
     if (!messages || !Array.isArray(messages)) {
         throw new Error('Failed to fetch thread history.');
     }
 
+    let userMessageCount = 0;
     messages.forEach(message => {
-      if (message.senderID && messageCounts[message.senderID] !== undefined) {
-        messageCounts[message.senderID]++;
+      if (message.senderID === userID) {
+        userMessageCount++;
       }
     });
 
-    if (Object.keys(messageCounts).length === 0) {
-      console.warn('No messages found for this thread.');
-    }
-
-    return messageCounts;
+    return userMessageCount;
   } catch (err) {
-    console.error('Error fetching message counts:', err);
-    return {};
+    console.error('Error fetching message count:', err);
+    return 0;
   }
 }
 
@@ -69,9 +56,8 @@ export default {
       const balanceResult = await Economy.getBalance(uid);
       const money = balanceResult.data;
 
-      // جلب عدد الرسائل لكل مشارك في المحادثة
-      const messageCounts = await getMessageCounts(api, event.threadID);
-      const userMessageCount = messageCounts[uid] || 0;
+      // جلب عدد الرسائل للشخص المحدد
+      const userMessageCount = await getMessageCount(api, event.threadID, uid);
 
       // استخدام Exp.check لجلب نقاط الخبرة
       const userDataFile = path.join(process.cwd(), 'pontsData.json');
