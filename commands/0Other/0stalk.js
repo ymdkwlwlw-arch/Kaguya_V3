@@ -19,7 +19,8 @@ async function getMessageCount(api, threadId, userID) {
 
     let userMessageCount = 0;
     messages.forEach(message => {
-      if (message.senderID === userID) {
+      // التحقق من أن الرسالة موجودة وأنها تحتوي على senderID
+      if (message && message.senderID && message.senderID === userID) {
         userMessageCount++;
       }
     });
@@ -56,7 +57,7 @@ export default {
       const balanceResult = await Economy.getBalance(uid);
       const money = balanceResult.data;
 
-      // جلب عدد الرسائل للشخص المحدد
+      // جلب عدد الرسائل للشخص المحدد في المحادثة
       const userMessageCount = await getMessageCount(api, event.threadID, uid);
 
       // استخدام Exp.check لجلب نقاط الخبرة
