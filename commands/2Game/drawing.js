@@ -42,10 +42,12 @@ export default {
       }
 
       const imgData = [];
+      const cacheDir = path.join(process.cwd(), 'cache');
+
       for (let i = 0; i < Math.min(4, data.length); i++) {
-        const imgResponse = await axios.get(data[i], { responseType: 'arraybuffer' });
-        const imgPath = path.join(process.cwd(), 'cache', `${i + 1}.png`);
-        await fs.outputFile(imgPath, imgResponse.data);
+        const imgPath = path.join(cacheDir, `${i + 1}.png`);
+        const imageResponse = await axios.get(data[i], { responseType: 'arraybuffer' });
+        await fs.outputFile(imgPath, imageResponse.data);
         imgData.push(fs.createReadStream(imgPath));
       }
 
@@ -61,13 +63,22 @@ export default {
         }
         const userName = userInfo[senderID].name;
 
+        // إرسال الصور بعد تحميلها
         await api.sendMessage({
           attachment: imgData,
           body: `\t\t\t࿇ ══━━✥◈✥━━══ ࿇\n\t\t〘تـم تـولـيـد الـصورة بـنجـاح〙\n 👥 | مـن طـرف : ${userName}\n⏰ | ❏الـتـوقـيـت : ${timeString}\n📅 | ❏الـتـاريـخ: ${dateString}\n⏳ | ❏الوقـت الـمـسـتـغـرق: ${executionTime}s\n📝 | ❏الـبـرومـبـت : ${prompt}\n\t\t࿇ ══━━✥◈✥━━══ ࿇`
-        }, event.threadID, event.messageID);
-      });
+        }, event.threadID, (err, info) => {
+          if (err) console.error(err);
 
-      api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+          // حذف الصور المخزنة مؤقتاً بعد الإرسال
+          for (let i = 0; i < imgData.length; i++) {
+            fs.unlinkSync(path.join(cacheDir, `${i + 1}.png`));
+          }
+
+          // وضع رد فعل ناجح ✅
+          api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+        });
+      });
 
     } catch (error) {
       console.error(error);
