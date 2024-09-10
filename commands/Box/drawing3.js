@@ -9,6 +9,12 @@ export default {
     aliases: ["بنتريست"],
     description: "Searches Pinterest and returns related images based on the keyword.",
     execute: async function({ api, event, args }) {
+
+        // التحقق إذا لم يتم إدخال أي كلمة بحث
+        if (args.length === 0) {
+            return api.sendMessage("⚠️ | من فضلك أدخل كلمة بحث للبحث عن الصور في بنتريست.", event.threadID, event.messageID);
+        }
+
         const keySearch = args.join(" ");
 
         // React with ⏱️ to indicate the search has started
