@@ -34,7 +34,7 @@ export default {
       const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
       const translatedText = translationResponse?.data?.[0]?.[0]?.[0];
 
-      const res = await axios.get(`https://c-v1.onrender.com/flux/v1?prompt=${encodeURIComponent(translatedText)}`);
+      const res = await axios.get(`https://www.samirxpikachu.run.place/fluxfl?prompt=${encodeURIComponent(translatedText)}&ratio=1:1&model=2`);
       const data = res.data.data.output;
 
       if (!data || data.length === 0) {
