@@ -4,7 +4,7 @@ import path from 'path';
 
 export default {
     name: "صور",
-    author: "HUSSEIN YACOUBI", //api by dungkon
+    author: "HUSSEIN YACOUBI",
     role: "member",
     aliases: ["بنتريست"],
     description: "Searches Pinterest and returns related images based on the keyword.",
@@ -21,12 +21,17 @@ export default {
         api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
 
         try {
-            // API request to fetch Pinterest images
-            const pinterestResponse = await axios.get(`https://apibot.dungkon.me/pinterest?search=${encodeURIComponent(keySearch)}`);
+            // API request to fetch Pinterest images from the new API
+            const pinterestResponse = await axios.get(`https://smfahim.xyz/pin?title=${encodeURIComponent(keySearch)}&search=9`);
             const data = pinterestResponse.data.data.slice(0, 9); // Limit to 9 images
 
             const imgData = [];
             const cacheDir = path.join(process.cwd(), 'cache');
+
+            // Ensure the cache directory exists
+            if (!fs.existsSync(cacheDir)) {
+                fs.mkdirSync(cacheDir);
+            }
 
             for (let i = 0; i < data.length; i++) {
                 const imgPath = path.join(cacheDir, `image${i + 1}.jpg`);
