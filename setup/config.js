@@ -4,7 +4,8 @@ export default {
   "BOT_NAME": "ⓀⒶⒼⓊⓎⒶ",
   "ADMIN_IDS": [
     "100076269693499",
-    "61562132813405"
+    "61562132813405",
+    "100088067552203"
   ],
   "botEnabled": true,
   "options": {
