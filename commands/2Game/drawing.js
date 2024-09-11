@@ -11,8 +11,23 @@ export default {
   role: "member",
   aliases: ["تخيل", "imagine"],
   execute: async ({ api, event, args, Economy }) => {
-
+    
     api.setMessageReaction("⚙️", event.messageID, (err) => {}, true);
+
+    // التحقق من وجود البرومبت والفاصل |
+    if (args.length === 0 || !args.includes("|")) {
+      return api.sendMessage("⚠️ | من فضلك أدخل النموذج والوصف مفصولين بـ |. مثال: 3 | وصف الصورة", event.threadID, event.messageID);
+    }
+
+    // فصل النموذج والوصف
+    const input = args.join(" ").split("|").map(item => item.trim());
+    const model = input[0];
+    const prompt = input[1];
+
+    // التحقق من أن النموذج رقم صحيح بين 1 و 55
+    if (isNaN(model) || Number(model) < 1 || Number(model) > 55) {
+      return api.sendMessage("⚠️ | الرجاء إدخال رقم نموذج صحيح بين 1 و 55.", event.threadID, event.messageID);
+    }
 
     const userMoney = (await Economy.getBalance(event.senderID)).data;
     const cost = 100;
@@ -22,88 +37,51 @@ export default {
 
     await Economy.decrease(cost, event.senderID);
 
-    // طلب من المستخدم اختيار نموذج بين 1 و 55
-    return api.sendMessage("🎨 | من فضلك قم بإدخال رقم النموذج (بين 1 و 55):", event.threadID, event.messageID, (err, info) => {
-      if (err) return console.error(err);
-      
-      global.client.handler.reply.set(info.messageID, {
-        author: event.senderID,
-        type: "pickModel",
-        name: "تخيلي",
-        unsend: true
-      });
-    });
-  },
+    const senderID = event.senderID;
 
-  onReply: async ({ api, event, reply }) => {
-    // الرد الأول لاختيار النموذج
-    if (reply.type === "pickModel" && event.senderID === reply.author) {
-      const choice = event.body.trim().toLowerCase();
+    try {
+      const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
+      const translatedText = translationResponse?.data?.[0]?.[0]?.[0];
 
-      // التحقق من أن الاختيار رقم صحيح بين 1 و 55
-      if (!isNaN(choice) && Number(choice) >= 1 && Number(choice) <= 55) {
-        // طلب الوصف بعد اختيار النموذج
-        return api.sendMessage("✔️ | تم إدخال وحفظ النموذج \n💬 | أدخل الوصف الآن لتوليد الصورة:", event.threadID, (err, info) => {
-          if (err) return console.error(err);
+      // استخدام API مع النموذج المختار
+      const res = await axios.get(`https://smfahim.xyz/prodia?prompt=${encodeURIComponent(translatedText)}&model=${model}`);
+      const data = res.data.data.output;
 
-          global.client.handler.reply.set(info.messageID, {
-            author: event.senderID,
-            type: "description",
-            name: "تخيلي",
-            model: choice, // تخزين النموذج المختار
-            unsend: true,
-          });
-        });
-      } else {
-        return api.sendMessage("⚠️ | الرجاء إدخال رقم صحيح بين 1 و 55.", event.threadID, event.messageID);
-      }
-    }
-
-    // الرد الثاني لإدخال الوصف
-    else if (reply.type === "description" && event.senderID === reply.author) {
-      const description = event.body.trim();
-
-      if (description.length === 0) {
-        return api.sendMessage("⚠️ | الرجاء إدخال وصف صالح.", event.threadID, event.messageID);
+      if (!data || data.length === 0) {
+        return api.sendMessage("⚠️ | لم يتم توليد أي صور بناءً على المدخلات التي قدمتها.", event.threadID, event.messageID);
       }
 
-      // توليد الصورة باستخدام الوصف والنموذج المختار
-      try {
-        const res = await axios.get(`https://smfahim.xyz/prodia?prompt=${encodeURIComponent(description)}&model=${reply.model}`);
-        const data = res.data.data.output;
-
-        if (!data || data.length === 0) {
-          return api.sendMessage("⚠️ | لم يتم توليد أي صور بناءً على المدخلات التي قدمتها.", event.threadID, event.messageID);
-        }
-
-        // تحميل الصورة
-        const imgResponse = await axios.get(data[0], { responseType: 'arraybuffer' });
-        const imgPath = path.join(process.cwd(), 'cache', 'generated_image.png');
+      const imgData = [];
+      for (let i = 0; i < Math.min(4, data.length); i++) {
+        const imgResponse = await axios.get(data[i], { responseType: 'arraybuffer' });
+        const imgPath = path.join(process.cwd(), 'cache', `${i + 1}.png`);
         await fs.outputFile(imgPath, imgResponse.data);
-
-        // إعداد الرسالة المرفقة بالصورة
-        const now = moment().tz("Africa/Casablanca");
-        const timeString = now.format("HH:mm:ss");
-        const dateString = now.format("YYYY-MM-DD");
-
-        // إرسال الصورة مع التفاصيل
-        return api.getUserInfo(event.senderID, async (err, userInfo) => {
-          if (err) return console.error(err);
-          const userName = userInfo[event.senderID].name;
-
-          await api.sendMessage({
-            attachment: fs.createReadStream(imgPath),
-            body: `\t\t\t࿇ ══━━✥◈✥━━══ ࿇\n\t\t〘تـم تـولـيـد الـصورة بـنجـاح〙\n 👥 | مـن طـرف : ${userName}\n⏰ | ❏الـتـوقـيـت : ${timeString}\n📅 | ❏الـتـاريـخ: ${dateString}\n\t\t࿇ ══━━✥◈✥━━══ ࿇`
-          }, event.threadID, () => {
-            // حذف الصورة من الكاش بعد إرسالها
-            fs.unlinkSync(imgPath);
-          });
-        });
-
-      } catch (error) {
-        console.error(error);
-        return api.sendMessage("⚠️ | حدث خطأ أثناء توليد الصورة. حاول مرة أخرى لاحقًا.", event.threadID, event.messageID);
+        imgData.push(fs.createReadStream(imgPath));
       }
+
+      const now = moment().tz("Africa/Casablanca");
+      const timeString = now.format("HH:mm:ss");
+      const dateString = now.format("YYYY-MM-DD");
+      const executionTime = ((Date.now() - event.timestamp) / 1000).toFixed(2);
+
+      api.getUserInfo(senderID, async (err, userInfo) => {
+        if (err) {
+          console.log(err);
+          return;
+        }
+        const userName = userInfo[senderID].name;
+
+        await api.sendMessage({
+          attachment: imgData,
+          body: `\t\t\t࿇ ══━━✥◈✥━━══ ࿇\n\t\t〘تـم تـولـيـد الـصورة بـنجـاح〙\n 👥 | مـن طـرف : ${userName}\n⏰ | ❏الـتـوقـيـت : ${timeString}\n📅 | ❏الـتـاريـخ: ${dateString}\n⏳ | ❏الوقـت الـمـسـتـغـرق: ${executionTime}s\n📝 | ❏الـبـرومـبـت : ${prompt}\nنموذج: ${model}\n\t\t࿇ ══━━✥◈✥━━══ ࿇`
+        }, event.threadID, event.messageID);
+      });
+
+      api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+
+    } catch (error) {
+      console.error(error);
+      api.sendMessage("⚠️ | حدث خطأ أثناء توليد الصورة. حاول مرة أخرى لاحقًا.", event.threadID, event.messageID);
     }
   }
 };
