@@ -24,6 +24,7 @@ export default {
       }).then(response => {
         response.data.pipe(writer);
         writer.on('finish', () => {
+          
           api.sendMessage(
             {
               attachment: fs.createReadStream(tempFilePath)
