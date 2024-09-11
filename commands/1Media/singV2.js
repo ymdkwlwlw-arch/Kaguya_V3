@@ -22,7 +22,7 @@ export default {
     const videoName = data.join(" ");
 
     try {
-      const sentMessage = await api.sendMessage(`✔ | جاري البحث عن المقطع المطلوب "${videoName}". المرجو الانتظار...`, event.threadID);
+      const sentMessage = await api.sendMessage(`✔ | جاري البحث عن الأغنية المطلوبة "${videoName}". المرجو الانتظار...`, event.threadID);
 
       const searchUrl = `https://c-v1.onrender.com/yt/s?query=${encodeURIComponent(videoName)}`;
       const searchResponse = await axios.get(searchUrl);
@@ -88,7 +88,9 @@ export default {
 
     const { author, searchResults } = reply;
 
-    if (event.senderID !== author) return;
+    if (event.senderID !== author) {
+  return api.sendMessage("⚠️ | هذا ليس لك.", event.threadID);
+    }
 
     const selectedIndex = parseInt(event.body, 10) - 1;
 
