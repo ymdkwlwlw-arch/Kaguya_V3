@@ -88,7 +88,9 @@ export default {
 
     const { author, searchResults } = reply;
 
-    if (event.senderID !== author) return;
+    if (event.senderID !== author) {
+  return api.sendMessage("⚠️ | هذا ليس لك.", event.threadID);
+    }
 
     const selectedIndex = parseInt(event.body, 10) - 1;
 
