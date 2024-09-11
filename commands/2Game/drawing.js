@@ -43,7 +43,7 @@ export default {
       // التحقق من أن الاختيار رقم صحيح بين 1 و 55
       if (!isNaN(choice) && Number(choice) >= 1 && Number(choice) <= 55) {
         // طلب الوصف بعد اختيار النموذج
-        return api.sendMessage("✔️ | أدخل الوصف الآن لتوليد الصورة:", event.threadID, (err, info) => {
+        return api.sendMessage("✔️ | تم إدخال وحفظ النموذج \n💬 | أدخل الوصف الآن لتوليد الصورة:", event.threadID, (err, info) => {
           if (err) return console.error(err);
 
           global.client.handler.reply.set(info.messageID, {
@@ -94,7 +94,7 @@ export default {
           await api.sendMessage({
             attachment: fs.createReadStream(imgPath),
             body: `\t\t\t࿇ ══━━✥◈✥━━══ ࿇\n\t\t〘تـم تـولـيـد الـصورة بـنجـاح〙\n 👥 | مـن طـرف : ${userName}\n⏰ | ❏الـتـوقـيـت : ${timeString}\n📅 | ❏الـتـاريـخ: ${dateString}\n\t\t࿇ ══━━✥◈✥━━══ ࿇`
-          }, event.threadID, event.messageID, () => {
+          }, event.threadID, () => {
             // حذف الصورة من الكاش بعد إرسالها
             fs.unlinkSync(imgPath);
           });
