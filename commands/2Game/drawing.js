@@ -14,106 +14,95 @@ export default {
 
     api.setMessageReaction("⚙️", event.messageID, (err) => {}, true);
 
-    // التحقق من وجود برومبت
-    if (args.length === 0) {
-      return api.sendMessage("⚠️ | من فضلك قم بالرد على هذه الرسالة وأدخل نموذج (بين 1 و 55) لاستخدامه لتوليد الصورة.", event.threadID, (err, info) => {
-        global.client.handler.reply.set(info.messageID, {
-          author: event.senderID,
-          type: "pick",
-          unsend: true,
-        });
-      });
+    const userMoney = (await Economy.getBalance(event.senderID)).data;
+    const cost = 100;
+    if (userMoney < cost) {
+      return api.sendMessage(`⚠️ | لا يوجد لديك رصيد كافٍ. يجب عليك الحصول على ${cost} دولار 💵 لكل صورة تخيلية واحدة`, event.threadID);
     }
-  },
-  
-  onReply: async ({ api, event, reply, Economy }) => {
-    // التأكد من أن المستخدم هو نفس الشخص الذي أرسل الأمر الأصلي
-    if (event.senderID !== reply.author) return;
 
-    if (reply.type === "pick") {
-      const modelNumber = parseInt(event.body.trim());
+    await Economy.decrease(cost, event.senderID);
 
-      if (isNaN(modelNumber) || modelNumber < 1 || modelNumber > 55) {
-        return api.sendMessage("⚠️ | أدخل رقم نموذج صحيح بين 1 و 55.", event.threadID, event.messageID);
-      }
-
-      api.sendMessage("💬 | أدخل الآن الوصف الذي تود استخدامه لتوليد الصورة:", event.threadID, (err, info) => {
-        global.client.handler.reply.set(info.messageID, {
-          author: event.senderID,
-          type: "prompt",
-          modelNumber,
-          unsend: true,
-        });
+    // طلب من المستخدم اختيار نموذج بين 1 و 55
+    return api.sendMessage("🎨 | من فضلك قم بإدخال رقم النموذج (بين 1 و 55):", event.threadID, event.messageID, (err, info) => {
+      if (err) return console.error(err);
+      
+      global.client.handler.reply.set(info.messageID, {
+        author: event.senderID,
+        type: "pickModel",
+        name: "تخيلي",
+        unsend: true
       });
+    });
+  },
 
-    } else if (reply.type === "prompt") {
-      const prompt = event.body.trim();
+  onReply: async ({ api, event, reply }) => {
+    // الرد الأول لاختيار النموذج
+    if (reply.type === "pickModel" && event.senderID === reply.author) {
+      const choice = event.body.trim().toLowerCase();
 
-      if (!prompt) {
-        return api.sendMessage("⚠️ | أدخل وصف صحيح لتوليد الصورة.", event.threadID, event.messageID);
+      // التحقق من أن الاختيار رقم صحيح بين 1 و 55
+      if (!isNaN(choice) && Number(choice) >= 1 && Number(choice) <= 55) {
+        // طلب الوصف بعد اختيار النموذج
+        return api.sendMessage("✔️ | أدخل الوصف الآن لتوليد الصورة:", event.threadID, (err, info) => {
+          if (err) return console.error(err);
+
+          global.client.handler.reply.set(info.messageID, {
+            author: event.senderID,
+            type: "description",
+            name: "تخيلي",
+            model: choice, // تخزين النموذج المختار
+            unsend: true,
+          });
+        });
+      } else {
+        return api.sendMessage("⚠️ | الرجاء إدخال رقم صحيح بين 1 و 55.", event.threadID, event.messageID);
+      }
+    }
+
+    // الرد الثاني لإدخال الوصف
+    else if (reply.type === "description" && event.senderID === reply.author) {
+      const description = event.body.trim();
+
+      if (description.length === 0) {
+        return api.sendMessage("⚠️ | الرجاء إدخال وصف صالح.", event.threadID, event.messageID);
       }
 
-      const userMoney = (await Economy.getBalance(event.senderID)).data;
-      const cost = 100;
-
-      if (userMoney < cost) {
-        return api.sendMessage(`⚠️ | لا يوجد لديك رصيد كافٍ. يجب عليك الحصول على ${cost} دولار 💵 لكل صورة تخيلية واحدة`, event.threadID);
-      }
-
-      await Economy.decrease(cost, event.senderID);
-
-      const senderID = event.senderID;
-      const modelNumber = reply.modelNumber;
-
+      // توليد الصورة باستخدام الوصف والنموذج المختار
       try {
-        const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
-        const translatedText = translationResponse?.data?.[0]?.[0]?.[0];
-
-        const res = await axios.get(`https://smfahim.xyz/prodia?prompt=${encodeURIComponent(translatedText)}&model=${modelNumber}`);
+        const res = await axios.get(`https://smfahim.xyz/prodia?prompt=${encodeURIComponent(description)}&model=${reply.model}`);
         const data = res.data.data.output;
 
         if (!data || data.length === 0) {
           return api.sendMessage("⚠️ | لم يتم توليد أي صور بناءً على المدخلات التي قدمتها.", event.threadID, event.messageID);
         }
 
-        const imgData = [];
-        for (let i = 0; i < Math.min(4, data.length); i++) {
-          const imgResponse = await axios.get(data[i], { responseType: 'arraybuffer' });
-          const imgPath = path.join(process.cwd(), 'cache', `${i + 1}.png`);
-          await fs.outputFile(imgPath, imgResponse.data);
-          imgData.push(fs.createReadStream(imgPath));
-        }
+        // تحميل الصورة
+        const imgResponse = await axios.get(data[0], { responseType: 'arraybuffer' });
+        const imgPath = path.join(process.cwd(), 'cache', 'generated_image.png');
+        await fs.outputFile(imgPath, imgResponse.data);
 
+        // إعداد الرسالة المرفقة بالصورة
         const now = moment().tz("Africa/Casablanca");
         const timeString = now.format("HH:mm:ss");
         const dateString = now.format("YYYY-MM-DD");
-        const executionTime = ((Date.now() - event.timestamp) / 1000).toFixed(2);
 
-        api.getUserInfo(senderID, async (err, userInfo) => {
-          if (err) {
-            console.log(err);
-            return;
-          }
-          const userName = userInfo[senderID].name;
+        // إرسال الصورة مع التفاصيل
+        return api.getUserInfo(event.senderID, async (err, userInfo) => {
+          if (err) return console.error(err);
+          const userName = userInfo[event.senderID].name;
 
           await api.sendMessage({
-            attachment: imgData,
-            body: `\t\t\t࿇ ══━━✥◈✥━━══ ࿇\n\t\t〘تـم تـولـيـد الـصورة بـنجـاح〙\n 👥 | مـن طـرف : ${userName}\n⏰ | ❏الـتـوقـيـت : ${timeString}\n📅 | ❏الـتـاريـخ: ${dateString}\n⏳ | ❏الوقـت الـمـسـتـغـرق: ${executionTime}s\n📝 | ❏الـبـرومـبـت : ${prompt}\n\t\t࿇ ══━━✥◈✥━━══ ࿇`
-          }, event.threadID, event.messageID);
-
-          // تنظيف الملفات المؤقتة
-          for (let i = 0; i < imgData.length; i++) {
-            const imgPath = path.join(process.cwd(), 'cache', `${i + 1}.png`);
+            attachment: fs.createReadStream(imgPath),
+            body: `\t\t\t࿇ ══━━✥◈✥━━══ ࿇\n\t\t〘تـم تـولـيـد الـصورة بـنجـاح〙\n 👥 | مـن طـرف : ${userName}\n⏰ | ❏الـتـوقـيـت : ${timeString}\n📅 | ❏الـتـاريـخ: ${dateString}\n\t\t࿇ ══━━✥◈✥━━══ ࿇`
+          }, event.threadID, event.messageID, () => {
+            // حذف الصورة من الكاش بعد إرسالها
             fs.unlinkSync(imgPath);
-          }
-
-          api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-
+          });
         });
 
       } catch (error) {
         console.error(error);
-        api.sendMessage("⚠️ | حدث خطأ أثناء توليد الصورة. حاول مرة أخرى لاحقًا.", event.threadID, event.messageID);
+        return api.sendMessage("⚠️ | حدث خطأ أثناء توليد الصورة. حاول مرة أخرى لاحقًا.", event.threadID, event.messageID);
       }
     }
   }
