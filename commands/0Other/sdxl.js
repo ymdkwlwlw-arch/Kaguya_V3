@@ -8,6 +8,18 @@ export default {
   role: "member",
   description: "صةر مثيرة للفتيات في الأنمي.",
   async execute({ api, event }) {
+    
+    api.setMessageReaction("🚫", event.messageID, (err) => {}, true);
+  
+    const userMoney = (await Economy.getBalance(event.senderID)).data;
+      const cost = 10000;
+      if (userMoney < cost) {
+        return api.sendMessage(`⚠️ | على وين يا حلو 🙂 إدفع ${cost} علشان تشوف الصور 😉`, event.threadID);
+      }
+
+      // الخصم من الرصيد
+      await Economy.decrease(cost, event.senderID);
+    
     api.setMessageReaction("😏", event.messageID, (err) => {}, true);
 
     try {
