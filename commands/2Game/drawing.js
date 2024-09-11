@@ -10,8 +10,8 @@ export default {
   description: "قم بتوليد صور باستخدام الذكاء الاصطناعي DALL·E",
   role: "member",
   aliases: ["تخيل", "imagine"],
-  execute: async ({ api, event, args, Economy }) => {
-    
+  
+  execute: async function ({ api, event, args, Economy }) {
     api.setMessageReaction("⚙️", event.messageID, (err) => {}, true);
 
     // التحقق من وجود البرومبت والفاصل |
@@ -37,23 +37,24 @@ export default {
 
     await Economy.decrease(cost, event.senderID);
 
-    const senderID = event.senderID;
-
     try {
+      // الترجمة من العربية إلى الإنجليزية
       const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
-      const translatedText = translationResponse?.data?.[0]?.[0]?.[0];
+      const translatedText = translationResponse?.data?.[0]?.[0]?.[0] || prompt;
 
       // استخدام API مع النموذج المختار
-      const res = await axios.get(`https://smfahim.xyz/prodia?prompt=${encodeURIComponent(translatedText)}&model=${model}`);
-      const data = res.data.data.output;
+      const apiUrl = `https://smfahim.xyz/prodia?prompt=${encodeURIComponent(translatedText)}&model=${model}`;
+      const response = await axios.get(apiUrl, { responseType: 'json' });
 
-      if (!data || data.length === 0) {
+      const outputData = response?.data?.data?.output;
+      if (!outputData || outputData.length === 0) {
         return api.sendMessage("⚠️ | لم يتم توليد أي صور بناءً على المدخلات التي قدمتها.", event.threadID, event.messageID);
       }
 
       const imgData = [];
-      for (let i = 0; i < Math.min(4, data.length); i++) {
-        const imgResponse = await axios.get(data[i], { responseType: 'arraybuffer' });
+      for (let i = 0; i < Math.min(4, outputData.length); i++) {
+        const imgUrl = outputData[i];
+        const imgResponse = await axios.get(imgUrl, { responseType: 'arraybuffer' });
         const imgPath = path.join(process.cwd(), 'cache', `${i + 1}.png`);
         await fs.outputFile(imgPath, imgResponse.data);
         imgData.push(fs.createReadStream(imgPath));
@@ -64,23 +65,26 @@ export default {
       const dateString = now.format("YYYY-MM-DD");
       const executionTime = ((Date.now() - event.timestamp) / 1000).toFixed(2);
 
-      api.getUserInfo(senderID, async (err, userInfo) => {
+      api.getUserInfo(event.senderID, async (err, userInfo) => {
         if (err) {
           console.log(err);
           return;
         }
-        const userName = userInfo[senderID].name;
+        const userName = userInfo[event.senderID].name;
 
         await api.sendMessage({
           attachment: imgData,
           body: `\t\t\t࿇ ══━━✥◈✥━━══ ࿇\n\t\t〘تـم تـولـيـد الـصورة بـنجـاح〙\n 👥 | مـن طـرف : ${userName}\n⏰ | ❏الـتـوقـيـت : ${timeString}\n📅 | ❏الـتـاريـخ: ${dateString}\n⏳ | ❏الوقـت الـمـسـتـغـرق: ${executionTime}s\n📝 | ❏الـبـرومـبـت : ${prompt}\nنموذج: ${model}\n\t\t࿇ ══━━✥◈✥━━══ ࿇`
-        }, event.threadID, event.messageID);
+        }, event.threadID, () => {
+          // حذف الصور المؤقتة بعد إرسالها
+          imgData.forEach(file => fs.unlinkSync(file.path));
+        }, event.messageID);
       });
 
       api.setMessageReaction("✅", event.messageID, (err) => {}, true);
 
     } catch (error) {
-      console.error(error);
+      console.error("خطأ أثناء معالجة الطلب:", error);
       api.sendMessage("⚠️ | حدث خطأ أثناء توليد الصورة. حاول مرة أخرى لاحقًا.", event.threadID, event.messageID);
     }
   }
