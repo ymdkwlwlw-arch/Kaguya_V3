@@ -51,6 +51,11 @@ async function execute({ api, event }) {
 }
 
 async function onReply({ api, event, reply, Economy, Users }) {
+  // Check if the person replying is the original author
+  if (event.senderID !== reply.author) {
+    return api.sendMessage("⚠️ | ليس لك.", event.threadID, event.messageID);
+  }
+
   if (reply.type === "pick") {
     const choices = [
       "\nفيتنام",
