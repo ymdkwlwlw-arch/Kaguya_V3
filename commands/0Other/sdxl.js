@@ -7,7 +7,7 @@ export default {
   author: "ChatGPT",
   role: "member",
   description: "صةر مثيرة للفتيات في الأنمي.",
-  async execute({ api, event }) {
+  async execute({ api, event, Economy }) {
     
     api.setMessageReaction("🚫", event.messageID, (err) => {}, true);
   
@@ -20,8 +20,6 @@ export default {
       // الخصم من الرصيد
       await Economy.decrease(cost, event.senderID);
     
-    api.setMessageReaction("😏", event.messageID, (err) => {}, true);
-
     try {
       const response = await axios.get('https://ahegao.netlify.app/random');
       const ext = response.headers['content-type'].split('/')[1];
@@ -37,6 +35,7 @@ export default {
         response.data.pipe(writer);
         writer.on('finish', () => {
           
+          api.setMessageReaction("😏", event.messageID, (err)
           api.sendMessage(
             {
               attachment: fs.createReadStream(tempFilePath)
