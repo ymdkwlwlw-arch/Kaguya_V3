@@ -13,7 +13,7 @@ const generateImage = async (userOneId, userTwoId) => {
     avTwo.circle();
 
     const imagePath = path.join(process.cwd(), 'cache', 'ball.png');
-    const img = await jimp.read('https://i.imgur.com/TGq05CR.jpeg');
+    const img = await jimp.read('https://imgur.com/vcG4det.jpg');
 
     img.resize(700, 440)
        .composite(avOne.resize(50, 50), 287, 97)   // Updated coordinates and size for the first user
