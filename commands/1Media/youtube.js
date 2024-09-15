@@ -36,13 +36,17 @@ export default {
       const selectedResults = searchResults.slice(0, 4); // Get only the first 4 results
       const attachments = [];
 
+      // الرموز التي تم طلبها للأرقام: ⓵, ⓶, ⓷, ⓸
+      const numberSymbols = ['⓵', '⓶', '⓷', '⓸'];
+
       for (let i = 0; i < selectedResults.length; i++) {
         const video = selectedResults[i];
-        const videoIndex = i + 1;
+        const videoIndex = numberSymbols[i]; // استخدام الرموز
+
         msg += `\n${videoIndex}. ❀ العنوان: ${video.title}`;
         
         // تنزيل الصورة وإضافتها إلى المرفقات
-        const imagePath = path.join(process.cwd(), 'cache', `video_thumb_${videoIndex}.jpg`);
+        const imagePath = path.join(process.cwd(), 'cache', `video_thumb_${i + 1}.jpg`);
         const imageStream = await axios({
           url: video.thumbnail,
           responseType: 'stream',
@@ -89,7 +93,7 @@ export default {
     const { author, searchResults } = reply;
 
     if (event.senderID !== author) {
-  return api.sendMessage("⚠️ | هذا ليس لك.", event.threadID);
+      return api.sendMessage("⚠️ | هذا ليس لك.", event.threadID);
     }
 
     const selectedIndex = parseInt(event.body, 10) - 1;
