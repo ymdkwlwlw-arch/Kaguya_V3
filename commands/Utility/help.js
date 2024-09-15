@@ -9,7 +9,7 @@ class Help {
     this.cooldowns = 60;
     this.description = "عرض قائمة الأوامر مع كيفية استعمال كل واحد!";
     this.role = "member";
-    this.aliases = ["أوامر"];
+    this.aliases = ["أوامر","الاوامر"];
     this.commands = global.client.commands;
     this.cache = {}; // Cache to store image paths
     this.tempFolder = path.join(process.cwd(), 'temp');
@@ -56,7 +56,7 @@ commandList.forEach((command, index) => {
 allCommandsMsg += `إجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\n╰───────────────◊`;
       await api.sendMessage(allCommandsMsg, event.threadID);
     } else if (!isNaN(page) && page > 0 && page <= totalPages) {
-      let msg = `\n•——[قٰཻــ͒͜ـًائمـٰة أوُامـٰࢪ ڪاغــِْــٰوُيا ]——• اٰلـٰ̲ـہصـٰ̲ـہفـٰ̲ـہحـٰ̲ـة 🌞🌩 ${page}/${totalPages}:\nإجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\n`;
+      let msg = `\n•—[قٰཻــ͒͜ـًائمـٰة أوُامـٰࢪ ڪاغــِْــٰوُيا ]—•\n اٰلـٰ̲ـہصـٰ̲ـہفـٰ̲ـہحـٰ̲ـة : ${page}/${totalPages}:\nإجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\n`;
 
       const commandsToDisplay = commandList.slice(startIndex, endIndex);
       commandsToDisplay.forEach((command, index) => {
