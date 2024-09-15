@@ -2,16 +2,15 @@ import moment from "moment-timezone";
 import axios from "axios";
 import fs from "fs";
 import path from "path";
+import { promisify } from "util";
 
-
-// تحويل fs.unlink إلى promise
 const unlinkAsync = promisify(fs.unlink);
 
 export default {
   name: "التذكير-اليومي",
   author: "kaguya project",
   role: "admin",
-  description: "يرسل رسائل في أوقات محددة كل يوم مع صورة عشوائية.",
+  description: "يرسل رسائل تلقائيًا في أوقات محددة كل يوم مع صورة عشوائية.",
   execute: async ({ api, event }) => {
     const reminders = [
       { time: "10:00", message: `وليس كل ماصرفه الله عنك شرٌ لك لعلك أنت الخير الذي لا يستحقونه 💙💙.
@@ -47,7 +46,7 @@ export default {
 𝙎𝙪𝙞𝙩𝙖𝙗𝙡𝙚 𝙬𝙤𝙧𝙙𝙨.💖` },
       { time: "21:00", message: `-الغائبون بلا عذر كالحاضرين بلا فائدة ، كلاهما يشغل حيزاً ﻻ يستحقه.💨
 - 𝑇ℎ𝑜𝑠𝑒 𝑤ℎ𝑜 𝑎𝑟𝑒 𝑎𝑏𝑠𝑒𝑛𝑡 𝑤𝑖𝑡ℎ𝑜𝑢𝑡 𝑒𝑥𝑐𝑢𝑠𝑒 𝑎𝑟𝑒 𝑙𝑖𝑘𝑒 𝑡ℎ𝑜𝑠𝑒 𝑤ℎ𝑜 𝑎𝑟𝑒 𝑝𝑟𝑒𝑠𝑒𝑛𝑡 𝑤𝑖𝑡ℎ𝑜𝑢𝑡 𝑏𝑒𝑛𝑒𝑓𝑖𝑡. 𝐵𝑜𝑡ℎ 𝑜𝑓 𝑡ℎ𝑒𝑚 𝑜𝑐𝑐𝑢𝑝𝑦 𝑠𝑝𝑎𝑐𝑒 𝑡ℎ𝑎𝑡 𝑡ℎ𝑒𝑦 𝑑𝑜 𝑛𝑜𝑡 𝑑𝑒𝑠𝑒𝑟𝑣𝑒.💨` }
-      
+    
     ];
 
     const imageUrls = [
