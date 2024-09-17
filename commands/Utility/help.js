@@ -64,7 +64,7 @@ allCommandsMsg += `إجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـ
         msg += `[${commandNumber}] ⟻『${command.name}』\n`;
       });
 
-      msg += "✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎\nاٰلـٰ̲ـہصـٰ̲ـہفـٰ̲ـہحـٰ̲ـة : ${page}/${totalPages}:\nإجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\nقم بكتابة أوامر 'رقم الصفحة' من أجل رؤية باقي الصفحات \nأو قم بكتابة اوامر الكل من أجل رؤية جميع الأوامر\n✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎";
+      msg += `✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎\nاٰلـٰ̲ـہصـٰ̲ـہفـٰ̲ـہحـٰ̲ـة : ${page}/${totalPages}:\nإجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\nقم بكتابة أوامر 'رقم الصفحة' من أجل رؤية باقي الصفحات \nأو قم بكتابة اوامر الكل من أجل رؤية جميع الأوامر\n✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎`;
 
       const randomImageUrl = this.randomImageUrls[Math.floor(Math.random() * this.randomImageUrls.length)];
       const tempImagePath = path.join(this.tempFolder, `random_image_${Date.now()}.jpeg`);
