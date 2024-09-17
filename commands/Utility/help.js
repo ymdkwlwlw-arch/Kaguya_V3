@@ -54,7 +54,7 @@ class Help {
       allCommandsMsg += `إجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\n╰───────────────◊`;
       await api.sendMessage(allCommandsMsg, event.threadID);
     } else if (!isNaN(page) && page > 0 && page <= totalPages) {
-      let msg = `\n•—[قٰཻــ͒͜ـًائمـٰة أوُامـٰࢪ ڪاغــِْــٰوُيا ]—•\n اٰلـٰ̲ـہصـٰ̲ـہفـٰ̲ـہحـٰ̲ـة : ${page}/${totalPages}:\nإجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\n`;
+      let msg = `\n•—[قٰཻــ͒͜ـًائمـٰة أوُامـٰࢪ كاغــِْــٰوُيا ]—•\n اٰلـٰ̲ـہصـٰ̲ـہفـٰ̲ـہحـٰ̲ـة : ${page}/${totalPages}:\nإجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\n`;
 
       const commandsToDisplay = commandList.slice(startIndex, endIndex);
       commandsToDisplay.forEach((command, index) => {
@@ -80,62 +80,61 @@ class Help {
       await api.sendMessage("❌ | الصفحة غير موجودة.", event.threadID);
     }
   }
+async onReply({ reply, event, api }) {
+  // تحقق من أن الشخص الذي يرد هو نفسه الشخص الذي طلب الأوامر
+  if (reply.author != event.senderID) return;
 
-  async onReply({ reply, event, api }) {
-    // تحقق من أن الشخص الذي يرد هو نفسه الشخص الذي طلب الأوامر
-    if (reply.author != event.senderID) return;
+  // تحقق من أن الرقم المدخل صحيح ويقع ضمن قائمة الأوامر
+  const commandIndex = parseInt(event.body);
+  if (isNaN(commandIndex) || commandIndex > reply.commands.length || commandIndex < 1) {
+    return api.sendMessage("❌ | الرقم المدخل غير صحيح أو الأمر غير موجود.", event.threadID);
+  }
 
-    // تحقق من أن الرقم المدخل صحيح ويقع ضمن قائمة الأوامر
-    const commandIndex = parseInt(event.body);
-    if (isNaN(commandIndex) || commandIndex > reply.commands.length || commandIndex < 1) {
-      return api.sendMessage("❌ | الرقم المدخل غير صحيح أو الأمر غير موجود.", event.threadID);
+  // الحصول على الأمر بناءً على الرقم المدخل
+  const getCommands = reply.commands[commandIndex - 1];
+
+  // روابط الصور (يمكنك تغيير هذه الروابط حسب الحاجة)
+  const imageUrls = [
+    "https://i.postimg.cc/jj25dynJ/thumb-350-1080006.webp",
+    "https://i.postimg.cc/d32QSBpg/thumb-350-1239849.webp",
+    "https://i.imgur.com/VZKKBHv.jpeg",
+    "https://i.imgur.com/fX5iiTb.png" // قم بتعديل الرابط حسب الحاجة
+  ];
+
+  // اختيار صورة (تأكد من تعديل هذا لاختيار الصورة المناسبة بناءً على الأمر أو أي شرط آخر)
+  const selectedImage = imageUrls[Math.floor(Math.random() * imageUrls.length)];
+
+  // مسار حفظ الصورة في مجلد temp
+  const imagePath = path.join(this.tempFolder, `image_${Date.now()}.jpg`);
+
+  try {
+    // تحميل الصورة من الإنترنت
+    const response = await axios.get(selectedImage, { responseType: 'arraybuffer' });
+    const imageBuffer = Buffer.from(response.data, 'binary');
+
+    // التأكد من وجود مجلد temp
+    if (!fs.existsSync(this.tempFolder)) {
+      fs.mkdirSync(this.tempFolder, { recursive: true });
     }
 
-    // الحصول على الأمر بناءً على الرقم المدخل
-    const getCommands = reply.commands[commandIndex - 1];
+    // حفظ الصورة إلى ملف في مجلد temp
+    fs.writeFileSync(imagePath, imageBuffer);
 
-    // روابط الصور (يمكنك تغيير هذه الروابط حسب الحاجة)
-    const imageUrls = [
-      "https://i.postimg.cc/jj25dynJ/thumb-350-1080006.webp",
-      "https://i.postimg.cc/d32QSBpg/thumb-350-1239849.webp",
-      "https://i.imgur.com/VZKKBHv.jpeg",
-      "https://i.imgur.com/fX5iiTb.png" // قم بتعديل الرابط حسب الحاجة
-    ];
+    // تحضير الرسالة التي تحتوي على تفاصيل الأمر (الاسم، المؤلف، الوصف، الوقت، إلخ)
+    const replyMsg = `◆❯━━━━━▣✦▣━━━━━━❮◆\n🔹 [ ${getCommands.name.toUpperCase()} ]\n`
+      + `- ✨ **الاسم**: ${getCommands.name}\n`
+      + `- 👤 **المؤلف**: ${getCommands.author}\n`
+      + `- ⏱️ **الوقت المستغرق**: ${getCommands.cooldowns} ثواني\n`
+      + `- 📜 **الوصف**: ${getCommands.description}\n`
+      + `- 🔑 **الدور**: ${this.roleText(getCommands.role)}\n`
+      + `- 📝 **الأسماء البديلة**: ${this.aliasesText(getCommands.aliases)}\n◆❯━━━━━▣✦▣━━━━━━❮◆`;
 
-    // اختيار صورة (تأكد من تعديل هذا لاختيار الصورة المناسبة بناءً على الأمر أو أي شرط آخر)
-    const selectedImage = imageUrls[Math.floor(Math.random() * imageUrls.length)];
-
-    // مسار حفظ الصورة في مجلد temp
-    const imagePath = path.join(this.tempFolder, `image_${Date.now()}.jpg`);
-
-    try {
-      // تحميل الصورة من الإنترنت
-      const response = await axios.get(selectedImage, { responseType: 'arraybuffer' });
-      const imageBuffer = Buffer.from(response.data, 'binary');
-
-      // التأكد من وجود مجلد temp
-      if (!fs.existsSync(this.tempFolder)) {
-        fs.mkdirSync(this.tempFolder, { recursive: true });
-      }
-
-      // حفظ الصورة إلى ملف في مجلد temp
-      fs.writeFileSync(imagePath, imageBuffer);
-
-      // تحضير الرسالة التي تحتوي على تفاصيل الأمر (الاسم، المؤلف، الوصف، الوقت، إلخ)
-      const replyMsg = `◆❯━━━━━▣✦▣━━━━━━❮◆\n🔹 [ ${getCommands.name.toUpperCase()} ]\n`
-        + `- ✨ **الاسم**: ${getCommands.name}\n`
-        + `- 👤 **المؤلف**: ${getCommands.author}\n`
-        + `- ⏱️ **الوقت المستغرق**: ${getCommands.cooldowns} ثواني\n`
-        + `- 📜 **الوصف**: ${getCommands.description}\n`
-        + `- 🔑 **الدور**: ${this.roleText(getCommands.role)}\n`
-        + `- 📝 **الأسماء البديلة**: ${this.aliasesText(getCommands.aliases)}\n◆❯━━━━━▣✦▣━━━━━━❮◆`;
-
-      // إرسال رسالة تحتوي على تفاصيل الأمر وصورة
-      api.sendMessage({
-        body: replyMsg,
-        attachment: fs.createReadStream(imagePath)
-      }, event.threadID, (err, info) =>
-        if (err) {
+    // إرسال رسالة تحتوي على تفاصيل الأمر وصورة
+    api.sendMessage({
+      body: replyMsg,
+      attachment: fs.createReadStream(imagePath)
+    }, event.threadID, (err, info) => {
+      if (err) {
         console.error("حدث خطأ أثناء إرسال الرسالة: ", err);
       } else {
         // إزالة الصورة المؤقتة بعد إرسالها
@@ -144,22 +143,8 @@ class Help {
         });
       }
     });
-  }
-
-  roleText(role) {
-    switch (role) {
-      case "admin":
-        return "مشرف";
-      case "member":
-        return "عضو";
-      default:
-        return "غير محدد";
-    }
-  }
-
-  aliasesText(aliases) {
-    return aliases ? aliases.join(', ') : "لا توجد أسماء بديلة";
+  } catch (error) {
+    console.error("حدث خطأ: ", error);
+    await api.sendMessage("❌ | حدث خطأ أثناء جلب الصورة.", event.threadID);
   }
 }
-
-export default Help;
