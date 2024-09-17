@@ -88,24 +88,24 @@ class Help {
     // تحقق من أن الرقم المدخل صحيح ويقع ضمن قائمة الأوامر
     const commandIndex = parseInt(event.body);
     if (isNaN(commandIndex) || commandIndex > reply.commands.length || commandIndex < 1) {
-      return api.sendMessage(getLang("plugins.help.choose_invalid"), event.threadID);
+      return api.sendMessage("❌ | الرقم المدخل غير صحيح أو الأمر غير موجود.", event.threadID);
     }
 
     // الحصول على الأمر بناءً على الرقم المدخل
     const getCommands = reply.commands[commandIndex - 1];
 
     // روابط الصور (يمكنك تغيير هذه الروابط حسب الحاجة)
-    const imageUrls = {
+    const imageUrls = [
       "https://i.postimg.cc/jj25dynJ/thumb-350-1080006.webp",
       "https://i.postimg.cc/d32QSBpg/thumb-350-1239849.webp",
       "https://i.imgur.com/VZKKBHv.jpeg",
-      "https://i.imgur.com/fX5iiTb.png"// قم بتعديل الرابط حسب الحاجة
-    };
+      "https://i.imgur.com/fX5iiTb.png" // قم بتعديل الرابط حسب الحاجة
+    ];
 
     // اختيار صورة (تأكد من تعديل هذا لاختيار الصورة المناسبة بناءً على الأمر أو أي شرط آخر)
-    const selectedImage = imageUrls.example; // يمكنك تعديل اختيار الصورة حسب الحاجة
+    const selectedImage = imageUrls[Math.floor(Math.random() * imageUrls.length)];
 
-    // مسار حفظ الصورة في مجلد cache
+    // مسار حفظ الصورة في مجلد temp
     const imagePath = path.join(this.tempFolder, `image_${Date.now()}.jpg`);
 
     try {
@@ -113,12 +113,12 @@ class Help {
       const response = await axios.get(selectedImage, { responseType: 'arraybuffer' });
       const imageBuffer = Buffer.from(response.data, 'binary');
 
-      // التأكد من وجود مجلد cache
-      if (!fs.existsSync(path.dirname(imagePath))) {
-        fs.mkdirSync(path.dirname(imagePath), { recursive: true });
+      // التأكد من وجود مجلد temp
+      if (!fs.existsSync(this.tempFolder)) {
+        fs.mkdirSync(this.tempFolder, { recursive: true });
       }
 
-      // حفظ الصورة إلى ملف في مجلد cache
+      // حفظ الصورة إلى ملف في مجلد temp
       fs.writeFileSync(imagePath, imageBuffer);
 
       // تحضير الرسالة التي تحتوي على تفاصيل الأمر (الاسم، المؤلف، الوصف، الوقت، إلخ)
@@ -134,38 +134,32 @@ class Help {
       api.sendMessage({
         body: replyMsg,
         attachment: fs.createReadStream(imagePath)
-      }, event.threadID, (err, info) => {
-        if (err) return api.sendMessage(getLang("plugins.help.error"), event.threadID);
-
-        // إعداد معلومات الرد وتخزينها
-        client.handler.reply.set(info.messageID, {
-          name: this.name,
-          type: "info",
-          author: event.senderID,
-          commands: reply.commands,
+      }, event.threadID, (err, info) =>
+        if (err) {
+        console.error("حدث خطأ أثناء إرسال الرسالة: ", err);
+      } else {
+        // إزالة الصورة المؤقتة بعد إرسالها
+        fs.unlink(imagePath, (err) => {
+          if (err) console.error("حدث خطأ أثناء حذف الصورة: ", err);
         });
-      });
-    } catch (error) {
-      console.error("حدث خطأ: ", error);
-      await api.sendMessage("❌ | حدث خطأ أثناء جلب الصورة.", event.threadID);
+      }
+    });
+  }
+
+  roleText(role) {
+    switch (role) {
+      case "admin":
+        return "مشرف";
+      case "member":
+        return "عضو";
+      default:
+        return "غير محدد";
     }
   }
 
-  // مساعدات إضافية يمكن استخدامها في الرسالة
-  roleText(role) {
-    // قم بتعديل هذا حسب طريقة عرض الدور لديك
-    const roles = {
-      member: "الجميع",
-      admin: "الآدمنز",
-      owner: "المطور"
-    };
-    return roles[role] || role;
-  }
-
   aliasesText(aliases) {
-    // قم بتعديل هذا حسب طريقة عرض الأسماء البديلة لديك
-    return aliases.length > 0 ? aliases.join(", ") : "لا يوجد أسماء بديلة";
+    return aliases ? aliases.join(', ') : "لا توجد أسماء بديلة";
   }
 }
 
-export default new Help();
+export default Help;
