@@ -9,7 +9,7 @@ class Help {
     this.cooldowns = 60;
     this.description = "عرض قائمة الأوامر مع كيفية استعمال كل واحد!";
     this.role = "member";
-    this.aliases = ["أوامر","الاوامر"];
+    this.aliases = ["أوامر", "الاوامر"];
     this.commands = global.client.commands;
     this.cache = {}; // Cache to store image paths
     this.tempFolder = path.join(process.cwd(), 'temp');
@@ -32,10 +32,8 @@ class Help {
   }
 
   async execute({ api, event, args }) {
+    api.setMessageReaction("📝", event.messageID, (err) => {}, true);
 
-api.setMessageReaction("📝", event.messageID, (err) => {}, true);
-    
-    
     const [pageStr] = args;
     const page = parseInt(pageStr) || 1;
     const commandsPerPage = 10; // تعديل عدد الأوامر في كل صفحة
@@ -47,13 +45,13 @@ api.setMessageReaction("📝", event.messageID, (err) => {}, true);
     const totalCommands = commandList.length;
 
     if (pageStr && typeof pageStr === 'string' && pageStr.toLowerCase() === 'الكل') {
-      let allCommandsMsg = "╭───────────────◊\n•——[قِـٰٚـِْ✮ِـٰٚـِْآئمِـٰٚـِْ✮ِـٰٚـِْة جِـٰٚـِْ✮ِـٰٚـِْمِـٰٚـِْ✮ِـٰٚـِْيِـٰٚـِْ✮ِـٰٚـِْعِـٰٚـِْ✮ِـٰٚـِْ آلِـٰٚـِْ✮ِـٰٚـِْأﯛ̲୭آمِـٰٚـِْ✮ِـٰٚـِْر║]——•\n";
+      let allCommandsMsg = "╭───────────────◊\n•——[قِـٰٚـِْ✮ِـٰٚـِْآئمِـٰٚـِْ✮ِـٰٚـِْة جِـٰٚـِْ✮ِـٰٚـِْمِـٰٚـِْ✮ِـٰٚـِْعِـٰٚـِْ✮ِـٰٚـِْ آلِـٰٚـِْ✮ِـٰٚـِْأﯛ̲୭آمِـٰٚـِْ✮ِـٰٚـِْر║]——•\n";
       
-commandList.forEach((command, index) => {
-  const commandName = command.name.toLowerCase();
-  allCommandsMsg += `❏ الإسم : 『${commandName}』\n`;
-});
-allCommandsMsg += `إجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\n╰───────────────◊`;
+      commandList.forEach((command, index) => {
+        const commandName = command.name.toLowerCase();
+        allCommandsMsg += `❏ الإسم : 『${commandName}』\n`;
+      });
+      allCommandsMsg += `إجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\n╰───────────────◊`;
       await api.sendMessage(allCommandsMsg, event.threadID);
     } else if (!isNaN(page) && page > 0 && page <= totalPages) {
       let msg = `\n•—[قٰཻــ͒͜ـًائمـٰة أوُامـٰࢪ ڪاغــِْــٰوُيا ]—•\n اٰلـٰ̲ـہصـٰ̲ـہفـٰ̲ـہحـٰ̲ـة : ${page}/${totalPages}:\nإجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\n`;
@@ -64,7 +62,7 @@ allCommandsMsg += `إجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـ
         msg += `[${commandNumber}] ⬅『${command.name}』`;
       });
 
-      msg += "✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎\nقم بكتابة أوامر 'رقم الصفحة' من أجل رؤية باقي الصفحات \nأو قم بكتابة اوامر الكل من أجل رؤية جميع الأوامر\n✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎";
+      msg += "✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎\nقم بالرد برقم الأمر من أجل معرفة مزيد من التفاصيل حوله\nقم بكتابة أوامر 'رقم الصفحة' من أجل رؤية باقي الصفحات \nأو قم بكتابة اوامر الكل من أجل رؤية جميع الأوامر\n✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎";
 
       const randomImageUrl = this.randomImageUrls[Math.floor(Math.random() * this.randomImageUrls.length)];
       const tempImagePath = path.join(this.tempFolder, `random_image_${Date.now()}.jpeg`);
@@ -81,6 +79,92 @@ allCommandsMsg += `إجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـ
     } else {
       await api.sendMessage("❌ | الصفحة غير موجودة.", event.threadID);
     }
+  }
+
+  async onReply({ reply, event, api }) {
+    // تحقق من أن الشخص الذي يرد هو نفسه الشخص الذي طلب الأوامر
+    if (reply.author != event.senderID) return;
+
+    // تحقق من أن الرقم المدخل صحيح ويقع ضمن قائمة الأوامر
+    const commandIndex = parseInt(event.body);
+    if (isNaN(commandIndex) || commandIndex > reply.commands.length || commandIndex < 1) {
+      return api.sendMessage(getLang("plugins.help.choose_invalid"), event.threadID);
+    }
+
+    // الحصول على الأمر بناءً على الرقم المدخل
+    const getCommands = reply.commands[commandIndex - 1];
+
+    // روابط الصور (يمكنك تغيير هذه الروابط حسب الحاجة)
+    const imageUrls = {
+      "https://i.postimg.cc/jj25dynJ/thumb-350-1080006.webp",
+      "https://i.postimg.cc/d32QSBpg/thumb-350-1239849.webp",
+      "https://i.imgur.com/VZKKBHv.jpeg",
+      "https://i.imgur.com/fX5iiTb.png"// قم بتعديل الرابط حسب الحاجة
+    };
+
+    // اختيار صورة (تأكد من تعديل هذا لاختيار الصورة المناسبة بناءً على الأمر أو أي شرط آخر)
+    const selectedImage = imageUrls.example; // يمكنك تعديل اختيار الصورة حسب الحاجة
+
+    // مسار حفظ الصورة في مجلد cache
+    const imagePath = path.join(this.tempFolder, `image_${Date.now()}.jpg`);
+
+    try {
+      // تحميل الصورة من الإنترنت
+      const response = await axios.get(selectedImage, { responseType: 'arraybuffer' });
+      const imageBuffer = Buffer.from(response.data, 'binary');
+
+      // التأكد من وجود مجلد cache
+      if (!fs.existsSync(path.dirname(imagePath))) {
+        fs.mkdirSync(path.dirname(imagePath), { recursive: true });
+      }
+
+      // حفظ الصورة إلى ملف في مجلد cache
+      fs.writeFileSync(imagePath, imageBuffer);
+
+      // تحضير الرسالة التي تحتوي على تفاصيل الأمر (الاسم، المؤلف، الوصف، الوقت، إلخ)
+      const replyMsg = `◆❯━━━━━▣✦▣━━━━━━❮◆\n🔹 [ ${getCommands.name.toUpperCase()} ]\n`
+        + `- ✨ **الاسم**: ${getCommands.name}\n`
+        + `- 👤 **المؤلف**: ${getCommands.author}\n`
+        + `- ⏱️ **الوقت المستغرق**: ${getCommands.cooldowns} ثواني\n`
+        + `- 📜 **الوصف**: ${getCommands.description}\n`
+        + `- 🔑 **الدور**: ${this.roleText(getCommands.role)}\n`
+        + `- 📝 **الأسماء البديلة**: ${this.aliasesText(getCommands.aliases)}\n◆❯━━━━━▣✦▣━━━━━━❮◆`;
+
+      // إرسال رسالة تحتوي على تفاصيل الأمر وصورة
+      api.sendMessage({
+        body: replyMsg,
+        attachment: fs.createReadStream(imagePath)
+      }, event.threadID, (err, info) => {
+        if (err) return api.sendMessage(getLang("plugins.help.error"), event.threadID);
+
+        // إعداد معلومات الرد وتخزينها
+        client.handler.reply.set(info.messageID, {
+          name: this.name,
+          type: "info",
+          author: event.senderID,
+          commands: reply.commands,
+        });
+      });
+    } catch (error) {
+      console.error("حدث خطأ: ", error);
+      await api.sendMessage("❌ | حدث خطأ أثناء جلب الصورة.", event.threadID);
+    }
+  }
+
+  // مساعدات إضافية يمكن استخدامها في الرسالة
+  roleText(role) {
+    // قم بتعديل هذا حسب طريقة عرض الدور لديك
+    const roles = {
+      member: "الجميع",
+      admin: "الآدمنز",
+      owner: "المطور"
+    };
+    return roles[role] || role;
+  }
+
+  aliasesText(aliases) {
+    // قم بتعديل هذا حسب طريقة عرض الأسماء البديلة لديك
+    return aliases.length > 0 ? aliases.join(", ") : "لا يوجد أسماء بديلة";
   }
 }
 
