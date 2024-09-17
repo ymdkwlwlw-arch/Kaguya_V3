@@ -18,14 +18,13 @@ export default {
 
       // طلب البيانات من API الجديد
       try {
-        const response = await axios.get("https://shoti-api.adaptable.app/api/v1/request-f?fbclid=IwZXh0bgNhZW0CMTEAAR0hG3KH_ccxUdIIcBXQ5A8wEQyx7iZuCEcUfAAEPYk8kUFa6Yc4Ok8mwB4_aem_6NYypi603YoZOnlFAT037A");
-        const { url: videoUrl, cover, title, duration, user } = response.data.data;
-        const { username, nickname } = user;
+        const response = await axios.get("https://betadash-shoti-yazky.vercel.app/shotizxx?apikey=shipazu");
+        const { title, shotiurl: videoUrl, username, nickname, duration, region } = response.data;
 
         // مسار تخزين الصورة مؤقتًا
         const imagePath = path.resolve(process.cwd(), 'shoti_cover.jpg');
         const imageResponse = await axios({
-          url: cover,
+          url: "https://via.placeholder.com/150",  // صورة مؤقتة لأن API لم يقدم غلافًا
           method: 'GET',
           responseType: 'stream'
         });
@@ -39,7 +38,7 @@ export default {
 
           // إرسال صورة الغلاف مع العنوان وطلب الرد بتم
           api.sendMessage({
-            body: `🎬 | الـعـنـوان : ${title}\n⏳ | الـمـدة: ${duration}\n👤 | الـإسـم : ${username}\n💬 | الـلـقـب : ${nickname}\n\n 🔖 | الرجاء الرد بـ "تم" لتحميل الفيديو.`,
+            body: `🎬 | الـعـنـوان : ${title}\n⏳ | الـمـدة: ${duration} ثواني\n👤 | الـإسـم : ${username}\n💬 | الـلـقـب : ${nickname}\n🌍 | الـمـنـطـقـة: ${region}\n\n 🔖 | الرجاء الرد بـ "تم" لتحميل الفيديو.`,
             attachment: fs.createReadStream(imagePath)
           }, threadID, (err, info) => {
             if (err) return console.error("Error sending cover image:", err);
@@ -54,6 +53,7 @@ export default {
               duration,
               username,
               nickname,
+              region,
               unsend: true
             });
 
@@ -82,7 +82,7 @@ export default {
   },
 
   async onReply({ api, event, reply }) {
-    const { author, videoUrl, title, duration, username, nickname, name } = reply;
+    const { author, videoUrl, title, duration, username, nickname, name, region } = reply;
 
     // التحقق من أن الشخص الذي يرد هو نفس الشخص الذي أرسل الأمر الأصلي
     if (reply.type === "pick" && event.senderID === author && name === "شوتي") {
@@ -108,7 +108,7 @@ export default {
             api.setMessageReaction("✅", event.messageID, (err) => {}, true);
       
             api.sendMessage({
-              body: `✅ | تـم تـحـمـيـل مـقـطـع شـوتـي \n🎬 | الـعـنـوان: ${title}\n⏳ | الـمـدة: ${duration}\n👤 | الـإسـم: ${username}\n💬 | الـلـقـب: ${nickname}`,
+              body: `✅ | تـم تـحـمـيـل مـقـطـع شـوتـي \n🎬 | الـعـنـوان: ${title}\n⏳ | الـمـدة: ${duration} ثواني\n👤 | الـإسـم: ${username}\n💬 | الـلـقـب: ${nickname}\n🌍 | الـمـنـطـقـة: ${region}`,
               attachment: fs.createReadStream(videoPath)
             }, threadID, () => fs.unlinkSync(videoPath), messageID);
           });
