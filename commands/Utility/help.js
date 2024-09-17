@@ -38,7 +38,7 @@ api.setMessageReaction("📝", event.messageID, (err) => {}, true);
     
     const [pageStr] = args;
     const page = parseInt(pageStr) || 1;
-    const commandsPerPage = 8; // تعديل عدد الأوامر في كل صفحة
+    const commandsPerPage = 10; // تعديل عدد الأوامر في كل صفحة
     const startIndex = (page - 1) * commandsPerPage;
     const endIndex = page * commandsPerPage;
 
@@ -61,7 +61,7 @@ allCommandsMsg += `إجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـ
       const commandsToDisplay = commandList.slice(startIndex, endIndex);
       commandsToDisplay.forEach((command, index) => {
         const commandNumber = startIndex + index + 1;
-        msg += `━━━━━━━◈✿◈━━━━━━━\n\t\t\t\t\tالأمر رقم :  [${commandNumber}]\n\t\t\t\t\tالإسم : 『${command.name}』\n━━━━━━━◈✿◈━━━━━━━\n`;
+        msg += `[${commandNumber}] ⬅『${command.name}』`;
       });
 
       msg += "✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎\nقم بكتابة أوامر 'رقم الصفحة' من أجل رؤية باقي الصفحات \nأو قم بكتابة اوامر الكل من أجل رؤية جميع الأوامر\n✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎";
