@@ -9,10 +9,12 @@ class Help {
     this.cooldowns = 60;
     this.description = "عرض قائمة الأوامر مع كيفية استعمال كل واحد!";
     this.role = "member";
-    this.aliases = ["أوامر","الاوامر"];
+    this.aliases = ["أوامر", "الاوامر"];
     this.commands = global.client.commands;
     this.cache = {}; // Cache to store image paths
     this.tempFolder = path.join(process.cwd(), 'temp');
+    
+    // مصفوفة الصور العشوائية للعرض الأولي
     this.randomImageUrls = [
       "https://i.imgur.com/mCpWvaI.jpeg",
       "https://i.imgur.com/Q8Ljscl.jpeg",
@@ -29,13 +31,19 @@ class Help {
       "https://i.imgur.com/6DT6OrG.jpeg",
       "https://i.imgur.com/dRMPS2V.jpeg"
     ];
+
+    // مصفوفة الصور المخصصة للرد عند جلب معلومات أمر معين
+    this.detailedImageUrls = [
+    "https://i.postimg.cc/jj25dynJ/thumb-350-1080006.webp",
+    "https://i.postimg.cc/d32QSBpg/thumb-350-1239849.webp",
+    "https://i.imgur.com/VZKKBHv.jpeg",
+    "https://i.imgur.com/fX5iiTb.png" // قم بتعديل الرابط حسب الحاجة
+    ];
   }
 
   async execute({ api, event, args }) {
+    api.setMessageReaction("📝", event.messageID, (err) => {}, true);
 
-api.setMessageReaction("📝", event.messageID, (err) => {}, true);
-    
-    
     const [pageStr] = args;
     const page = parseInt(pageStr) || 1;
     const commandsPerPage = 10; // تعديل عدد الأوامر في كل صفحة
@@ -49,11 +57,13 @@ api.setMessageReaction("📝", event.messageID, (err) => {}, true);
     if (pageStr && typeof pageStr === 'string' && pageStr.toLowerCase() === 'الكل') {
       let allCommandsMsg = "╭───────────────◊\n•——[قِـٰٚـِْ✮ِـٰٚـِْآئمِـٰٚـِْ✮ِـٰٚـِْة جِـٰٚـِْ✮ِـٰٚـِْمِـٰٚـِْ✮ِـٰٚـِْيِـٰٚـِْ✮ِـٰٚـِْعِـٰٚـِْ✮ِـٰٚـِْ آلِـٰٚـِْ✮ِـٰٚـِْأﯛ̲୭آمِـٰٚـِْ✮ِـٰٚـِْر║]——•\n";
       
-commandList.forEach((command, index) => {
-  const commandName = command.name.toLowerCase();
-  allCommandsMsg += `❏ الإسم : 『${commandName}』\n`;
-});
-allCommandsMsg += `إجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\n╰───────────────◊`;
+      
+      
+      commandList.forEach((command, index) => {
+        const commandName = command.name.toLowerCase();
+        allCommandsMsg += `❏ الإسم : 『${commandName}』\n`;
+      });
+      allCommandsMsg +=`إجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\n╰───────────────◊`;
       await api.sendMessage(allCommandsMsg, event.threadID);
     } else if (!isNaN(page) && page > 0 && page <= totalPages) {
       let msg = `\n•—[قٰཻــ͒͜ـًائمـٰة أوُامـٰࢪ ڪاغــِْــٰوُيا ]—•\n`;
@@ -64,7 +74,8 @@ allCommandsMsg += `إجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـ
         msg += `[${commandNumber}] ⟻『${command.name}』\n`;
       });
 
-      msg += `✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎\nاٰلـٰ̲ـہصـٰ̲ـہفـٰ̲ـہحـٰ̲ـة : ${page}/${totalPages}:\nإجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\nقم بكتابة أوامر 'رقم الصفحة' من أجل رؤية باقي الصفحات \nأو قم بكتابة اوامر الكل من أجل رؤية جميع الأوامر\n✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎`;
+      msg +=`✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎\nاٰلـٰ̲ـہصـٰ̲ـہفـٰ̲ـہحـٰ̲ـة : ${page}/${totalPages}:\nإجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\nقم بكتابة أوامر 'رقم الصفحة' من أجل رؤية باقي الصفحات \nأو قم بكتابة اوامر الكل من أجل رؤية جميع الأوامر`;
+
 
       const randomImageUrl = this.randomImageUrls[Math.floor(Math.random() * this.randomImageUrls.length)];
       const tempImagePath = path.join(this.tempFolder, `random_image_${Date.now()}.jpeg`);
@@ -73,7 +84,16 @@ allCommandsMsg += `إجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـ
         const imageResponse = await axios.get(randomImageUrl, { responseType: 'arraybuffer' });
         fs.writeFileSync(tempImagePath, Buffer.from(imageResponse.data));
         const attachment = fs.createReadStream(tempImagePath);
-        await api.sendMessage({ body: msg, attachment }, event.threadID);
+        
+        const info = await api.sendMessage({ body: msg, attachment }, event.threadID);
+        
+        // Add onReply handler
+        global.client.handler.reply.set(info.messageID, {
+          author: event.senderID,
+          type: "pick",
+          name: "اوامر",
+          unsend: true,
+        });
       } catch (error) {
         console.error("حدث خطأ: ", error);
         await api.sendMessage("❌ | حدث خطأ أثناء جلب الصورة.", event.threadID);
@@ -82,7 +102,52 @@ allCommandsMsg += `إجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـ
       await api.sendMessage("❌ | الصفحة غير موجودة.", event.threadID);
     }
   }
+
+  async onReply({ api, event, reply }) {
+    if (reply.type === "pick" && reply.name === "اوامر" && reply.author === event.senderID) {
+      const commandNumber = parseInt(event.body.trim());
+
+      if (isNaN(commandNumber) || commandNumber < 1 || commandNumber > this.commands.size) {
+        return api.sendMessage("❌ | رقم الأمر غير صحيح.", event.threadID);
+      }
+
+      const commandList = Array.from(this.commands.values());
+      const selectedCommand = commandList[commandNumber - 1];
+
+      const roleText = this.getRoleText(selectedCommand.role);
+
+      const message = `◆❯━━━━━▣✦▣━━━━━━❮◆\n
+➭ الإسم ✨: 『${selectedCommand.name}』
+➭ المؤلف 👤: 『${selectedCommand.author}』
+➭ المسموح له 🔑:  『${roleText}』
+➭ الوصف 📜: 『${selectedCommand.description}』
+      \n◆❯━━━━━▣✦▣━━━━━━❮◆`;
+
+      const detailedImageUrl = this.detailedImageUrls[Math.floor(Math.random() * this.detailedImageUrls.length)];
+      const tempImagePath = path.join(this.tempFolder, `detailed_image_${Date.now()}.jpeg`);
+
+      try {
+        const imageResponse = await axios.get(detailedImageUrl, { responseType: 'arraybuffer' });
+        fs.writeFileSync(tempImagePath, Buffer.from(imageResponse.data));
+        const attachment = fs.createReadStream(tempImagePath);
+        await api.sendMessage({ body: message, attachment }, event.threadID);
+      } catch (error) {
+        console.error("حدث خطأ: ", error);
+        await api.sendMessage("❌ | حدث خطأ أثناء جلب الصورة.", event.threadID);
+      }
+    }
+  }
+
+  getRoleText(role) {
+    switch (role) {
+      case "admin":
+        return "المشرفين";
+      case "owner":
+        return "المالك";
+      default:
+        return "الجميع";
+    }
+  }
 }
 
 export default new Help();
-
