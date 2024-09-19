@@ -16,6 +16,20 @@ class Help {
     
     // مصفوفة الصور العشوائية للعرض الأولي
     this.randomImageUrls = [
+            "https://i.imgur.com/mCpWvaI.jpeg",
+      "https://i.imgur.com/Q8Ljscl.jpeg",
+      "https://i.imgur.com/ZGfBNLX.jpeg",
+      "https://i.imgur.com/UV1zAwh.jpeg",
+      "https://i.imgur.com/MKoNjNT.jpeg",
+      "https://i.imgur.com/ICzZ9l6.jpeg",
+      "https://i.imgur.com/wdWjH1D.jpeg",
+      "https://i.imgur.com/H2rhsH5.jpeg",
+      "https://i.imgur.com/GE7w5nt.jpeg",
+      "https://i.imgur.com/UEg87Rw.png",
+      "https://i.imgur.com/q9myIow.jpeg",
+      "https://i.imgur.com/k1Bhji6.jpeg",
+      "https://i.imgur.com/6DT6OrG.jpeg",
+      "https://i.imgur.com/dRMPS2V.jpeg"
     ];
 
     // مصفوفة الصور المخصصة للرد عند جلب معلومات أمر معين
