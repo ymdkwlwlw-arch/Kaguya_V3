@@ -74,7 +74,7 @@ class Help {
         msg += `[${commandNumber}] ⟻『${command.name}』\n`;
       });
 
-      msg +=`✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎\nاٰلـٰ̲ـہصـٰ̲ـہفـٰ̲ـہحـٰ̲ـة : ${page}/${totalPages}:\nإجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\nقم بكتابة أوامر 'رقم الصفحة' من أجل رؤية باقي الصفحات \nأو قم بكتابة اوامر الكل من أجل رؤية جميع الأوامر`;
+      msg +=`✎﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏﹏✎\nاٰلـٰ̲ـہصـٰ̲ـہفـٰ̲ـہحـٰ̲ـة : ${page}/${totalPages}:\nإجِٰـِۢمِٰـِۢآلِٰـِۢيِٰـِۢ عِٰـِۢدد آلِٰـِۢأﯛ̲୭آمِٰـِۢر : ${totalCommands} أمر\n🔖 | قم بكتابة أوامر 'رقم الصفحة' من أجل رؤية باقي الصفحات \n 🧿 | أو قم بكتابة اوامر الكل من أجل رؤية جميع الأوامر\n 📜 | رد بـ رقم الأمر من أجل مزيد من التفاصيل`;
 
 
       const randomImageUrl = this.randomImageUrls[Math.floor(Math.random() * this.randomImageUrls.length)];
@@ -92,7 +92,7 @@ class Help {
           author: event.senderID,
           type: "pick",
           name: "اوامر",
-          unsend: true,
+          unsend: false,
         });
       } catch (error) {
         console.error("حدث خطأ: ", error);
@@ -116,13 +116,13 @@ class Help {
 
       const roleText = this.getRoleText(selectedCommand.role);
 
-      const message = `◆❯━━━━━▣✦▣━━━━━━❮◆\n
-➭ الإسم ✨: 『${selectedCommand.name}』
-➭ المؤلف 👤: 『${selectedCommand.author}』
-➭ المسموح له 🔑:  『${roleText}』
-➭ الوصف 📜: 『${selectedCommand.description}』
-      \n◆❯━━━━━▣✦▣━━━━━━❮◆`;
-
+      const message = `◆❯━━━━━━▣✦▣━━━━━━━❮◆\n〘مـعلـومـات و تـفـاصـيـل〙\n
+✨ | **الـإسـم**:『${selectedCommand.name}』
+👤 | **الـمـؤلـف**:『${selectedCommand.author}』
+🔑 | **الـدور**:『${roleText}』
+📋 | **الـوصـف** :『${selectedCommand.description}』
+📝 | **الـأسـمـاء الـبـديـلـة**:『${selectedCommand.aliases}』
+⏱️ | **الوقت المستغرق**:『${selectedCommand.cooldowns}』\n◆❯━━━━━━▣✦▣━━━━━━━❮◆`;
       const detailedImageUrl = this.detailedImageUrls[Math.floor(Math.random() * this.detailedImageUrls.length)];
       const tempImagePath = path.join(this.tempFolder, `detailed_image_${Date.now()}.jpeg`);
 
