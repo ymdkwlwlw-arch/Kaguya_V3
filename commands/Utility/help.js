@@ -120,8 +120,7 @@ class Help {
 👤 | **الـمـؤلـف**:\n\t『${selectedCommand.author}』
 🔑 | **الـدور**:\n\t『${roleText}』
 📋 | **الـوصـف** :\n『${selectedCommand.description}』
-📝 | **اسماء اخرى**:\n\t『${selectedCommand.aliases?.join(", ") || "غير متوفرة"}』
-'}\n◆❯━━━━━▣✦▣━━━━━━❮◆`;
+📝 | **اسماء اخرى**:\n\t『${selectedCommand.aliases?.join(", ") || "غير متوفرة"}』\n◆❯━━━━━▣✦▣━━━━━━❮◆`;
       const detailedImageUrl = this.detailedImageUrls[Math.floor(Math.random() * this.detailedImageUrls.length)];
       const tempImagePath = path.join(this.tempFolder, `detailed_image_${Date.now()}.jpeg`);
 
