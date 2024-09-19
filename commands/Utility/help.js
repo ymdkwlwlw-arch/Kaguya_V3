@@ -116,12 +116,12 @@ class Help {
 
       const roleText = this.getRoleText(selectedCommand.role);
 
-      const message = `◆❯━━━━━▣✦▣━━━━━━❮◆\n\t〘مـعلـومـات و تـفـاصـيـل حـول ${selectedCommand.name}〙\t\n
-👤 | **الـمـؤلـف**:『${selectedCommand.author}』
-🔑 | **الـدور**:『${roleText}』
-📋 | **الـوصـف** :『${selectedCommand.description}』
-📝 | **اسماء اخرى**:『${selectedCommand.aliases?.join(", ") || "غير متوفرة"}』
-⏱️ | **الوقت**:『${selectedCommand.cooldowns || "غير محدد"}'}\n◆❯━━━━━▣✦▣━━━━━━❮◆`;
+      const message = `◆❯━━━━━▣✦▣━━━━━━❮◆\n\t〘${selectedCommand.name}〙\t\n
+👤 | **الـمـؤلـف**:\n\t『${selectedCommand.author}』
+🔑 | **الـدور**:\n\t『${roleText}』
+📋 | **الـوصـف** :\n『${selectedCommand.description}』
+📝 | **اسماء اخرى**:\n\t『${selectedCommand.aliases?.join(", ") || "غير متوفرة"}』
+'}\n◆❯━━━━━▣✦▣━━━━━━❮◆`;
       const detailedImageUrl = this.detailedImageUrls[Math.floor(Math.random() * this.detailedImageUrls.length)];
       const tempImagePath = path.join(this.tempFolder, `detailed_image_${Date.now()}.jpeg`);
 
