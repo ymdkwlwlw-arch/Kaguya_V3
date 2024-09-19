@@ -36,13 +36,14 @@ export default {
     try {
       api.setMessageReaction("⏳", event.messageID, () => {}, true);
 
-      const response = await fetch(`https://y2pheq.glitch.me/ai?prompt=${query}&uid=${event.senderID}`);
+      // استخدم الرابط الجديد مع الاستعلام المرسل
+      const response = await fetch(`https://smfahim.xyz/hercai?ask=${query}&uid=${event.senderID}`);
       if (!response.ok) {
         return api.sendMessage("API DOWN", event.threadID, event.messageID);
       }
 
       const data = await response.json();
-      api.sendMessage(`${data.response}\n\n• clear conversation history: ai clear`, event.threadID, event.messageID);
+      api.sendMessage(`${data.answer}`, event.threadID, event.messageID);
       api.setMessageReaction("✅", event.messageID, () => {}, true);
 
       // إعداد الرد للاستمرار في المحادثة
@@ -68,13 +69,15 @@ export default {
 
       try {
         api.setMessageReaction("⏳", messageID, () => {}, true);
-        const response = await fetch(`https://y2pheq.glitch.me/ai?prompt=${query}&uid=${senderID}`);
+        
+        // استخدم الرابط الجديد مع الاستعلام في الرد
+        const response = await fetch(`https://smfahim.xyz/hercai?ask=${query}&uid=${senderID}`);
         if (!response.ok) {
           return api.sendMessage("API DOWN", threadID, messageID);
         }
 
         const data = await response.json();
-        api.sendMessage(`${data.response}\n\n• clear conversation history: ai clear`, threadID, messageID);
+        api.sendMessage(`${data.answer}`, threadID, messageID);
         api.setMessageReaction("✅", messageID, () => {}, true);
 
       } catch (error) {
