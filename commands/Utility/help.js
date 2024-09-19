@@ -16,20 +16,6 @@ class Help {
     
     // مصفوفة الصور العشوائية للعرض الأولي
     this.randomImageUrls = [
-      "https://i.imgur.com/mCpWvaI.jpeg",
-      "https://i.imgur.com/Q8Ljscl.jpeg",
-      "https://i.imgur.com/ZGfBNLX.jpeg",
-      "https://i.imgur.com/UV1zAwh.jpeg",
-      "https://i.imgur.com/MKoNjNT.jpeg",
-      "https://i.imgur.com/ICzZ9l6.jpeg",
-      "https://i.imgur.com/wdWjH1D.jpeg",
-      "https://i.imgur.com/H2rhsH5.jpeg",
-      "https://i.imgur.com/GE7w5nt.jpeg",
-      "https://i.imgur.com/UEg87Rw.png",
-      "https://i.imgur.com/q9myIow.jpeg",
-      "https://i.imgur.com/k1Bhji6.jpeg",
-      "https://i.imgur.com/6DT6OrG.jpeg",
-      "https://i.imgur.com/dRMPS2V.jpeg"
     ];
 
     // مصفوفة الصور المخصصة للرد عند جلب معلومات أمر معين
@@ -116,13 +102,13 @@ class Help {
 
       const roleText = this.getRoleText(selectedCommand.role);
 
-      const message = `◆❯━━━━━━▣✦▣━━━━━━━❮◆\n〘مـعلـومـات و تـفـاصـيـل〙\n
+      const message = `◆❯━━━━━▣✦▣━━━━━━❮◆\n\t〘مـعلـومـات و تـفـاصـيـل〙\t\n
 ✨ | **الـإسـم**:『${selectedCommand.name}』
 👤 | **الـمـؤلـف**:『${selectedCommand.author}』
 🔑 | **الـدور**:『${roleText}』
 📋 | **الـوصـف** :『${selectedCommand.description}』
-📝 | **الـأسـمـاء الـبـديـلـة**:『${selectedCommand.aliases}』
-⏱️ | **الوقت المستغرق**:『${selectedCommand.cooldowns}』\n◆❯━━━━━━▣✦▣━━━━━━━❮◆`;
+📝 | **الـأسـمـاء الـبـديـلـة**:『${selectedCommand.aliases?.join(", ") || "غير متوفرة"}』
+⏱️ | **الوقت المستغرق**:『${selectedCommand.cooldowns || "غير محدد"}'}\n◆❯━━━━━━▣✦▣━━━━━━❮◆`;
       const detailedImageUrl = this.detailedImageUrls[Math.floor(Math.random() * this.detailedImageUrls.length)];
       const tempImagePath = path.join(this.tempFolder, `detailed_image_${Date.now()}.jpeg`);
 
