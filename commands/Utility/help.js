@@ -110,12 +110,15 @@ class Help {
       if (isNaN(commandNumber) || commandNumber < 1 || commandNumber > this.commands.size) {
         return api.sendMessage("❌ | رقم الأمر غير صحيح.", event.threadID);
       }
+      
 
       const commandList = Array.from(this.commands.values());
       const selectedCommand = commandList[commandNumber - 1];
 
       const roleText = this.getRoleText(selectedCommand.role);
-
+      
+        api.setMessageReaction("🎯", event.messageID, (err) => {}, true);
+  
       const message = `◆❯━━━━━▣✦▣━━━━━━❮◆\n\t〘${selectedCommand.name}〙\t\n
 👤 | ➭ الإسم:『${selectedCommand.author}』
 🔑 | ➭ الدور:『${roleText}』
