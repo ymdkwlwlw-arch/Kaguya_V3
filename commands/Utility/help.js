@@ -119,8 +119,8 @@ class Help {
       
         api.setMessageReaction("🎯", event.messageID, (err) => {}, true);
   
-      const message = `◆❯━━━━━▣✦▣━━━━━━❮◆\n\t〘${selectedCommand.name}〙\t\n
-👤 | ➭ الإسم:『${selectedCommand.author}』
+      const message = `◆❯━━━━━▣✦▣━━━━━━❮◆\n\t\t\t\t\t〘${selectedCommand.name}〙\n
+👤 | ➭ المؤلف:『${selectedCommand.author}』
 🔑 | ➭ الدور:『${roleText}』
 📋 | ➭ الوصف:『${selectedCommand.description}』
 📝 | ➭ اسماء بديلة:『${selectedCommand.aliases?.join(", ") || "غير متوفرة"}』\n◆❯━━━━━▣✦▣━━━━━━❮◆`;
