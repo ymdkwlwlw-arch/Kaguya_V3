@@ -5,6 +5,7 @@ export default {
   author: "Chilli Mansi",
   role: "member",
   description: "يحلل صورة مرفقة أو يستجيب لاستفسار نصي باستخدام Gemini AI.",
+  aliases:["Ai","ai"],
   async execute({ api, event, args }) {
     const attachment = event.messageReply?.attachments[0] || event.attachments[0];
     const customPrompt = args.join(' ');
@@ -48,13 +49,17 @@ ${aiResponse.trim()}
 ━━━━━━━━━━━━━━━━━━
 `;
 
-      // تعديل الرسالة الأولية لإظهار الرد النهائي
-      await api.editMessage(formattedResponse.trim(), initialMessage.messageID);
+      // حذف الرسالة المؤقتة بعد اكتمال المعالجة
+      await api.unsendMessage(initialMessage.messageID);
+
+      // إرسال الرد النهائي
+      await api.sendMessage(formattedResponse.trim(), event.threadID, event.messageID);
 
     } catch (error) {
       console.error('Error:', error);
-      // في حال حدوث خطأ، تعديل الرسالة لتوضيح أن هناك خطأ
-      await api.editMessage('An error occurred, please try using the "ai2" command.', initialMessage.messageID);
+      // في حال حدوث خطأ، حذف الرسالة المؤقتة وتوضيح أن هناك خطأ
+      await api.unsendMessage(initialMessage.messageID);
+      await api.sendMessage('An error occurred, please try using the "ai2" command.', event.threadID, event.messageID);
     }
   }
 };
