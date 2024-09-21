@@ -2,11 +2,22 @@ import axios from "axios";
 import fs from "fs-extra";
 
 export default function ({ api, event }) {
-  const formatCurrency = (number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USA", maximumFractionDigits: 9 }).format(number);
+  const formatCurrency = (number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 9 }).format(number);
 
   const send = (message, callback) => (typeof callback === "function" ? api.sendMessage(message, event.threadID, callback) : api.sendMessage(message, event.threadID));
 
   const reply = (message, callback) => (typeof callback === "function" ? api.sendMessage(message, event.threadID, callback, event.messageID) : api.sendMessage(message, event.threadID, event.messageID));
+
+  const unsend = (messageID) => api.unsendMessage(messageID);
+
+  // دالة لتعديل رسالة موجودة
+  const editMessage = async (messageID, newMessageContent) => {
+    try {
+      await api.editMessage({ body: newMessageContent }, messageID);
+    } catch (error) {
+      console.error("Failed to edit message:", error);
+    }
+  };
 
   const downloadFile = async (url, path) => {
     const response = await axios.get(url, { responseType: "stream" });
@@ -35,8 +46,6 @@ export default function ({ api, event }) {
       throw error;
     }
   };
-
-  const unsend = (messageID) => api.unsendMessage(messageID);
 
   const findUID = async (vanity) => {
     try {
@@ -83,5 +92,6 @@ export default function ({ api, event }) {
 
   const isBot = () => (event?.senderID != api.getCurrentUserID() && event?.author != api.getCurrentUserID() ? false : true);
   const isAdmin = () => (global.client.config.ADMIN_IDS.includes(event.senderID) ? true : false);
-  return { formatCurrency, isAdmin, send, reply, downloadFile, isVaildUrl, detectText, unsend, findUID, isBot };
+
+  return { formatCurrency, isAdmin, send, reply, downloadFile, isVaildUrl, detectText, unsend, findUID, isBot, editMessage };
 }
