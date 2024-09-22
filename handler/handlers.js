@@ -197,25 +197,6 @@ export class CommandHandler {
     throw new Error(err);
   }
 }
-    });
-
-    this.events.forEach(async (event) => {
-      try {
-        // تنفيذ الأحداث العامة
-        await event.execute({ ...this.arguments });
-      } catch (err) {
-        console.error(`Error in general event handler:`, err);
-        await api.sendMessage(
-          `حدث خطأ أثناء تنفيذ حدث عام`,
-          threadID
-        );
-      }
-    });
-  } catch (err) {
-    console.error("Error in handleEvent function:", err);
-    throw new Error(err);
-  }
-}
 
   async handleReply() {
     const { messageReply } = this.arguments.event;
