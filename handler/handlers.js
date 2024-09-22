@@ -109,19 +109,62 @@ export class CommandHandler {
   }
 
   handleEvent() {
-    try {
-      this.commands.forEach((event) => {
-        if (event.events) {
-          event.events({ ...this.arguments });
-        }
-      });
-      this.events.forEach((event) => {
-        event.execute({ ...this.arguments });
-      });
-    } catch (err) {
-      throw new Error(err);
+  try {
+    const { api, event } = this.arguments;
+    const { body, threadID, messageID } = event;
+
+    // التأكد من أن الرسالة تحتوي على نص
+    if (!body) return;
+
+    // قائمة الكلمات المفتاحية والردود الخاصة بها
+    const keywordResponses = [
+      { keyword: "مرحبا", response: "أهلاً وسهلاً! كيف يمكنني مساعدتك؟" },
+      { keyword: "كيف حالك", response: "أنا بخير، شكراً لسؤالك! ماذا عنك؟" },
+      { keyword: "باي", response: "إلى اللقاء! أتمنى لك يوماً سعيداً." },
+      // يمكن إضافة المزيد من الكلمات المفتاحية والردود هنا
+    ];
+
+    // البحث عن كلمة مطابقة في الرسالة
+    const foundKeyword = keywordResponses.find(kw => body.toLowerCase().includes(kw.keyword.toLowerCase()));
+
+    if (foundKeyword) {
+      // إرسال الرد المطابق للكلمة المفتاحية
+      return api.sendMessage(foundKeyword.response, threadID, messageID);
     }
+
+    // إذا لم يتم العثور على كلمة مفتاحية، يمكن متابعة تنفيذ باقي الأحداث
+    this.commands.forEach(async (command) => {
+      if (command.events) {
+        try {
+          // تنفيذ الأحداث المرفقة بالأوامر
+          await command.events({ ...this.arguments });
+        } catch (err) {
+          console.error(`Error in command event '${command.name}':`, err);
+          await api.sendMessage(
+            `حدث خطأ أثناء تنفيذ الحدث للأمر: ${command.name}`,
+            threadID
+          );
+        }
+      }
+    });
+
+    this.events.forEach(async (event) => {
+      try {
+        // تنفيذ الأحداث العامة
+        await event.execute({ ...this.arguments });
+      } catch (err) {
+        console.error(`Error in general event handler:`, err);
+        await api.sendMessage(
+          `حدث خطأ أثناء تنفيذ حدث عام`,
+          threadID
+        );
+      }
+    });
+  } catch (err) {
+    console.error("Error in handleEvent function:", err);
+    throw new Error(err);
   }
+}
 
   async handleReply() {
     const { messageReply } = this.arguments.event;
