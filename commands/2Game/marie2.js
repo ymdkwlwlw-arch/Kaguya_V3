@@ -4,7 +4,7 @@ import fs from 'fs-extra';
 import jimp from 'jimp';
 
 export default {
-  name: "زواج2",
+  name: "زواج",
   version: "1.0.1",
   role: "member",
   author: "Md Rajib",
@@ -58,7 +58,7 @@ export default {
     const imagePath = await makeImage({ one, two });
     
     const message = {
-      body: `✅ | تـم الإقـتـران بـنـجـاح\n〘💖〙تـم إقـتـران ${senderName} مـع ${targetName} 〘💖〙\n〘📎〙الإحـتـمـالات : ${matchPercentage}〘📎〙`,
+      body: `✅ | تـم الإقـتـران بـنـجـاح\n〘💖〙تـم إقـتـران ${senderName} مـع ${targetName} \n〘📎〙الإحـتـمـالات : ${matchPercentage}`,
       mentions: [{ id: senderID, tag: senderName }, { id: randomID, tag: targetName }],
       attachment: fs.createReadStream(imagePath)
     };
