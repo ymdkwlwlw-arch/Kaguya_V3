@@ -38,6 +38,17 @@ export default {
 
   async execute({ api, event, Users, Threads, Economy }) {
     const { threadID, messageID, senderID } = event;
+    const userMoney = (await Economy.getBalance(event.senderID)).data;
+
+      const cost = 100;
+      if (userMoney < cost) {
+        api.setMessageReaction("⚠️", event.messageID, (err) => {}, true);
+  
+        return api.sendMessage(`⚠️ | تحتاج أولا أن تعطي المهر اللذي يقدر ب ${cost} دولار جرب هدية ربما يكون يوم حظك 🙂`, event.threadID);
+      }
+
+      // الخصم من الرصيد
+      await Economy.decrease(cost, event.senderID);
 
     const percentages = ['21%', '67%', '19%', '37%', '17%', '96%', '52%', '62%', '76%', '83%', '100%', '99%', "0%", "48%"];
     const matchPercentage = percentages[Math.floor(Math.random() * percentages.length)];
