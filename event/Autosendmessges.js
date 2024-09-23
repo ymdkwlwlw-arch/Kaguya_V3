@@ -2,7 +2,7 @@ import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
 
-// جلب وحفظ الصورة إلى مجلد cache
+// Function to fetch and save image to the cache folder
 async function fetchAndSaveImage(imageURL, imageName) {
   const imagePath = path.join(process.cwd(), 'cache', imageName);
   try {
@@ -26,25 +26,25 @@ async function fetchAndSaveImage(imageURL, imageName) {
 }
 
 export default {
-  name: "autosendmessges",
+  name: "autosendmessages",
   execute: async ({ api, event, Threads }) => {
     try {
-      // العثور على بيانات المجموعة باستخدام معرّف المجموعة
+      // Retrieve thread data using threadID
       const threadsData = await Threads.find(event.threadID);
       const threads = threadsData?.data?.data || {};
 
-      // إذا كانت البيانات غير موجودة، قم بإنشاء مجموعة جديدة
+      // If no data found, create new thread
       if (!threads) {
         await Threads.create(event.threadID);
       }
 
-      // إذا كانت البيانات فارغة، أوقف المعالجة
+      // If data is empty, stop execution
       if (!Object.keys(threads).length) return;
 
-      // إرسال العديد من الرسائل والصور يوميًا
+      // Send scheduled messages with images daily
       setInterval(() => {
         sendScheduledMessages(api, event.threadID);
-      }, 86400000); // تكرار كل 24 ساعة
+      }, 86400000); // Repeat every 24 hours
 
     } catch (error) {
       console.error("Error handling thread update:", error);
@@ -52,10 +52,10 @@ export default {
   },
 };
 
-// دالة لإرسال رسائل مجدولة مع الصور
+// Function to send scheduled messages with images
 async function sendScheduledMessages(api, threadID) {
   const messagesWithImages = [
-    
+
     { delay: 3600000, text: `وليس كل ماصرفه الله عنك شرٌ لك لعلك أنت الخير الذي لا يستحقونه 💙💙.
 𝑨𝒏𝒅 𝒏𝒐𝒕 𝒆𝒗𝒆𝒓𝒚𝒕𝒉𝒊𝒏𝒈 𝒕𝒉𝒂𝒕 𝑮𝒐𝒅 𝒔𝒑𝒆𝒏𝒕 𝒇𝒓𝒐𝒎 𝒚𝒐𝒖 𝒊𝒔 𝒆𝒗𝒊𝒍 𝒇𝒐𝒓 𝒚𝒐𝒖, 𝒑𝒆𝒓𝒉𝒂𝒑𝒔 𝒚𝒐𝒖 𝒂𝒓𝒆 𝒕𝒉𝒆 𝒈𝒐𝒐𝒅 𝒕𝒉𝒂𝒕 𝒕𝒉𝒆𝒚 𝒅𝒐 𝒏𝒐𝒕 𝒅𝒆𝒔𝒆𝒓𝒗𝒆.💙💙` ,
  imageURL: "https://i.imgur.com/L39Bu27.jpeg", imageName: "image1.jpg" },
@@ -90,20 +90,21 @@ async function sendScheduledMessages(api, threadID) {
 𝙎𝙪𝙞𝙩𝙖𝙗𝙡𝙚 𝙬𝙤𝙧𝙙𝙨.💖` , imageURL: "https://i.imgur.com/O7NTeg8.jpeg", imageName: "image5.jpg" },
     { delay: 39600000, text: `-الغائبون بلا عذر كالحاضرين بلا فائدة ، كلاهما يشغل حيزاً ﻻ يستحقه.💨
 - 𝑇ℎ𝑜𝑠𝑒 𝑤ℎ𝑜 𝑎𝑟𝑒 𝑎𝑏𝑠𝑒𝑛𝑡 𝑤𝑖𝑡ℎ𝑜𝑢𝑡 𝑒𝑥𝑐𝑢𝑠𝑒 𝑎𝑟𝑒 𝑙𝑖𝑘𝑒 𝑡ℎ𝑜𝑠𝑒 𝑤ℎ𝑜 𝑎𝑟𝑒 𝑝𝑟𝑒𝑠𝑒𝑛𝑡 𝑤𝑖𝑡ℎ𝑜𝑢𝑡 𝑏𝑒𝑛𝑒𝑓𝑖𝑡. 𝐵𝑜𝑡ℎ 𝑜𝑓 𝑡ℎ𝑒𝑚 𝑜𝑐𝑐𝑢𝑝𝑦 𝑠𝑝𝑎𝑐𝑒 𝑡ℎ𝑎𝑡 𝑡ℎ𝑒𝑦 𝑑𝑜 𝑛𝑜𝑡 𝑑𝑒𝑠𝑒𝑟𝑣𝑒.💨` , imageURL: "https://i.imgur.com/2B7aLoZ.jpeg", imageName: "image5.jpg" },
+    // Add more messages as necessary with their respective delays and images.
   ];
 
-  for (const msg of messagesWithImages) {
-    await new Promise(resolve => setTimeout(resolve, msg.delay));
-
-    const imagePath = await fetchAndSaveImage(msg.imageURL, msg.imageName);
-
-    if (imagePath) {
-      api.sendMessage({
-        body: msg.text,
-        attachment: fs.createReadStream(imagePath)
-      }, threadID);
-    } else {
-      api.sendMessage(msg.text, threadID);
-    }
+  for (const message of messagesWithImages) {
+    setTimeout(async () => {
+      const imagePath = await fetchAndSaveImage(message.imageURL, message.imageName);
+      if (imagePath) {
+        api.sendMessage(
+          {
+            body: message.text,
+            attachment: fs.createReadStream(imagePath),
+          },
+          threadID
+        );
+      }
+    }, message.delay);
   }
-        }
+}
