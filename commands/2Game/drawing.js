@@ -1,77 +1,82 @@
-import axios from "axios";
-import fs from "fs-extra";
-import path from "path";
-import moment from "moment-timezone";
+import axios from 'axios';
+import moment from 'moment-timezone';
 
 export default {
   name: "تخيلي",
-  author: "kaguya project",
-  cooldowns: 50,
-  description: "قم بتوليد صور باستخدام الذكاء الاصطناعي DALL·E",
+  author: "HUSSEIN YACOUBI",
   role: "member",
-  aliases: ["تخيل", "imagine"],
-  execute: async ({ api, event, args, Economy }) => {
+  description: "توليد الصور باستخدام dalle-E",
+  aliases: ["تخيل", "dalle"],
+  cooldown: 50,
 
-    api.setMessageReaction("⚙️", event.messageID, (err) => {}, true);
-
-    // التحقق من وجود برومبت
-    if (args.length === 0) {
-      return api.sendMessage("⚠️ | من فضلك أدخل البرومبت الذي تود استخدامه لتوليد الصورة.", event.threadID, event.messageID);
-    }
-
-    const userMoney = (await Economy.getBalance(event.senderID)).data;
+  execute: async ({ api, event, args }) => {
+    const senderID = event.senderID;
+    let prompt = (event.messageReply?.body.split("dalle")[1] || args.join(" ")).trim();
+        const userMoney = (await Economy.getBalance(event.senderID)).data;
     const cost = 100;
     if (userMoney < cost) {
       return api.sendMessage(`⚠️ | لا يوجد لديك رصيد كافٍ. يجب عليك الحصول على ${cost} دولار 💵 لكل صورة تخيلية واحدة`, event.threadID);
     }
 
     await Economy.decrease(cost, event.senderID);
-
-    const prompt = args.join(" ");
-    const senderID = event.senderID;
+    
+    if (!prompt) {
+      return api.sendMessage("❌|  صيغة خاطئة. ✅ | إستخدم الامر هكذا : 17/18 years old boy/girl watching football match on TV with 'Dipto' and '69' written on the back of their dress, 4", event.threadID, event.messageID);
+    }
 
     try {
+      // Translation from Arabic to English if the prompt is in Arabic
       const translationResponse = await axios.get(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=ar&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
-      const translatedText = translationResponse?.data?.[0]?.[0]?.[0];
+      prompt = translationResponse?.data?.[0]?.[0]?.[0] || prompt;
 
-      const res = await axios.get(`https://c-v1.onrender.com/flux/v1?prompt=${encodeURIComponent(translatedText)}`);
-      const data = res.data.data.output;
+      // List of cookies
+      const cookies = ["1WMSMa5rJ9Jikxsu_KvCxWmb0m4AwilqsJhlkC1whxRDp2StLDR-oJBnLWpoppENES3sBh9_OeFE6BT-Kzzk_46_g_z_NPr7Du63M92maZmXZYR91ymjlxE6askzY9hMCdtX-9LK09sUsoqokbOwi3ldOlm0blR_0VLM3OjdHWcczWjvJ78LSUT7MWrdfdplScZbtHfNyOFlDIGkOKHI7Bg"];
+      const randomCookie = cookies[Math.floor(Math.random() * cookies.length)];
 
-      if (!data || data.length === 0) {
-        return api.sendMessage("⚠️ | لم يتم توليد أي صور بناءً على المدخلات التي قدمتها.", event.threadID, event.messageID);
+      // Inform user the request is being processed
+      const wait = api.sendMessage(" ⏱️ | جاري معالجة طلبك يرجى الانتظار....", event.threadID);
+
+      // Make request to generate the image
+      const response = await axios.get(`https://www.noobs-api.000.pe/dipto/dalle?prompt=${prompt}&key=dipto008&cookies=${randomCookie}`);
+      const imageUrls = response.data.imgUrls || [];
+
+      if (!imageUrls.length) {
+        return api.sendMessage("Empty response or no images generated.", event.threadID, event.messageID);
       }
 
-      const imgData = [];
-      for (let i = 0; i < Math.min(4, data.length); i++) {
-        const imgResponse = await axios.get(data[i], { responseType: 'arraybuffer' });
-        const imgPath = path.join(process.cwd(), 'cache', `${i + 1}.png`);
-        await fs.outputFile(imgPath, imgResponse.data);
-        imgData.push(fs.createReadStream(imgPath));
-      }
+      // Download the images as streams
+      const images = await Promise.all(imageUrls.map(url => axios.get(url, { responseType: 'stream' }).then(res => res.data)));
 
+      // Unsend the waiting message
+      api.unsendMessage(wait.messageID);
+
+      // Get the current time, date, and execution time
       const now = moment().tz("Africa/Casablanca");
       const timeString = now.format("HH:mm:ss");
       const dateString = now.format("YYYY-MM-DD");
       const executionTime = ((Date.now() - event.timestamp) / 1000).toFixed(2);
 
+      // Get user info
       api.getUserInfo(senderID, async (err, userInfo) => {
         if (err) {
-          console.log(err);
+          console.error(err);
           return;
         }
-        const userName = userInfo[senderID].name;
 
+        const userName = userInfo[senderID]?.name || "Unknown";
+
+        // Send the final message with the images and details
         await api.sendMessage({
-          attachment: imgData,
-          body: `\t\t࿇ ══━━✥◈✥━━══ ࿇\n\t\t〘تـم تـولـيـد الـصورة بـنجـاح〙\n 👥 | مـن طـرف : ${userName}\n⏰ | ❏الـتـوقـيـت : ${timeString}\n📅 | ❏الـتـاريـخ: ${dateString}\n⏳ | ❏الوقـت الـمـسـتـغـرق: ${executionTime}s\n📝 | ❏الـبـرومـبـت : ${prompt}\n\t\t࿇ ══━━✥◈✥━━══ ࿇`
+          body: `\t\t࿇ ══━━✥◈✥━━══ ࿇\n\t\t〘تـم تـولـيـد الـصورة بـنجـاح〙\n 👥 | مـن طـرف : ${userName}\n⏰ | ❏الـتـوقـيـت : ${timeString}\n📅 | ❏الـتـاريـخ: ${dateString}\n⏳ | ❏الوقـت الـمـسـتـغـرق: ${executionTime}s\n📝 | ❏الـبـرومـبـت : ${prompt}\n\t\t࿇ ══━━✥◈✥━━══ ࿇`,
+          attachment: images
         }, event.threadID, event.messageID);
       });
 
+      // Set the reaction to indicate success
       api.setMessageReaction("✅", event.messageID, (err) => {}, true);
-
     } catch (error) {
-      console.error(error);
-      api.sendMessage("⚠️ | حدث خطأ أثناء توليد الصورة. حاول مرة أخرى لاحقًا.", event.threadID, event.messageID);
+      console.error("Error: ", error);
+      api.sendMessage(`Generation failed!\nError: ${error.message}`, event.threadID, event.messageID);
     }
   }
 };
