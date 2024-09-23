@@ -11,10 +11,13 @@ export default {
   
   execute: async ({ api, message, args, event }) => {
     if (args.length === 0) {
+       
+api.setMessageReaction("⚠️", event.messageID, (err) => {}, true);
       // إذا لم يتم إدخال أي نص
-      return api.sendMessage("⚠️ من فضلك أدخل شيئًا لأقوله.", event.threadID);
+      return api.sendMessage("⚠️ | من فضلك أدخل شيئًا لأقوله.", event.threadID);
     }
-
+ 
+api.setMessageReaction("⏱️", event.messageID, (err) => {}, true);
     let lng = "ar";
     let say = args.join(" ");
 
@@ -35,7 +38,8 @@ export default {
 
         const audioPath = path.join(process.cwd(), "cache", "audio.mp3");
         fs.writeFileSync(audioPath, Buffer.from(audioResponse.data));
-
+ 
+api.setMessageReaction("✅", event.messageID, (err) => {}, true);
         await api.sendMessage({
           body: `✅ تم تحويل النص إلى كلام باستخدام النموذج الصوتي: ${data.voiceModel}`,
           attachment: fs.createReadStream(audioPath)
