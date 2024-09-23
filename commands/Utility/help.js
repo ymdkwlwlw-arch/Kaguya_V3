@@ -119,7 +119,7 @@ class Help {
       
         api.setMessageReaction("🎯", event.messageID, (err) => {}, true);
   
-      const message = `⎔━〚〘${selectedCommand.name}〙〛━⎔\n
+      const message = `\n\n\n⎔━〚〘${selectedCommand.name}〙〛━⎔\n
 👤 | ➭ المؤلف:『${selectedCommand.author}』
 🔑 | ➭ الدور:『${roleText}』
 📋 | ➭ الوصف:『${selectedCommand.description}』
