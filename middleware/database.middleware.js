@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
-import config from "../setup/config.js";
+import config from "../KaguyaSetUp/config.js";
 import { log } from "../logger/index.js";
 import fs from "fs";
+
 (async () => {
   switch (config.database.type) {
     case "mongodb":
@@ -11,6 +12,16 @@ import fs from "fs";
             useNewUrlParser: true,
             useUnifiedTopology: true,
           });
+          log([
+            {
+              message: "[ DATABASE ]: ",
+              color: "green",
+            },
+            {
+              message: "Successfully connected to the database",
+              color: "white",
+            },
+          ]);
         } catch (error) {
           console.log(error);
           log([
@@ -19,7 +30,7 @@ import fs from "fs";
               color: "red",
             },
             {
-              message: getLang("database.connection_failed"),
+              message: "Unable to connect to the database",
               color: "white",
             },
           ]);
@@ -35,30 +46,19 @@ import fs from "fs";
 
         createIfNotExists("./database/users.json");
         createIfNotExists("./database/threads.json");
+
+        log([
+          {
+            message: "[ DATABASE ]: ",
+            color: "green",
+          },
+          {
+            message: "Connected to JSON database",
+            color: "white",
+          },
+        ]);
       }
       break;
-    default: {
-      log([
-        {
-          message: "[ DATABASE ]: ",
-          color: "red",
-        },
-        {
-          message: getLang("database.connection_failed"),
-          color: "white",
-        },
-      ]);
-      process.exit(0)
-    }
   }
-  log([
-    {
-      message: "[ DATABASE ]: ",
-      color: "green",
-    },
-    {
-      message: getLang("database.connection_success"),
-      color: "white",
-    },
-  ]);
 })();
+            
