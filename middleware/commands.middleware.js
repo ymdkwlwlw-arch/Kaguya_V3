@@ -1,14 +1,18 @@
 import fs from "fs-extra";
 import { log } from "../logger/index.js";
+
+/**
+ * Middleware function to load commands and their aliases.
+ */
 export const commandMiddleware = async () => {
   try {
-    const dir = await fs.readdir("./commands");
+    const dir = await fs.readdir("./command");
     for (const directory of dir) {
-      if (fs.statSync(`./commands/${directory}`).isDirectory()) {
-        const cmd = await fs.readdir(`./commands/${directory}`);
+      if (fs.statSync(`./command/${directory}`).isDirectory()) {
+        const cmd = await fs.readdir(`./command/${directory}`);
         for (const command of cmd) {
           try {
-            const commands = (await import(`../commands/${directory}/${command}`)).default;
+            const commands = (await import(`../command/${directory}/${command}`)).default;
             if (commands?.onLoad && typeof commands?.onLoad == "function") {
               await commands.onLoad();
             }
@@ -19,7 +23,7 @@ export const commandMiddleware = async () => {
                   color: "green",
                 },
                 {
-                  message: getLang("handler.command_load_error", command, "không có tên lệnh!"),
+                  message: `Cannot load command: ${command} because it has no command name`,
                   color: "red",
                 },
               ]);
@@ -32,7 +36,7 @@ export const commandMiddleware = async () => {
                   color: "green",
                 },
                 {
-                  message: getLang("handler.command_load_error", command, "không có hàm thực thi!"),
+                  message: `Cannot load command: ${command} because it has no execute function`,
                   color: "red",
                 },
               ]);
@@ -45,13 +49,10 @@ export const commandMiddleware = async () => {
                 color: "green",
               },
               {
-                message: getLang("handler.command_load", `/${directory.toLowerCase()}/${commands.name}`),
+                message: `Successfully loaded command: ./${directory.toLowerCase()}/${commands.name}`,
                 color: "white",
               },
             ]);
-            if (commands.lang && Object.keys(commands.lang).length > 0) {
-              global.language[client.config.language].plugins[commands.name] = commands.lang[client.config.language];
-            }
             if (commands.aliases && Array.isArray(commands.aliases)) {
               for (const alias of commands.aliases) {
                 if (global.client.aliases.has(alias)) {
@@ -61,7 +62,7 @@ export const commandMiddleware = async () => {
                       color: "ocean",
                     },
                     {
-                      message: getLang("handler.command_aliases_exitsts", `<${global.client.aliases.get(alias)}>`, command.name),
+                      message: `Alias "${alias}" is already used for command <${global.client.aliases.get(alias)}> and cannot be used for command: ${commands.name}`,
                       color: "red",
                     },
                   ]);
@@ -80,7 +81,7 @@ export const commandMiddleware = async () => {
                 color: "green",
               },
               {
-                message: getLang("handler.command_load_error", command, error),
+                message: `Cannot load command: ${command} due to error: ${error}`,
                 color: "red",
               },
             ]);
@@ -96,7 +97,7 @@ export const commandMiddleware = async () => {
         color: "green",
       },
       {
-        message: getLang("handler.error", error),
+        message: `Cannot load commands due to error: ${error}`,
         color: "red",
       },
     ]);
