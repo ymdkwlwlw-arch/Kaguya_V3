@@ -6,13 +6,13 @@ import { log } from "../logger/index.js";
  */
 export const commandMiddleware = async () => {
   try {
-    const dir = await fs.readdir("./command");
+    const dir = await fs.readdir("./commands");
     for (const directory of dir) {
-      if (fs.statSync(`./command/${directory}`).isDirectory()) {
-        const cmd = await fs.readdir(`./command/${directory}`);
+      if (fs.statSync(`./commands/${directory}`).isDirectory()) {
+        const cmd = await fs.readdir(`./commands/${directory}`);
         for (const command of cmd) {
           try {
-            const commands = (await import(`../command/${directory}/${command}`)).default;
+            const commands = (await import(`../commands/${directory}/${command}`)).default;
             if (commands?.onLoad && typeof commands?.onLoad == "function") {
               await commands.onLoad();
             }

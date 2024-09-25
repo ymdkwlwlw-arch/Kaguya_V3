@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import config from "../../setup/config.js";
+import config from "../../KaguyaSetUp/config.js";
 const { Schema } = mongoose;
 const bannedSchema = new Schema({
     status: { type: Boolean, default: false },
