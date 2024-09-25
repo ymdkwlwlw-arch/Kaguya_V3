@@ -1,6 +1,6 @@
 import userModels from "../models/users.models.js";
 import { log } from "../../logger/index.js";
-import config from "../../setup/config.js";
+import config from "../../KaguyaSetUp/config.js";
 import fs from "fs-extra";
 import chokidar from "chokidar";
 
