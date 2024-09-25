@@ -1,5 +1,6 @@
 import fs from "fs-extra";
 import { log } from "../logger/index.js";
+
 export const eventMiddleware = async () => {
   try {
     const dir = await fs.readdir("./event");
@@ -8,7 +9,7 @@ export const eventMiddleware = async () => {
         continue;
       }
       const events = (await import(`../event/${event}`)).default;
-      if (events?.onLoad && typeof events?.onLoad == "function") {
+      if (events?.onLoad && typeof events?.onLoad === "function") {
         await events.onLoad();
       }
       if (!events?.name) {
@@ -18,7 +19,7 @@ export const eventMiddleware = async () => {
             color: "yellow",
           },
           {
-            message: getLang("handler.event_load_error" , event, "không có tên sự kiện!"),
+            message: `Failed to load event: ${event} because it lacks event name`,
             color: "red",
           },
         ]);
@@ -31,7 +32,7 @@ export const eventMiddleware = async () => {
             color: "yellow",
           },
           {
-            message: getLang("handler.event_load_error" , event, "không có tên hàm thực thi!"),
+            message: `Failed to load event: ${event} because it lacks execute function`,
             color: "red",
           },
         ]);
@@ -44,7 +45,7 @@ export const eventMiddleware = async () => {
           color: "yellow",
         },
         {
-          message: getLang("handler.event_load", `/event/${events.name}`),
+          message: `Successfully loaded event: ./event/${events.name}`,
           color: "white",
         },
       ]); 
@@ -56,7 +57,7 @@ export const eventMiddleware = async () => {
         color: "yellow",
       },
       {
-        message: getLang("handler.error", error),
+        message: `Failed to load event due to error: ${error}`,
         color: "red",
       },
     ]);
