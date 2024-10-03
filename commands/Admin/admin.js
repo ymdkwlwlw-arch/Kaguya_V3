@@ -13,7 +13,7 @@ class Admin {
       global.client.__proto__.setConfig = function (newConfig) {
         try {
           Object.assign(global.client.config, newConfig);
-          fs.writeFileSync("./setup/config.js", `export default ${JSON.stringify(global.client.c, null, 2)};`);
+          fs.writeFileSync("./setup/config.js", `export default ${JSON.stringify(global.client.config, null, 2)};`);
         } catch (err) {
           this.emit("system:err", err);
         }
@@ -21,67 +21,76 @@ class Admin {
     }
   }
 
-  async execute({ event, args }) {
+  async execute({ event, args, api }) {
     try {
       var [type, tags] = args;
       tags = event.mentions && Object.keys(event.mentions).length > 0 ? event.mentions : tags && !isNaN(tags) ? { [tags]: "" } : false;
 
       if (["add", "remove"].includes(type) && !global.client.config.ADMIN_IDS.includes(event.senderID)) {
-        return kaguya.reply(" ⚠️ | ليس لديك الإذن لاستخدام هذا الأمر!");
+        return api.sendMessage(" ⚠️ | ليس لديك الإذن لاستخدام هذا الأمر!", event.threadID);
       }
 
       switch (type) {
         case "إضافة":
-          return this.addAdmin(tags);
+          return this.addAdmin(tags, api, event.threadID);
 
         case "إزالة":
-          return this.removeAdmin(tags);
+          return this.removeAdmin(tags, api, event.threadID);
 
         case "قائمة":
         case "-l":
         case "-all":
-          return this.listAdmins();
+          return this.listAdmins(api, event.threadID);
 
         default:
           var commandName = client.config.prefix + this.name;
-          return kaguya.reply(`[ آدمن ]\n${commandName} إضافة <@منشن أو الآيدي> قم بإضافة العضو آدمن على البوت \n${commandName} إزالة <@منشن أو الآيدي> قم بإزالة العضو من دور الآدمن على البوت \n${commandName} قائمة إظهار قائمة الآدمنية على البوت`);
+          return api.sendMessage(`[ آدمن ]\n${commandName} إضافة <@منشن أو الآيدي> قم بإضافة العضو آدمن على البوت \n${commandName} إزالة <@منشن أو الآيدي> قم بإزالة العضو من دور الآدمن على البوت \n${commandName} قائمة إظهار قائمة الآدمنية على البوت`, event.threadID);
       }
     } catch (err) {
       console.log(err);
     }
   }
 
-  addAdmin(tags) {
+  addAdmin(tags, api, threadID) {
     if (!tags) {
-      return kaguya.reply(` ⚠️ | يرحى عمل منشن أو إدخال آيدي العضو المراد إضافته كآدمن`);
+      return api.sendMessage(" ⚠️ | يرجى عمل منشن أو إدخال آيدي العضو المراد إضافته كآدمن", threadID);
     }
 
     const addedUids = this.processAdmins(tags, "add");
     const statusMessage = this.getStatusMessage(addedUids, "");
 
-    return kaguya.reply(statusMessage);
+    return api.sendMessage(statusMessage, threadID);
   }
 
-  removeAdmin(tags) {
+  removeAdmin(tags, api, threadID) {
     if (!tags) {
-      return kaguya.reply(` ⚠️ | يرحى عمل منشن أو إدخال آيدي العضو المراد إزالته من قائمة الآدمنية`);
+      return api.sendMessage(" ⚠️ | يرجى عمل منشن أو إدخال آيدي العضو المراد إزالته من قائمة الآدمنية", threadID);
     }
 
     const removedUids = this.processAdmins(tags, "remove");
     const statusMessage = this.getStatusMessage(removedUids, "Xoá");
 
-    return kaguya.reply(statusMessage);
+    return api.sendMessage(statusMessage, threadID);
   }
 
-  listAdmins() {
+  async listAdmins(api, threadID) {
     const adminIds = global.client.config.ADMIN_IDS;
 
     if (adminIds.length === 0) {
-      return kaguya.reply(" ⚠️ | هذا العضو لم يتم إضافته إلى قائمة الآدمنية.");
+      return api.sendMessage(" ⚠️ | لا يوجد أعضاء في قائمة الآدمنية.", threadID);
     }
 
-    const adminList = adminIds.join(", ");
-    return kaguya.reply(` 👑 | قائمة الآدمنية:\n${adminList}`);
+    try {
+      const userInfo = await api.getUserInfo(adminIds);
+      const adminList = adminIds
+        .map(id => `${userInfo[id]?.name || "غير معروف"} (${id})`)
+        .join("\n");
+
+      return api.sendMessage(` 👑 | قائمة الآدمنية:\n${adminList}`, threadID);
+    } catch (error) {
+      console.error(error);
+      return api.sendMessage("⚠️ | حدث خطأ أثناء جلب معلومات الآدمنية.", threadID);
+    }
   }
 
   processAdmins(tags, action) {
@@ -109,15 +118,15 @@ class Admin {
     let message = `${status} عملية التعيين`;
 
     if (successUids.length > 0) {
-      message += `\n\nتمت إضافة العضو صاحب الآيدي  ${action.toLowerCase()}\n ${successUids.join(", ")} نجحت بذالك عملية التعيين`;
+      message += `\n\nتمت إضافة العضو صاحب الآيدي ${action.toLowerCase()}\n ${successUids.join(", ")} نجحت بذالك عملية التعيين`;
     }
 
     if (failedUids.length > 0) {
-      message += `\n\n ⚠️ | موجود بالفعل في قائمة الآدمنية : ${failedUids.join(", ")} فشلت بذالك عملية التعيين`;
+      message += `\n\n ⚠️ | موجود بالفعل في قائمة الآدمنية: ${failedUids.join(", ")} فشلت بذالك عملية التعيين`;
     }
 
     return message;
   }
 }
 
-export default new Admin(); 
+export default new Admin();
